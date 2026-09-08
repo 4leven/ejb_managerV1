@@ -1,0 +1,4 @@
+{"level":"error","path":"/api/auth/login","message":"Correo o contraseña incorrectos"}
+{"level":"error","path":"/api/auth/login","message":"Cuenta bloqueada temporalmente. Inténtalo nuevamente en unos minutos"}
+{"level":"error","path":"/api/auth/login","message":"Cuenta bloqueada temporalmente. Inténtalo nuevamente en unos minutos"}
+{"level":"error","path":"/api/auth/login","message":"Cuenta bloqueada temporalmente. Inténtalo nuevamente en unos minutos"}
