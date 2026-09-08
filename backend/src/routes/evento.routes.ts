@@ -1,0 +1,1 @@
+import {Router} from "express";import {create,list,remove,update} from "../controllers/evento.controller.js";export const eventoRoutes=Router().get("/",list).post("/",create).patch("/:id",update).delete("/:id",remove);

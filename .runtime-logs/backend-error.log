@@ -1,0 +1,2 @@
+ ERROR  ENOENT: no such file or directory, lstat 'C:\Proyecto'
+For help, run: pnpm help run

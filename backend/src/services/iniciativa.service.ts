@@ -1,0 +1,45 @@
+import { Estado, Esfuerzo, Prisma } from '@prisma/client';
+import { prisma } from '../config/db.js';
+import { codigo, score } from '../utils/iniciativa.js';
+import { automaticProjectStatus, progressFromTasks, type ProjectStatus } from './project-status.js';
+
+const allowed: Record<Estado, Estado[]> = {
+  Pendiente: [Estado.En_evaluacion], En_evaluacion: [Estado.Pendiente, Estado.Priorizado],
+  Priorizado: [Estado.En_evaluacion, Estado.En_desarrollo], En_desarrollo: [Estado.Priorizado],
+  Finalizado: []
+};
+export const iniciativaService = {
+  async list() {const rows=await prisma.iniciativa.findMany({where:{deletedAt:null},include:{area:true, objetivo:true, responsable:true,tareas:{where:{deletedAt:null},include:{responsable:{select:{id:true,nombres:true,apellidos:true,fotoPerfil:true}},comentarios:{include:{usuario:{select:{id:true,nombres:true,apellidos:true,fotoPerfil:true}}},orderBy:{createdAt:'desc'}}},orderBy:{createdAt:'asc'}},progresos:{orderBy:{createdAt:'desc'}},_count:{select:{eventos:true}}}, orderBy:{score:'desc'}});return rows.map(row=>{const porcentajeAvance=progressFromTasks(row.tareas.length,row.tareas.filter(task=>task.completada).length,row.porcentajeAvance),hasActiveTasks=row.tareas.some(task=>task.estado==='Iniciado'||task.estado==='En_progreso');return{...row,porcentajeAvance,estado:automaticProjectStatus(porcentajeAvance,row.estado as ProjectStatus,hasActiveTasks)}})},
+  async create(data:{creadorId?:string;titulo:string;descripcion:string;cliente?:string;areaId:string;objetivoId?:string;impacto:number;esfuerzo:Esfuerzo;fechaInicio?:Date;fechaFin?:Date;tareas?:string[]}) {
+    const attempt = () => prisma.$transaction(async tx => {
+      const last = await tx.iniciativa.findFirst({ orderBy:{codigo:'desc'}, select:{codigo:true} });
+      const sequence = last ? Number(last.codigo.slice(4)) : 0;
+      const {tareas,...initiative}=data;
+      return tx.iniciativa.create({data:{...initiative,codigo:codigo(sequence),score:score(data.impacto,data.esfuerzo),tareas:tareas?.length?{create:tareas.map(titulo=>({titulo}))}:undefined},include:{area:true,tareas:true}});
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    try { return await attempt(); }
+    catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && ['P2002','P2034'].includes(error.code)) return attempt();
+      throw error;
+    }
+  },
+  async transition(id:string, estado:Estado, responsableId?:string) {
+    const current = await prisma.iniciativa.findUniqueOrThrow({where:{id}});
+    if (!allowed[current.estado].includes(estado)) throw new Error('Transición de estado no permitida');
+    const owner = responsableId ?? current.responsableId;
+    if (estado === Estado.Priorizado && !owner) throw new Error('Asigna un responsable antes de priorizar');
+    return prisma.iniciativa.update({where:{id},data:{estado,responsableId:owner}});
+  },
+  progresos:(id:string)=>prisma.progreso.findMany({where:{iniciativaId:id},include:{usuario:{select:{nombres:true,apellidos:true}}},orderBy:{createdAt:'desc'}}),
+  appearance:(id:string,icono:string,colorIcono:string)=>prisma.iniciativa.update({where:{id},data:{icono,colorIcono},include:{area:true,objetivo:true,responsable:true}}),
+  async addProgreso(id:string,usuarioId:string,porcentaje:number,comentario:string){
+    return prisma.$transaction(async tx=>{
+      const initiative=await tx.iniciativa.findUniqueOrThrow({where:{id},include:{tareas:{where:{deletedAt:null},select:{completada:true,estado:true}}}});
+      const porcentajeAvance=progressFromTasks(initiative.tareas.length,initiative.tareas.filter(task=>task.completada).length,porcentaje);
+      const estadoProyecto=automaticProjectStatus(porcentajeAvance,initiative.estado as ProjectStatus,initiative.tareas.some(task=>task.estado==='Iniciado'||task.estado==='En_progreso'));
+      const progreso=await tx.progreso.create({data:{iniciativaId:id,usuarioId,porcentaje,comentario},include:{usuario:{select:{nombres:true,apellidos:true}}}});
+      await tx.iniciativa.update({where:{id},data:{porcentajeAvance,estado:estadoProyecto}});
+      return {...progreso,porcentajeAvance,estadoProyecto};
+    });
+  }
+};

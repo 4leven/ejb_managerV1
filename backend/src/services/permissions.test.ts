@@ -1,0 +1,6 @@
+import test from "node:test";import assert from "node:assert/strict";import{canManageArea,canReadInitiative,canReadPrivateGroup,isManagement,isTechnical}from"./permissions.js";
+const worker={id:"u1",areaId:"a1",cargo:"Trabajador",rol:"Usuario",isSuperAdmin:false};
+test("un usuario solo lee iniciativas de su área o asignadas",()=>{assert.equal(canReadInitiative(worker,{areaId:"a1"}),true);assert.equal(canReadInitiative(worker,{areaId:"a2"}),false);assert.equal(canReadInitiative(worker,{areaId:"a2",responsableId:"u1"}),true)});
+test("el técnico opera en todas las áreas sin convertirse en administrador",()=>{const technician={...worker,cargo:"Tecnico"};assert.equal(isTechnical(technician),true);assert.equal(isManagement(technician),false);assert.equal(canReadInitiative(technician,{areaId:"a2"}),true);assert.equal(canManageArea(technician,"a2"),true)});
+test("solo gerencia del área administra el área",()=>{assert.equal(canManageArea(worker,"a1"),false);assert.equal(canManageArea({...worker,cargo:"Gerente"},"a1"),true);assert.equal(canManageArea({...worker,cargo:"Gerente"},"a2"),false)});
+test("los grupos privados no se filtran solo en la interfaz",()=>{assert.equal(canReadPrivateGroup("u1",{miembros:["u1","u2"]},"owner"),true);assert.equal(canReadPrivateGroup("u3",{miembros:["u1","u2"]},"owner"),false)});

@@ -1,0 +1,5 @@
+
+> ejb-hub-backend@ dev C:\Proyecto Innovation Hub\backend
+> tsx watch src/server.ts
+
+ ELIFECYCLE  Command failed with exit code 1.

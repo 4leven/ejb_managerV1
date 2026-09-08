@@ -1,0 +1,3 @@
+ALTER TYPE "CanalTicket" ADD VALUE IF NOT EXISTS 'WHATSAPP';
+
+ALTER TABLE "ticket_historial" ADD COLUMN IF NOT EXISTS "metadata" JSONB;

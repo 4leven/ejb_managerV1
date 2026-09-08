@@ -1,0 +1,1 @@
+ALTER TYPE "Cargo" ADD VALUE IF NOT EXISTS 'Tecnico';

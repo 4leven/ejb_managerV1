@@ -1,0 +1,43 @@
+{
+  "name": "ejb-hub-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "test": "tsx --test src/**/*.test.ts",
+    "test:tickets:smoke": "node scripts/ticket-smoke.mjs",
+    "test:tickets:lifecycle": "node scripts/ticket-lifecycle-smoke.mjs",
+    "test:kanban:systems": "node scripts/system-kanban-smoke.mjs",
+    "backup": "node scripts/backup.mjs",
+    "production:check": "node scripts/production-check.mjs",
+    "summary:weekly": "node scripts/weekly-summary.mjs",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.5.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
+    "livekit-server-sdk": "^2.18.0",
+    "pdf-lib": "^1.17.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.13.10",
+    "prisma": "^6.5.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

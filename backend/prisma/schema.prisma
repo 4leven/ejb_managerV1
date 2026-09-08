@@ -1,0 +1,550 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  Admin
+  Comite
+  Usuario
+}
+
+enum Cargo {
+  Jefe
+  Administracion
+  Gerente
+  Tecnico
+  Asistente
+  Trabajador
+}
+
+enum Esfuerzo {
+  Bajo
+  Medio
+  Alto
+}
+
+enum Estado {
+  Pendiente
+  En_evaluacion
+  Priorizado
+  En_desarrollo
+  Finalizado
+}
+
+enum EstadoSolicitud {
+  Pendiente
+  Aprobada
+  Rechazada
+}
+
+enum AccionSolicitud {
+  Editar
+  Eliminar
+}
+
+enum TipoEntidad {
+  Iniciativa
+  Objetivo
+  Requerimiento
+  Documento
+}
+
+enum TipoMensaje {
+  Texto
+  Documento
+  Sticker
+}
+
+enum EstadoTicket {
+  PENDIENTE
+  EN_CURSO
+  FINALIZADO
+}
+
+enum PrioridadTicket {
+  BAJA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum CanalTicket {
+  TELEFONO
+  WHATSAPP
+  CORREO
+  CHAT
+  VIDEOLLAMADA
+  OTRO
+}
+
+model Area {
+  id             String            @id @default(uuid()) @db.Uuid
+  nombre         String            @unique @db.VarChar(100)
+  colorHex       String            @map("color_hex") @db.VarChar(7)
+  createdAt      DateTime          @default(now()) @map("created_at")
+  usuarios       Usuario[]
+  iniciativas    Iniciativa[]
+  solicitudes    SolicitudCambio[]
+  eventos        Evento[]
+  requerimientos Requerimiento[]
+  flujos         FlujoArea[]
+
+  @@map("areas")
+}
+
+model ObjetivoNegocio {
+  creadorId   String? @map("creador_id") @db.Uuid
+  areaId      String? @map("area_id") @db.Uuid
+  id          String             @id @default(uuid()) @db.Uuid
+  nombre      String             @db.VarChar(150)
+  descripcion String?
+  createdAt   DateTime           @default(now()) @map("created_at")
+  deletedAt   DateTime?          @map("deleted_at")
+  deletedById String?            @map("deleted_by_id") @db.Uuid
+  iniciativas Iniciativa[]
+  progresos   ObjetivoProgreso[]
+
+  @@map("objetivos_negocio")
+}
+
+model ObjetivoProgreso {
+  id         String          @id @default(uuid()) @db.Uuid
+  objetivoId String          @map("objetivo_id") @db.Uuid
+  usuarioId  String          @map("usuario_id") @db.Uuid
+  porcentaje Int
+  comentario String          @db.VarChar(1000)
+  createdAt  DateTime        @default(now()) @map("created_at")
+  objetivo   ObjetivoNegocio @relation(fields: [objetivoId], references: [id], onDelete: Cascade)
+  usuario    Usuario         @relation(fields: [usuarioId], references: [id])
+
+  @@index([objetivoId, createdAt], map: "idx_objetivo_progresos_fecha")
+  @@map("objetivo_progresos")
+}
+
+model Usuario {
+  id                      String              @id @default(uuid()) @db.Uuid
+  nombres                 String              @db.VarChar(100)
+  apellidos               String              @db.VarChar(100)
+  email                   String              @unique @db.VarChar(150)
+  passwordHash            String              @map("password_hash") @db.VarChar(255)
+  areaId                  String              @map("area_id") @db.Uuid
+  cargo                   Cargo
+  rol                     Rol
+  portalColor             String              @default("#0B2347") @map("portal_color") @db.VarChar(7)
+  darkMode                Boolean             @default(false) @map("dark_mode")
+  fotoPerfil              String?             @map("foto_perfil")
+  estadoMensaje           String              @default("Disponible") @map("estado_mensaje") @db.VarChar(20)
+  resetTokenHash          String?             @map("reset_token_hash") @db.VarChar(64)
+  resetExpires            DateTime?           @map("reset_expires")
+  emailVerifiedAt         DateTime?           @map("email_verified_at")
+  verificationTokenHash   String?             @map("verification_token_hash") @db.VarChar(64)
+  failedLoginAttempts     Int                 @default(0) @map("failed_login_attempts")
+  lockedUntil             DateTime?           @map("locked_until")
+  permisos                Json                @default("{}")
+  notificationPreferences Json                @default("{}") @map("notification_preferences")
+  onboardingCompleted     Boolean             @default(false) @map("onboarding_completed")
+  isSuperAdmin            Boolean             @default(false) @map("is_super_admin")
+  createdAt               DateTime            @default(now()) @map("created_at")
+  area                    Area                @relation(fields: [areaId], references: [id])
+  iniciativas             Iniciativa[]        @relation("Responsable")
+  progresos               Progreso[]
+  progresosObjetivo       ObjetivoProgreso[]
+  mensajesEnviados        Mensaje[]           @relation("MensajesEnviados")
+  mensajesRecibidos       Mensaje[]           @relation("MensajesRecibidos")
+  reaccionesMensaje       MensajeReaccion[]
+  mensajesProgramados     MensajeProgramado[] @relation("MensajesProgramados")
+  huddlesIniciados        Huddle[]            @relation("HuddlesIniciados")
+  solicitudesCreadas      SolicitudCambio[]   @relation("SolicitudesCreadas")
+  solicitudesAprobadas    SolicitudCambio[]   @relation("SolicitudesAprobadas")
+  eventosCreados          Evento[]            @relation("EventosCreados")
+  eventosAsignados        Evento[]            @relation("EventosAsignados")
+  requerimientos          Requerimiento[]
+  flujosSubidos           FlujoArea[]
+  registrosPortal         RegistroPortal[]
+  comentariosTarea        TareaComentario[]
+  tareasAsignadas         TareaIniciativa[]   @relation("TareasAsignadas")
+  notificaciones          Notificacion[]
+  ticketsCreados          Ticket[]            @relation("TicketsCreados")
+  ticketsAsignados        Ticket[]            @relation("TicketsAsignados")
+  ticketsFinalizados      Ticket[]            @relation("TicketsFinalizados")
+  historialTickets        TicketHistorial[]
+
+  @@map("usuarios")
+}
+
+model Cliente {
+  id          String   @id @default(uuid()) @db.Uuid
+  ruc         String?  @unique @db.VarChar(11)
+  razonSocial String   @unique @map("razon_social") @db.VarChar(180)
+  telefono    String?  @db.VarChar(30)
+  contacto    String?  @db.VarChar(150)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  tickets     Ticket[]
+
+  @@map("clientes")
+}
+
+model Ticket {
+  id              String            @id @default(uuid()) @db.Uuid
+  correlativo     Int               @unique @default(autoincrement())
+  clienteId       String            @map("cliente_id") @db.Uuid
+  ruc             String            @db.VarChar(11)
+  razonSocial     String            @map("razon_social") @db.VarChar(180)
+  modulo          String            @db.VarChar(100)
+  telefono        String?           @db.VarChar(30)
+  contacto        String            @db.VarChar(150)
+  consulta        String            @db.VarChar(3000)
+  prioridad       PrioridadTicket   @default(NORMAL)
+  canal           CanalTicket       @default(TELEFONO)
+  estado          EstadoTicket      @default(PENDIENTE)
+  creadoPorId     String            @map("creado_por_id") @db.Uuid
+  registradoAt    DateTime          @default(now()) @map("registrado_at")
+  asignadoAId     String?           @map("asignado_a_id") @db.Uuid
+  asignadoAt      DateTime?         @map("asignado_at")
+  contactadoAt    DateTime?         @map("contactado_at")
+  observaciones   String?           @db.VarChar(3000)
+  solucion        String?           @db.VarChar(3000)
+  finalizadoAt    DateTime?         @map("finalizado_at")
+  finalizadoPorId String?           @map("finalizado_por_id") @db.Uuid
+  slaVenceAt      DateTime?         @map("sla_vence_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  cliente         Cliente           @relation(fields: [clienteId], references: [id])
+  creadoPor       Usuario           @relation("TicketsCreados", fields: [creadoPorId], references: [id])
+  asignadoA       Usuario?          @relation("TicketsAsignados", fields: [asignadoAId], references: [id])
+  finalizadoPor   Usuario?          @relation("TicketsFinalizados", fields: [finalizadoPorId], references: [id])
+  historial       TicketHistorial[]
+
+  @@index([estado, registradoAt])
+  @@index([asignadoAId, estado])
+  @@index([clienteId, registradoAt])
+  @@map("tickets")
+}
+
+model TicketHistorial {
+  id             String        @id @default(uuid()) @db.Uuid
+  ticketId       String        @map("ticket_id") @db.Uuid
+  accion         String        @db.VarChar(80)
+  estadoAnterior EstadoTicket? @map("estado_anterior")
+  estadoNuevo    EstadoTicket? @map("estado_nuevo")
+  usuarioId      String        @map("usuario_id") @db.Uuid
+  comentario     String?       @db.VarChar(2000)
+  metadata       Json?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  ticket         Ticket        @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  usuario        Usuario       @relation(fields: [usuarioId], references: [id])
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_historial")
+}
+
+model RegistroPortal {
+  id        String   @id @default(uuid()) @db.Uuid
+  tipo      String   @db.VarChar(40)
+  datos     Json
+  creadorId String   @map("creador_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  creador   Usuario  @relation(fields: [creadorId], references: [id], onDelete: Cascade)
+
+  @@index([tipo, createdAt])
+  @@map("registros_portal")
+}
+
+model Iniciativa {
+  creadorId          String? @map("creador_id") @db.Uuid
+  id                 String            @id @default(uuid()) @db.Uuid
+  codigo             String            @unique @db.VarChar(10)
+  titulo             String            @db.VarChar(200)
+  descripcion        String
+  cliente            String?           @db.VarChar(160)
+  icono              String?           @db.VarChar(12)
+  colorIcono         String?           @map("color_icono") @db.VarChar(7)
+  areaId             String            @map("area_id") @db.Uuid
+  objetivoId         String?           @map("objetivo_id") @db.Uuid
+  impacto            Int
+  esfuerzo           Esfuerzo
+  score              Decimal           @default(0) @db.Decimal(5, 2)
+  estado             Estado            @default(Pendiente)
+  responsableId      String?           @map("responsable_id") @db.Uuid
+  porcentajeAvance   Int               @default(0) @map("porcentaje_avance")
+  fechaCreacion      DateTime          @default(now()) @map("fecha_creacion")
+  fechaActualizacion DateTime          @updatedAt @map("fecha_actualizacion")
+  fechaInicio        DateTime?         @map("fecha_inicio") @db.Date
+  fechaFin           DateTime?         @map("fecha_fin") @db.Date
+  deletedAt          DateTime?         @map("deleted_at")
+  deletedById        String?           @map("deleted_by_id") @db.Uuid
+  area               Area              @relation(fields: [areaId], references: [id])
+  objetivo           ObjetivoNegocio?  @relation(fields: [objetivoId], references: [id])
+  responsable        Usuario?          @relation("Responsable", fields: [responsableId], references: [id])
+  progresos          Progreso[]
+  eventos            Evento[]
+  tareas             TareaIniciativa[]
+
+  @@index([estado], map: "idx_iniciativas_estado")
+  @@index([areaId], map: "idx_iniciativas_area")
+  @@index([score(sort: Desc)], map: "idx_iniciativas_score")
+  @@index([responsableId], map: "idx_iniciativas_responsable")
+  @@map("iniciativas")
+}
+
+model Progreso {
+  id           String     @id @default(uuid()) @db.Uuid
+  iniciativaId String     @map("iniciativa_id") @db.Uuid
+  usuarioId    String     @map("usuario_id") @db.Uuid
+  porcentaje   Int
+  comentario   String     @db.VarChar(500)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  iniciativa   Iniciativa @relation(fields: [iniciativaId], references: [id], onDelete: Cascade)
+  usuario      Usuario    @relation(fields: [usuarioId], references: [id])
+
+  @@index([iniciativaId], map: "idx_progresos_iniciativa")
+  @@map("progresos")
+}
+
+model TareaIniciativa {
+  id             String            @id @default(uuid()) @db.Uuid
+  iniciativaId   String            @map("iniciativa_id") @db.Uuid
+  titulo         String            @db.VarChar(220)
+  estado         String            @default("Pendiente") @db.VarChar(30)
+  completada     Boolean           @default(false)
+  comentario     String?           @db.VarChar(600)
+  prioridad      String            @default("Normal") @db.VarChar(20)
+  responsableId  String?           @map("responsable_id") @db.Uuid
+  recordatorioAt DateTime?         @map("recordatorio_at")
+  adjuntos       Json              @default("[]")
+  fechaInicio    DateTime?         @map("fecha_inicio") @db.Date
+  fechaFin       DateTime?         @map("fecha_fin") @db.Date
+  completadaAt   DateTime?         @map("completada_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  deletedAt      DateTime?         @map("deleted_at")
+  iniciativa     Iniciativa        @relation(fields: [iniciativaId], references: [id], onDelete: Cascade)
+  responsable    Usuario?          @relation("TareasAsignadas", fields: [responsableId], references: [id])
+  comentarios    TareaComentario[]
+
+  @@index([iniciativaId, estado])
+  @@index([responsableId, estado])
+  @@map("tareas_iniciativa")
+}
+
+model TareaComentario {
+  id        String          @id @default(uuid()) @db.Uuid
+  tareaId   String          @map("tarea_id") @db.Uuid
+  usuarioId String          @map("usuario_id") @db.Uuid
+  contenido String          @db.VarChar(600)
+  createdAt DateTime        @default(now()) @map("created_at")
+  tarea     TareaIniciativa @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  usuario   Usuario         @relation(fields: [usuarioId], references: [id])
+
+  @@index([tareaId, createdAt])
+  @@map("tarea_comentarios")
+}
+
+model Mensaje {
+  eliminadoAt    DateTime? @map("eliminado_at")
+  id             String            @id @default(uuid()) @db.Uuid
+  remitenteId    String            @map("remitente_id") @db.Uuid
+  destinatarioId String            @map("destinatario_id") @db.Uuid
+  contenido      String            @db.VarChar(2000)
+  tipo           TipoMensaje       @default(Texto)
+  archivoNombre  String?           @map("archivo_nombre") @db.VarChar(255)
+  archivoMime    String?           @map("archivo_mime") @db.VarChar(120)
+  archivoData    String?           @map("archivo_data")
+  leidoAt        DateTime?         @map("leido_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  respuestaAId   String?           @map("respuesta_a_id") @db.Uuid
+  respuestaA     Mensaje?          @relation("MensajeRespuesta", fields: [respuestaAId], references: [id], onDelete: SetNull)
+  respuestas     Mensaje[]         @relation("MensajeRespuesta")
+  reenviadoDeId  String?           @map("reenviado_de_id") @db.Uuid
+  reenviadoDe    Mensaje?          @relation("MensajeReenvio", fields: [reenviadoDeId], references: [id], onDelete: SetNull)
+  reenvios       Mensaje[]         @relation("MensajeReenvio")
+  reacciones     MensajeReaccion[]
+  remitente      Usuario           @relation("MensajesEnviados", fields: [remitenteId], references: [id], onDelete: Cascade)
+  destinatario   Usuario           @relation("MensajesRecibidos", fields: [destinatarioId], references: [id], onDelete: Cascade)
+
+  @@index([remitenteId, destinatarioId, createdAt], map: "idx_mensajes_conversacion")
+  @@index([destinatarioId, leidoAt], map: "idx_mensajes_no_leidos")
+  @@map("mensajes")
+}
+
+model MensajeReaccion {
+  id        String   @id @default(uuid()) @db.Uuid
+  mensajeId String   @map("mensaje_id") @db.Uuid
+  usuarioId String   @map("usuario_id") @db.Uuid
+  emoji     String   @db.VarChar(8)
+  createdAt DateTime @default(now()) @map("created_at")
+  mensaje   Mensaje  @relation(fields: [mensajeId], references: [id], onDelete: Cascade)
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([mensajeId, usuarioId, emoji])
+  @@map("mensaje_reacciones")
+}
+
+model MensajeProgramado {
+  id             String      @id @default(uuid()) @db.Uuid
+  remitenteId    String      @map("remitente_id") @db.Uuid
+  destinatarioId String      @map("destinatario_id") @db.Uuid
+  contenido      String      @db.VarChar(2000)
+  tipo           TipoMensaje @default(Texto)
+  archivoNombre  String?     @map("archivo_nombre") @db.VarChar(255)
+  archivoMime    String?     @map("archivo_mime") @db.VarChar(120)
+  archivoData    String?     @map("archivo_data")
+  enviarEn       DateTime    @map("enviar_en")
+  enviadoAt      DateTime?   @map("enviado_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  remitente      Usuario     @relation("MensajesProgramados", fields: [remitenteId], references: [id], onDelete: Cascade)
+
+  @@index([enviarEn, enviadoAt], map: "idx_programados_pendientes")
+  @@map("mensajes_programados")
+}
+
+model Huddle {
+  id            String    @id @default(uuid()) @db.Uuid
+  salaId        String    @unique @map("sala_id") @db.VarChar(80)
+  contexto      String    @db.VarChar(20)
+  contextoId    String    @map("contexto_id") @db.VarChar(80)
+  iniciadoPorId String    @map("iniciado_por_id") @db.Uuid
+  estado        String    @default("activa") @db.VarChar(20)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  finalizadaAt  DateTime? @map("finalizada_at")
+  iniciadoPor   Usuario   @relation("HuddlesIniciados", fields: [iniciadoPorId], references: [id])
+
+  @@index([contexto, contextoId, estado])
+  @@map("huddles")
+}
+
+model SolicitudCambio {
+  id               String          @id @default(uuid()) @db.Uuid
+  tipoEntidad      TipoEntidad     @map("tipo_entidad")
+  entidadId        String          @map("entidad_id") @db.Uuid
+  accion           AccionSolicitud
+  payload          Json?
+  snapshot         Json?
+  motivo           String          @db.VarChar(500)
+  etapas           Json            @default("[]")
+  etapaActual      Int             @default(0) @map("etapa_actual")
+  decisiones       Json            @default("[]")
+  motivoResolucion String?         @map("motivo_resolucion") @db.VarChar(500)
+  estado           EstadoSolicitud @default(Pendiente)
+  solicitanteId    String          @map("solicitante_id") @db.Uuid
+  aprobadorId      String?         @map("aprobador_id") @db.Uuid
+  areaId           String          @map("area_id") @db.Uuid
+  createdAt        DateTime        @default(now()) @map("created_at")
+  resolvedAt       DateTime?       @map("resolved_at")
+  solicitante      Usuario         @relation("SolicitudesCreadas", fields: [solicitanteId], references: [id])
+  aprobador        Usuario?        @relation("SolicitudesAprobadas", fields: [aprobadorId], references: [id])
+  area             Area            @relation(fields: [areaId], references: [id])
+
+  @@index([areaId, estado], map: "idx_solicitudes_area_estado")
+  @@index([solicitanteId, createdAt], map: "idx_solicitudes_solicitante_fecha")
+  @@map("solicitudes_cambio")
+}
+
+model Evento {
+  id           String      @id @default(uuid()) @db.Uuid
+  titulo       String      @db.VarChar(180)
+  descripcion  String?     @db.VarChar(800)
+  inicio       DateTime
+  fin          DateTime
+  icono        String      @default("📅") @db.VarChar(12)
+  colorHex     String      @default("#2F6FED") @map("color_hex") @db.VarChar(7)
+  prioridad    String      @default("Normal") @db.VarChar(20)
+  estado       String      @default("Programado") @db.VarChar(30)
+  areaId       String      @map("area_id") @db.Uuid
+  creadorId    String      @map("creador_id") @db.Uuid
+  asignadoId   String?     @map("asignado_id") @db.Uuid
+  iniciativaId String?     @map("iniciativa_id") @db.Uuid
+  software     String?     @db.VarChar(120)
+  plataforma   String?     @db.VarChar(30)
+  empresa      String?     @db.VarChar(160)
+  sala         String?     @db.VarChar(60)
+  comentarios  String?     @db.VarChar(800)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  deletedAt    DateTime?   @map("deleted_at")
+  area         Area        @relation(fields: [areaId], references: [id])
+  creador      Usuario     @relation("EventosCreados", fields: [creadorId], references: [id])
+  asignado     Usuario?    @relation("EventosAsignados", fields: [asignadoId], references: [id])
+  iniciativa   Iniciativa? @relation(fields: [iniciativaId], references: [id])
+
+  @@index([areaId, inicio])
+  @@index([asignadoId, inicio])
+  @@map("eventos")
+}
+
+model Requerimiento {
+  id             String    @id @default(uuid()) @db.Uuid
+  titulo         String    @db.VarChar(180)
+  descripcion    String?   @db.VarChar(800)
+  cantidad       Int       @default(1)
+  prioridad      String    @default("Normal") @db.VarChar(20)
+  estado         String    @default("Solicitado") @db.VarChar(30)
+  fechaNecesaria DateTime? @map("fecha_necesaria") @db.Date
+  areaId         String    @map("area_id") @db.Uuid
+  usuarioId      String    @map("usuario_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+  area           Area      @relation(fields: [areaId], references: [id])
+  usuario        Usuario   @relation(fields: [usuarioId], references: [id])
+
+  @@index([areaId, estado])
+  @@map("requerimientos")
+}
+
+model FlujoArea {
+  id            String             @id @default(uuid()) @db.Uuid
+  titulo        String             @db.VarChar(180)
+  descripcion   String?            @db.VarChar(500)
+  archivoNombre String             @map("archivo_nombre") @db.VarChar(255)
+  archivoData   String             @map("archivo_data")
+  areaId        String             @map("area_id") @db.Uuid
+  usuarioId     String             @map("usuario_id") @db.Uuid
+  createdAt     DateTime           @default(now()) @map("created_at")
+  deletedAt     DateTime?          @map("deleted_at")
+  area          Area               @relation(fields: [areaId], references: [id])
+  usuario       Usuario            @relation(fields: [usuarioId], references: [id])
+  versiones     DocumentoVersion[]
+
+  @@index([areaId, createdAt])
+  @@map("flujos_area")
+}
+
+model DocumentoVersion {
+  id            String    @id @default(uuid()) @db.Uuid
+  flujoId       String    @map("flujo_id") @db.Uuid
+  version       Int
+  archivoNombre String    @map("archivo_nombre") @db.VarChar(255)
+  archivoData   String    @map("archivo_data")
+  mime          String    @default("application/pdf") @db.VarChar(120)
+  usuarioId     String    @map("usuario_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at")
+  flujo         FlujoArea @relation(fields: [flujoId], references: [id], onDelete: Cascade)
+
+  @@unique([flujoId, version])
+  @@index([flujoId, createdAt])
+  @@map("documento_versiones")
+}
+
+model Notificacion {
+  id          String    @id @default(uuid()) @db.Uuid
+  usuarioId   String    @map("usuario_id") @db.Uuid
+  tipo        String    @db.VarChar(40)
+  titulo      String    @db.VarChar(180)
+  mensaje     String    @db.VarChar(600)
+  enlace      String?   @db.VarChar(240)
+  datos       Json      @default("{}")
+  leidaAt     DateTime? @map("leida_at")
+  archivadaAt DateTime? @map("archivada_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, leidaAt, createdAt])
+  @@map("notificaciones")
+}

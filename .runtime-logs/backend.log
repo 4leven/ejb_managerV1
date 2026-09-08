@@ -1,0 +1,16 @@
+
+> ejb-hub-backend@ dev C:\Proyecto Innovation Hub\backend
+> tsx watch src/server.ts
+
+API lista en la red local, puerto 4000
+2:27:35 p. m. [tsx] change in ./src\controllers\tarea.controller.ts Restarting...
+API lista en la red local, puerto 4000
+2:28:41 p. m. [tsx] change in ./src\controllers\iniciativa.controller.ts Restarting...
+API lista en la red local, puerto 4000
+2:36:47 p. m. [tsx] unlink in ./..\node_modules\.pnpm\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\node_modules\.prisma\client\default.js Restarting...
+API lista en la red local, puerto 4000
+2:37:01 p. m. [tsx] unlink in ./..\node_modules\.pnpm\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\node_modules\.prisma\client\index.js Restarting...
+API lista en la red local, puerto 4000
+2:38:14 p. m. [tsx] change in ./src\services\iniciativa.service.ts Restarting...
+API lista en la red local, puerto 4000
+ ELIFECYCLE  Command failed with exit code 4294967295.

@@ -1,0 +1,13 @@
+ALTER TABLE "usuarios" ADD COLUMN "email_verified_at" TIMESTAMP(3), ADD COLUMN "verification_token_hash" VARCHAR(64), ADD COLUMN "failed_login_attempts" INTEGER NOT NULL DEFAULT 0, ADD COLUMN "locked_until" TIMESTAMP(3), ADD COLUMN "permisos" JSONB NOT NULL DEFAULT '{}', ADD COLUMN "notification_preferences" JSONB NOT NULL DEFAULT '{}', ADD COLUMN "onboarding_completed" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "iniciativas" ADD COLUMN "deleted_at" TIMESTAMP(3), ADD COLUMN "deleted_by_id" UUID;
+ALTER TABLE "tareas_iniciativa" ADD COLUMN "deleted_at" TIMESTAMP(3);
+ALTER TABLE "eventos" ADD COLUMN "deleted_at" TIMESTAMP(3);
+ALTER TABLE "requerimientos" ADD COLUMN "deleted_at" TIMESTAMP(3);
+ALTER TABLE "flujos_area" ADD COLUMN "deleted_at" TIMESTAMP(3);
+CREATE TABLE "documento_versiones" ("id" UUID NOT NULL,"flujo_id" UUID NOT NULL,"version" INTEGER NOT NULL,"archivo_nombre" VARCHAR(255) NOT NULL,"archivo_data" TEXT NOT NULL,"mime" VARCHAR(120) NOT NULL DEFAULT 'application/pdf',"usuario_id" UUID NOT NULL,"created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "documento_versiones_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "documento_versiones_flujo_id_version_key" ON "documento_versiones"("flujo_id","version");
+CREATE INDEX "documento_versiones_flujo_id_created_at_idx" ON "documento_versiones"("flujo_id","created_at");
+ALTER TABLE "documento_versiones" ADD CONSTRAINT "documento_versiones_flujo_id_fkey" FOREIGN KEY ("flujo_id") REFERENCES "flujos_area"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+CREATE TABLE "notificaciones" ("id" UUID NOT NULL,"usuario_id" UUID NOT NULL,"tipo" VARCHAR(40) NOT NULL,"titulo" VARCHAR(180) NOT NULL,"mensaje" VARCHAR(600) NOT NULL,"enlace" VARCHAR(240),"datos" JSONB NOT NULL DEFAULT '{}',"leida_at" TIMESTAMP(3),"archivada_at" TIMESTAMP(3),"created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "notificaciones_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "notificaciones_usuario_id_leida_at_created_at_idx" ON "notificaciones"("usuario_id","leida_at","created_at");
+ALTER TABLE "notificaciones" ADD CONSTRAINT "notificaciones_usuario_id_fkey" FOREIGN KEY ("usuario_id") REFERENCES "usuarios"("id") ON DELETE CASCADE ON UPDATE CASCADE;

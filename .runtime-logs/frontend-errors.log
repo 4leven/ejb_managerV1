@@ -1,0 +1,419 @@
+9:32:43 a. m. [vite] http proxy error: /api/alertas/stream
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+9:32:46 a. m. [vite] http proxy error: /api/alertas/stream
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+9:32:48 a. m. [vite] http proxy error: /api/alertas/stream
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+9:32:50 a. m. [vite] http proxy error: /api/alertas/stream
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+9:32:52 a. m. [vite] http proxy error: /api/alertas/stream
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+10:47:01 a. m. [vite] Internal server error: [postcss] C:/Proyecto Innovation Hub/frontend/src/refinements.css:117:2696: Unknown word background
+  Plugin: vite:css
+  File: C:/Proyecto Innovation Hub/frontend/src/refinements.css:117:2695
+  115|  
+  116|  /* EJB Design System 2026: acabado corporativo sin alterar funciones */
+  117|  :root{--radius-sm:9px;--radius-md:14px;--radius-lg:20px;--shadow-sm:0 2px 8px #0b23470a;--shadow-md:0 12px 34px #0b234712;--focus-ring:0 0 0 3px color-mix(in srgb,var(--primary) 16%,transparent)}body{font-size:15px;letter-spacing:-.006em;background:color-mix(in srgb,var(--surface-2) 96%,#dce8fa);text-rendering:optimizeLegibility}.content{max-width:1560px;padding-top:42px}.title-row{gap:28px}.title-row h1{letter-spacing:-1.6px;line-height:1.08}.title-row p{font-size:14px;line-height:1.55}.shell>main>header{box-shadow:0 1px 0 var(--line),0 8px 25px #0b234706}.search,.header-theme{box-shadow:var(--shadow-sm)}button{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease}button:active{transform:scale(.975)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:none;box-shadow:var(--focus-ring)!important}.primary{min-height:42px;border-radius:11px!important;box-shadow:0 7px 20px color-mix(in srgb,var(--primary) 25%,transparent)!important}.primary:hover{transform:translateY(-1px);box-shadow:0 10px 26px color-mix(in srgb,var(--primary) 32%,transparent)!important}.stats{gap:16px;margin:36px 0}.stats article,.report-card,.module-card,.team-card,.help-card,.theme-panel,.gantt,.alerts-panel,.messenger,.module-form,.profile-form,.appearance-card{border-radius:var(--radius-md)!important;border-color:color-mix(in srgb,var(--line) 88%,transparent)!important;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.stats article{min-height:125px;padding:23px 24px}.stats article:hover,.report-card:hover{box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--primary) 25%,var(--line))!important}.initiative{border-radius:13px;padding:17px 19px;box-shadow:var(--shadow-sm)}.initiative:hover{box-shadow:var(--shadow-md)}.toolbar{margin-top:8px}.filters select,.filters button,.outline-small{min-height:38px;border-radius:10px}.modal,.event-modal,.collab-modal,.event-detail-modal,.initiative-detail,.progress-modal,.appearance-modal,.help-modal{border-radius:var(--radius-lg)!important;box-shadow:0 28px 90px #00142e55!important}.overlay{backdrop-filter:blur(9px);animation:professionalOverlay .16s ease-out}.close{width:42px!important;height:42px!important;border-radius:12px!important;display:grid!important;place-items:center!important;background:color-mix(in srgb,#dc2626 11%,var(--surface))!important;color:#dc2626!important;border:1px solid #dc262633!important}.close:hover{background:#dc2626!important;color:#fff!important;transform:rotate(3deg) scale(1.04)}input,select,textarea{transition:border-color .16s ease,box-shadow .16s ease;background .16s ease}input:hover,select:hover,textarea:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--line))!important}nav{gap:5px}nav button,.nav-foot button{min-height:43px;border-radius:11px!important}nav button:hover,.nav-foot button:hover{background:color-mix(in srgb,var(--portal-on-color) 9%,transparent);color:var(--portal-on-color)}nav button.active{box-shadow:inset 3px 0 color-mix(in srgb,var(--primary) 75%,white),0 8px 22px #00142e1c!important}.eyebrow{font-size:10px;letter-spacing:1.9px}.list-head{letter-spacing:1.25px}.status{font-weight:750}.toast,.message-notice{border-radius:14px!important;box-shadow:0 18px 50px #00142e38!important}@keyframes professionalOverlay{from{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+  118|  
+  119|  /* Espaciado editorial de módulos nuevos */
+      at Input.error (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\input.js:135:16)
+      at Parser.unknownWord (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:602:22)
+      at Parser.other (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:444:12)
+      at Parser.parse (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:479:16)
+      at parse (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parse.js:11:12)
+      at new LazyResult (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\lazy-result.js:171:16)
+      at Processor.process (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\processor.js:53:14)
+      at runPostCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43983:52)
+      at async compilePostCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43953:18)
+      at async compileCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43808:27)
+      at async TransformPluginContext.handler (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43124:11)
+      at async EnvironmentPluginContainer.transform (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+      at async loadAndTransform (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+      at async viteTransformMiddleware (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)
+10:47:01 a. m. [vite] Internal server error: [postcss] C:/Proyecto Innovation Hub/frontend/src/refinements.css:117:2696: Unknown word background
+  Plugin: vite:css
+  File: C:/Proyecto Innovation Hub/frontend/src/refinements.css:117:2695
+  115|  
+  116|  /* EJB Design System 2026: acabado corporativo sin alterar funciones */
+  117|  :root{--radius-sm:9px;--radius-md:14px;--radius-lg:20px;--shadow-sm:0 2px 8px #0b23470a;--shadow-md:0 12px 34px #0b234712;--focus-ring:0 0 0 3px color-mix(in srgb,var(--primary) 16%,transparent)}body{font-size:15px;letter-spacing:-.006em;background:color-mix(in srgb,var(--surface-2) 96%,#dce8fa);text-rendering:optimizeLegibility}.content{max-width:1560px;padding-top:42px}.title-row{gap:28px}.title-row h1{letter-spacing:-1.6px;line-height:1.08}.title-row p{font-size:14px;line-height:1.55}.shell>main>header{box-shadow:0 1px 0 var(--line),0 8px 25px #0b234706}.search,.header-theme{box-shadow:var(--shadow-sm)}button{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease}button:active{transform:scale(.975)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:none;box-shadow:var(--focus-ring)!important}.primary{min-height:42px;border-radius:11px!important;box-shadow:0 7px 20px color-mix(in srgb,var(--primary) 25%,transparent)!important}.primary:hover{transform:translateY(-1px);box-shadow:0 10px 26px color-mix(in srgb,var(--primary) 32%,transparent)!important}.stats{gap:16px;margin:36px 0}.stats article,.report-card,.module-card,.team-card,.help-card,.theme-panel,.gantt,.alerts-panel,.messenger,.module-form,.profile-form,.appearance-card{border-radius:var(--radius-md)!important;border-color:color-mix(in srgb,var(--line) 88%,transparent)!important;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.stats article{min-height:125px;padding:23px 24px}.stats article:hover,.report-card:hover{box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--primary) 25%,var(--line))!important}.initiative{border-radius:13px;padding:17px 19px;box-shadow:var(--shadow-sm)}.initiative:hover{box-shadow:var(--shadow-md)}.toolbar{margin-top:8px}.filters select,.filters button,.outline-small{min-height:38px;border-radius:10px}.modal,.event-modal,.collab-modal,.event-detail-modal,.initiative-detail,.progress-modal,.appearance-modal,.help-modal{border-radius:var(--radius-lg)!important;box-shadow:0 28px 90px #00142e55!important}.overlay{backdrop-filter:blur(9px);animation:professionalOverlay .16s ease-out}.close{width:42px!important;height:42px!important;border-radius:12px!important;display:grid!important;place-items:center!important;background:color-mix(in srgb,#dc2626 11%,var(--surface))!important;color:#dc2626!important;border:1px solid #dc262633!important}.close:hover{background:#dc2626!important;color:#fff!important;transform:rotate(3deg) scale(1.04)}input,select,textarea{transition:border-color .16s ease,box-shadow .16s ease;background .16s ease}input:hover,select:hover,textarea:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--line))!important}nav{gap:5px}nav button,.nav-foot button{min-height:43px;border-radius:11px!important}nav button:hover,.nav-foot button:hover{background:color-mix(in srgb,var(--portal-on-color) 9%,transparent);color:var(--portal-on-color)}nav button.active{box-shadow:inset 3px 0 color-mix(in srgb,var(--primary) 75%,white),0 8px 22px #00142e1c!important}.eyebrow{font-size:10px;letter-spacing:1.9px}.list-head{letter-spacing:1.25px}.status{font-weight:750}.toast,.message-notice{border-radius:14px!important;box-shadow:0 18px 50px #00142e38!important}@keyframes professionalOverlay{from{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+  118|  
+  119|  /* Espaciado editorial de módulos nuevos */
+      at Input.error (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\input.js:135:16)
+      at Parser.unknownWord (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:602:22)
+      at Parser.other (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:444:12)
+      at Parser.parse (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:479:16)
+      at parse (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parse.js:11:12)
+      at new LazyResult (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\lazy-result.js:171:16)
+      at Processor.process (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\processor.js:53:14)
+      at runPostCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43983:52)
+      at async compilePostCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43953:18)
+      at async compileCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43808:27)
+      at async TransformPluginContext.handler (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43124:11)
+      at async EnvironmentPluginContainer.transform (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+      at async loadAndTransform (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+      at async viteTransformMiddleware (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)
+10:47:01 a. m. [vite] Internal server error: [postcss] C:/Proyecto Innovation Hub/frontend/src/refinements.css:117:2696: Unknown word background
+  Plugin: vite:css
+  File: C:/Proyecto Innovation Hub/frontend/src/refinements.css:117:2695
+  115|  
+  116|  /* EJB Design System 2026: acabado corporativo sin alterar funciones */
+  117|  :root{--radius-sm:9px;--radius-md:14px;--radius-lg:20px;--shadow-sm:0 2px 8px #0b23470a;--shadow-md:0 12px 34px #0b234712;--focus-ring:0 0 0 3px color-mix(in srgb,var(--primary) 16%,transparent)}body{font-size:15px;letter-spacing:-.006em;background:color-mix(in srgb,var(--surface-2) 96%,#dce8fa);text-rendering:optimizeLegibility}.content{max-width:1560px;padding-top:42px}.title-row{gap:28px}.title-row h1{letter-spacing:-1.6px;line-height:1.08}.title-row p{font-size:14px;line-height:1.55}.shell>main>header{box-shadow:0 1px 0 var(--line),0 8px 25px #0b234706}.search,.header-theme{box-shadow:var(--shadow-sm)}button{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease}button:active{transform:scale(.975)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:none;box-shadow:var(--focus-ring)!important}.primary{min-height:42px;border-radius:11px!important;box-shadow:0 7px 20px color-mix(in srgb,var(--primary) 25%,transparent)!important}.primary:hover{transform:translateY(-1px);box-shadow:0 10px 26px color-mix(in srgb,var(--primary) 32%,transparent)!important}.stats{gap:16px;margin:36px 0}.stats article,.report-card,.module-card,.team-card,.help-card,.theme-panel,.gantt,.alerts-panel,.messenger,.module-form,.profile-form,.appearance-card{border-radius:var(--radius-md)!important;border-color:color-mix(in srgb,var(--line) 88%,transparent)!important;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.stats article{min-height:125px;padding:23px 24px}.stats article:hover,.report-card:hover{box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--primary) 25%,var(--line))!important}.initiative{border-radius:13px;padding:17px 19px;box-shadow:var(--shadow-sm)}.initiative:hover{box-shadow:var(--shadow-md)}.toolbar{margin-top:8px}.filters select,.filters button,.outline-small{min-height:38px;border-radius:10px}.modal,.event-modal,.collab-modal,.event-detail-modal,.initiative-detail,.progress-modal,.appearance-modal,.help-modal{border-radius:var(--radius-lg)!important;box-shadow:0 28px 90px #00142e55!important}.overlay{backdrop-filter:blur(9px);animation:professionalOverlay .16s ease-out}.close{width:42px!important;height:42px!important;border-radius:12px!important;display:grid!important;place-items:center!important;background:color-mix(in srgb,#dc2626 11%,var(--surface))!important;color:#dc2626!important;border:1px solid #dc262633!important}.close:hover{background:#dc2626!important;color:#fff!important;transform:rotate(3deg) scale(1.04)}input,select,textarea{transition:border-color .16s ease,box-shadow .16s ease;background .16s ease}input:hover,select:hover,textarea:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--line))!important}nav{gap:5px}nav button,.nav-foot button{min-height:43px;border-radius:11px!important}nav button:hover,.nav-foot button:hover{background:color-mix(in srgb,var(--portal-on-color) 9%,transparent);color:var(--portal-on-color)}nav button.active{box-shadow:inset 3px 0 color-mix(in srgb,var(--primary) 75%,white),0 8px 22px #00142e1c!important}.eyebrow{font-size:10px;letter-spacing:1.9px}.list-head{letter-spacing:1.25px}.status{font-weight:750}.toast,.message-notice{border-radius:14px!important;box-shadow:0 18px 50px #00142e38!important}@keyframes professionalOverlay{from{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+  118|  
+  119|  /* Espaciado editorial de módulos nuevos */
+      at Input.error (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\input.js:135:16)
+      at Parser.unknownWord (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:602:22)
+      at Parser.other (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:444:12)
+      at Parser.parse (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:479:16)
+      at parse (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parse.js:11:12)
+      at new LazyResult (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\lazy-result.js:171:16)
+      at Processor.process (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\processor.js:53:14)
+      at runPostCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43983:52)
+      at async compilePostCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43953:18)
+      at async compileCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43808:27)
+      at async TransformPluginContext.handler (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43124:11)
+      at async EnvironmentPluginContainer.transform (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+      at async loadAndTransform (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+      at async viteTransformMiddleware (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)
+10:48:40 a. m. [vite] (client) Pre-transform error: [postcss] C:/Proyecto Innovation Hub/frontend/src/refinements.css:117:2696: Unknown word background
+  Plugin: vite:css
+  File: C:/Proyecto Innovation Hub/frontend/src/refinements.css:117:2695
+  115|  
+  116|  /* EJB Design System 2026: acabado corporativo sin alterar funciones */
+  117|  :root{--radius-sm:9px;--radius-md:14px;--radius-lg:20px;--shadow-sm:0 2px 8px #0b23470a;--shadow-md:0 12px 34px #0b234712;--focus-ring:0 0 0 3px color-mix(in srgb,var(--primary) 16%,transparent)}body{font-size:15px;letter-spacing:-.006em;background:color-mix(in srgb,var(--surface-2) 96%,#dce8fa);text-rendering:optimizeLegibility}.content{max-width:1560px;padding-top:42px}.title-row{gap:28px}.title-row h1{letter-spacing:-1.6px;line-height:1.08}.title-row p{font-size:14px;line-height:1.55}.shell>main>header{box-shadow:0 1px 0 var(--line),0 8px 25px #0b234706}.search,.header-theme{box-shadow:var(--shadow-sm)}button{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease}button:active{transform:scale(.975)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:none;box-shadow:var(--focus-ring)!important}.primary{min-height:42px;border-radius:11px!important;box-shadow:0 7px 20px color-mix(in srgb,var(--primary) 25%,transparent)!important}.primary:hover{transform:translateY(-1px);box-shadow:0 10px 26px color-mix(in srgb,var(--primary) 32%,transparent)!important}.stats{gap:16px;margin:36px 0}.stats article,.report-card,.module-card,.team-card,.help-card,.theme-panel,.gantt,.alerts-panel,.messenger,.module-form,.profile-form,.appearance-card{border-radius:var(--radius-md)!important;border-color:color-mix(in srgb,var(--line) 88%,transparent)!important;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.stats article{min-height:125px;padding:23px 24px}.stats article:hover,.report-card:hover{box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--primary) 25%,var(--line))!important}.initiative{border-radius:13px;padding:17px 19px;box-shadow:var(--shadow-sm)}.initiative:hover{box-shadow:var(--shadow-md)}.toolbar{margin-top:8px}.filters select,.filters button,.outline-small{min-height:38px;border-radius:10px}.modal,.event-modal,.collab-modal,.event-detail-modal,.initiative-detail,.progress-modal,.appearance-modal,.help-modal{border-radius:var(--radius-lg)!important;box-shadow:0 28px 90px #00142e55!important}.overlay{backdrop-filter:blur(9px);animation:professionalOverlay .16s ease-out}.close{width:42px!important;height:42px!important;border-radius:12px!important;display:grid!important;place-items:center!important;background:color-mix(in srgb,#dc2626 11%,var(--surface))!important;color:#dc2626!important;border:1px solid #dc262633!important}.close:hover{background:#dc2626!important;color:#fff!important;transform:rotate(3deg) scale(1.04)}input,select,textarea{transition:border-color .16s ease,box-shadow .16s ease;background .16s ease}input:hover,select:hover,textarea:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--line))!important}nav{gap:5px}nav button,.nav-foot button{min-height:43px;border-radius:11px!important}nav button:hover,.nav-foot button:hover{background:color-mix(in srgb,var(--portal-on-color) 9%,transparent);color:var(--portal-on-color)}nav button.active{box-shadow:inset 3px 0 color-mix(in srgb,var(--primary) 75%,white),0 8px 22px #00142e1c!important}.eyebrow{font-size:10px;letter-spacing:1.9px}.list-head{letter-spacing:1.25px}.status{font-weight:750}.toast,.message-notice{border-radius:14px!important;box-shadow:0 18px 50px #00142e38!important}@keyframes professionalOverlay{from{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+  118|  
+  119|  /* Espaciado editorial de módulos nuevos */
+10:48:40 a. m. [vite] Internal server error: [postcss] C:/Proyecto Innovation Hub/frontend/src/refinements.css:117:2696: Unknown word background
+  Plugin: vite:css
+  File: C:/Proyecto Innovation Hub/frontend/src/refinements.css:117:2695
+  115|  
+  116|  /* EJB Design System 2026: acabado corporativo sin alterar funciones */
+  117|  :root{--radius-sm:9px;--radius-md:14px;--radius-lg:20px;--shadow-sm:0 2px 8px #0b23470a;--shadow-md:0 12px 34px #0b234712;--focus-ring:0 0 0 3px color-mix(in srgb,var(--primary) 16%,transparent)}body{font-size:15px;letter-spacing:-.006em;background:color-mix(in srgb,var(--surface-2) 96%,#dce8fa);text-rendering:optimizeLegibility}.content{max-width:1560px;padding-top:42px}.title-row{gap:28px}.title-row h1{letter-spacing:-1.6px;line-height:1.08}.title-row p{font-size:14px;line-height:1.55}.shell>main>header{box-shadow:0 1px 0 var(--line),0 8px 25px #0b234706}.search,.header-theme{box-shadow:var(--shadow-sm)}button{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease}button:active{transform:scale(.975)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:none;box-shadow:var(--focus-ring)!important}.primary{min-height:42px;border-radius:11px!important;box-shadow:0 7px 20px color-mix(in srgb,var(--primary) 25%,transparent)!important}.primary:hover{transform:translateY(-1px);box-shadow:0 10px 26px color-mix(in srgb,var(--primary) 32%,transparent)!important}.stats{gap:16px;margin:36px 0}.stats article,.report-card,.module-card,.team-card,.help-card,.theme-panel,.gantt,.alerts-panel,.messenger,.module-form,.profile-form,.appearance-card{border-radius:var(--radius-md)!important;border-color:color-mix(in srgb,var(--line) 88%,transparent)!important;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.stats article{min-height:125px;padding:23px 24px}.stats article:hover,.report-card:hover{box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--primary) 25%,var(--line))!important}.initiative{border-radius:13px;padding:17px 19px;box-shadow:var(--shadow-sm)}.initiative:hover{box-shadow:var(--shadow-md)}.toolbar{margin-top:8px}.filters select,.filters button,.outline-small{min-height:38px;border-radius:10px}.modal,.event-modal,.collab-modal,.event-detail-modal,.initiative-detail,.progress-modal,.appearance-modal,.help-modal{border-radius:var(--radius-lg)!important;box-shadow:0 28px 90px #00142e55!important}.overlay{backdrop-filter:blur(9px);animation:professionalOverlay .16s ease-out}.close{width:42px!important;height:42px!important;border-radius:12px!important;display:grid!important;place-items:center!important;background:color-mix(in srgb,#dc2626 11%,var(--surface))!important;color:#dc2626!important;border:1px solid #dc262633!important}.close:hover{background:#dc2626!important;color:#fff!important;transform:rotate(3deg) scale(1.04)}input,select,textarea{transition:border-color .16s ease,box-shadow .16s ease;background .16s ease}input:hover,select:hover,textarea:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--line))!important}nav{gap:5px}nav button,.nav-foot button{min-height:43px;border-radius:11px!important}nav button:hover,.nav-foot button:hover{background:color-mix(in srgb,var(--portal-on-color) 9%,transparent);color:var(--portal-on-color)}nav button.active{box-shadow:inset 3px 0 color-mix(in srgb,var(--primary) 75%,white),0 8px 22px #00142e1c!important}.eyebrow{font-size:10px;letter-spacing:1.9px}.list-head{letter-spacing:1.25px}.status{font-weight:750}.toast,.message-notice{border-radius:14px!important;box-shadow:0 18px 50px #00142e38!important}@keyframes professionalOverlay{from{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+  118|  
+  119|  /* Espaciado editorial de módulos nuevos */
+      at Input.error (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\input.js:135:16)
+      at Parser.unknownWord (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:602:22)
+      at Parser.other (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:444:12)
+      at Parser.parse (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parser.js:479:16)
+      at parse (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\parse.js:11:12)
+      at new LazyResult (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\lazy-result.js:171:16)
+      at Processor.process (C:\Proyecto Innovation Hub\node_modules\.pnpm\postcss@8.5.26\node_modules\postcss\lib\processor.js:53:14)
+      at runPostCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43983:52)
+      at async compilePostCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43953:18)
+      at async compileCSS (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43808:27)
+      at async TransformPluginContext.handler (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43124:11)
+      at async EnvironmentPluginContainer.transform (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+      at async loadAndTransform (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+      at async viteTransformMiddleware (file:///C:/Proyecto%20Innovation%20Hub/node_modules/.pnpm/vite@6.4.3_@types+node@22.20.1_jiti@2.7.0_tsx@4.23.12/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)
+2:27:35 p. m. [vite] http proxy error: /api/alertas/stream
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+2:27:35 p. m. [vite] http proxy error: /api/alertas/stream
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+2:27:35 p. m. [vite] http proxy error: /api/alertas/stream
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+2:27:36 p. m. [vite] http proxy error: /api/mensajes/0bbc62db-82e0-4051-82eb-ebbb4f185d4c
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:36 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:37 p. m. [vite] http proxy error: /api/mensajes/ec0e253a-8a8d-4168-a5cb-aa7dd7e94d6f
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:38 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:39 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:40 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:40 p. m. [vite] http proxy error: /api/mensajes/0bbc62db-82e0-4051-82eb-ebbb4f185d4c
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:40 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:41 p. m. [vite] http proxy error: /api/alertas
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:41 p. m. [vite] http proxy error: /api/mensajes/ec0e253a-8a8d-4168-a5cb-aa7dd7e94d6f
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:42 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:43 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:44 p. m. [vite] http proxy error: /api/mensajes/0bbc62db-82e0-4051-82eb-ebbb4f185d4c
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:44 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:45 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:45 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:45 p. m. [vite] http proxy error: /api/mensajes/ec0e253a-8a8d-4168-a5cb-aa7dd7e94d6f
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:47 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:48 p. m. [vite] http proxy error: /api/mensajes/0bbc62db-82e0-4051-82eb-ebbb4f185d4c
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:49 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:49 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:49 p. m. [vite] http proxy error: /api/mensajes/ec0e253a-8a8d-4168-a5cb-aa7dd7e94d6f
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:50 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:27:50 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:28:41 p. m. [vite] http proxy error: /api/mensajes/ec0e253a-8a8d-4168-a5cb-aa7dd7e94d6f
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:36:47 p. m. [vite] http proxy error: /api/alertas/stream
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+2:36:47 p. m. [vite] http proxy error: /api/alertas/stream
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+2:46:44 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:46:47 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:46:51 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:46:54 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:46:58 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:46:58 p. m. [vite] http proxy error: /api/alertas
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:46:59 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:46:59 p. m. [vite] http proxy error: /api/alertas
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:47:01 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:47:05 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:47:08 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:47:12 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:47:15 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:47:19 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:47:22 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+2:59:52 p. m. [vite] http proxy error: /api/alertas/stream
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+2:59:52 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:03 p. m. [vite] http proxy error: /api/alertas/stream
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+3:09:03 p. m. [vite] http proxy error: /api/alertas
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:04 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:08 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:11 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:15 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:18 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:22 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:25 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:29 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:32 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:33 p. m. [vite] http proxy error: /api/alertas
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:36 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:39 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:43 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:46 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:50 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:53 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:57 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:59 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:09:59 p. m. [vite] http proxy error: /api/alertas
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:10:00 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:10:03 p. m. [vite] http proxy error: /api/alertas
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:10:04 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:10:07 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:10:11 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:10:14 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:10:18 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:10:21 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+3:10:25 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:24 p. m. [vite] http proxy error: /api/alertas/stream
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+4:12:24 p. m. [vite] http proxy error: /api/alertas/stream
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+4:12:24 p. m. [vite] http proxy error: /api/alertas/stream
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+4:12:25 p. m. [vite] http proxy error: /api/mensajes/5f61faf0-d605-421c-a0de-c5324f4945cb
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:26 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:26 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:27 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:28 p. m. [vite] http proxy error: /api/mensajes/5f61faf0-d605-421c-a0de-c5324f4945cb
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:29 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:30 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:31 p. m. [vite] http proxy error: /api/alertas
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:32 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:32 p. m. [vite] http proxy error: /api/mensajes/5f61faf0-d605-421c-a0de-c5324f4945cb
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:33 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:33 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:36 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:36 p. m. [vite] http proxy error: /api/mensajes/5f61faf0-d605-421c-a0de-c5324f4945cb
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:37 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:37 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:39 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:40 p. m. [vite] http proxy error: /api/mensajes/5f61faf0-d605-421c-a0de-c5324f4945cb
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:40 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:41 p. m. [vite] http proxy error: /api/alertas
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+4:12:41 p. m. [vite] http proxy error: /api/mensajes/conversaciones
+Error: connect ECONNREFUSED 127.0.0.1:4000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)

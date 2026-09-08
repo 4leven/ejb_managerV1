@@ -1,0 +1,8 @@
+CREATE TABLE "requerimientos" ("id" UUID NOT NULL,"titulo" VARCHAR(180) NOT NULL,"descripcion" VARCHAR(800),"cantidad" INTEGER NOT NULL DEFAULT 1,"prioridad" VARCHAR(20) NOT NULL DEFAULT 'Normal',"estado" VARCHAR(30) NOT NULL DEFAULT 'Solicitado',"fecha_necesaria" DATE,"area_id" UUID NOT NULL,"usuario_id" UUID NOT NULL,"created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updated_at" TIMESTAMP(3) NOT NULL,CONSTRAINT "requerimientos_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "requerimientos_area_id_estado_idx" ON "requerimientos"("area_id","estado");
+ALTER TABLE "requerimientos" ADD CONSTRAINT "requerimientos_area_id_fkey" FOREIGN KEY ("area_id") REFERENCES "areas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "requerimientos" ADD CONSTRAINT "requerimientos_usuario_id_fkey" FOREIGN KEY ("usuario_id") REFERENCES "usuarios"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+CREATE TABLE "flujos_area" ("id" UUID NOT NULL,"titulo" VARCHAR(180) NOT NULL,"descripcion" VARCHAR(500),"archivo_nombre" VARCHAR(255) NOT NULL,"archivo_data" TEXT NOT NULL,"area_id" UUID NOT NULL,"usuario_id" UUID NOT NULL,"created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "flujos_area_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "flujos_area_area_id_created_at_idx" ON "flujos_area"("area_id","created_at");
+ALTER TABLE "flujos_area" ADD CONSTRAINT "flujos_area_area_id_fkey" FOREIGN KEY ("area_id") REFERENCES "areas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "flujos_area" ADD CONSTRAINT "flujos_area_usuario_id_fkey" FOREIGN KEY ("usuario_id") REFERENCES "usuarios"("id") ON DELETE CASCADE ON UPDATE CASCADE;

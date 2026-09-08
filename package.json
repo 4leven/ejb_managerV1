@@ -1,0 +1,9 @@
+{
+  "name": "ejb-innovation-hub",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm --dir backend dev\" \"pnpm --dir frontend dev\"",
+    "build": "pnpm --dir backend build && pnpm --dir frontend build"
+  },
+  "devDependencies": { "concurrently": "^9.1.2" }
+}

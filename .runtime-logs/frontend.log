@@ -1,0 +1,99 @@
+
+> ejb-hub-frontend@ dev C:\Proyecto Innovation Hub\frontend
+> vite
+
+
+  VITE v6.4.3  ready in 2303 ms
+
+  ➜  Local:   https://localhost:5173/
+  ➜  Network: https://26.178.87.95:5173/
+  ➜  Network: https://192.168.1.200:5173/
+9:57:01 a. m. [vite] (client) hmr update /src/App.tsx
+9:57:01 a. m. [vite] (client) hmr update /src/refinements.css
+10:00:02 a. m. [vite] (client) hmr update /src/refinements.css
+10:01:42 a. m. [vite] (client) hmr update /src/refinements.css
+10:02:02 a. m. [vite] (client) hmr update /src/refinements.css
+10:04:43 a. m. [vite] (client) hmr update /src/App.tsx
+10:04:43 a. m. [vite] (client) hmr update /src/refinements.css
+10:08:50 a. m. [vite] (client) hmr update /src/refinements.css
+10:09:39 a. m. [vite] (client) hmr update /src/refinements.css
+10:12:30 a. m. [vite] (client) hmr update /src/refinements.css
+10:12:30 a. m. [vite] (client) hmr update /src/App.tsx
+10:14:13 a. m. [vite] (client) hmr update /src/refinements.css
+10:14:27 a. m. [vite] (client) hmr update /src/refinements.css
+10:15:20 a. m. [vite] (client) hmr update /src/refinements.css
+10:16:59 a. m. [vite] (client) hmr update /src/refinements.css
+10:16:59 a. m. [vite] (client) hmr update /src/App.tsx
+10:18:08 a. m. [vite] (client) hmr update /src/refinements.css
+10:18:35 a. m. [vite] (client) hmr update /src/refinements.css
+10:21:08 a. m. [vite] (client) hmr update /src/refinements.css
+10:21:08 a. m. [vite] (client) hmr update /src/App.tsx
+10:22:32 a. m. [vite] (client) hmr update /src/refinements.css
+10:22:32 a. m. [vite] (client) hmr update /src/App.tsx
+10:27:26 a. m. [vite] (client) hmr update /src/App.tsx
+10:27:27 a. m. [vite] (client) hmr update /src/refinements.css
+10:36:24 a. m. [vite] (client) hmr update /src/refinements.css
+10:36:24 a. m. [vite] (client) hmr update /src/App.tsx
+10:47:00 a. m. [vite] (client) hmr update /src/components/Messages.tsx
+10:47:00 a. m. [vite] (client) hmr update /src/refinements.css
+10:47:00 a. m. [vite] (client) hmr update /src/App.tsx
+10:48:42 a. m. [vite] (client) hmr update /src/refinements.css
+10:50:19 a. m. [vite] (client) hmr update /src/App.tsx
+10:51:18 a. m. [vite] (client) hmr update /src/refinements.css
+10:54:05 a. m. [vite] (client) hmr update /src/components/EventCalendar.tsx
+10:54:05 a. m. [vite] (client) hmr update /src/refinements.css
+10:54:20 a. m. [vite] (client) hmr update /src/refinements.css
+10:55:27 a. m. [vite] (client) hmr update /src/refinements.css
+11:00:57 a. m. [vite] (client) hmr update /src/components/Messages.tsx
+11:00:57 a. m. [vite] (client) hmr update /src/refinements.css
+11:02:58 a. m. [vite] (client) hmr update /src/App.tsx
+11:04:43 a. m. [vite] (client) hmr update /src/components/Messages.tsx
+11:08:35 a. m. [vite] (client) hmr update /src/components/Messages.tsx
+11:12:26 a. m. [vite] (client) hmr update /src/components/Messages.tsx
+11:12:26 a. m. [vite] (client) hmr update /src/refinements.css
+11:21:31 a. m. [vite] (client) hmr update /src/components/Messages.tsx
+11:21:31 a. m. [vite] (client) hmr update /src/refinements.css
+2:28:41 p. m. [vite] (client) hmr update /src/App.tsx, /src/components/Operations.tsx, /src/components/EventCalendar.tsx, /src/components/SecureSignature.tsx, /src/components/ObjectivesModule.tsx, /src/components/ManagerModules.tsx, /src/components/CollaborationModules.tsx, /src/components/Messages.tsx, /src/components/AnalyticsCalendar.tsx
+2:28:41 p. m. [vite] (client) hmr update /src/App.tsx
+2:28:58 p. m. [vite] (client) hmr update /src/App.tsx
+2:29:20 p. m. [vite] (client) hmr update /src/App.tsx
+2:29:42 p. m. [vite] (client) hmr update /src/App.tsx
+2:33:06 p. m. [vite] (client) hmr update /src/App.tsx
+2:34:05 p. m. [vite] (client) hmr update /src/App.tsx
+2:34:26 p. m. [vite] (client) hmr update /src/App.tsx
+2:34:52 p. m. [vite] (client) hmr update /src/App.tsx
+2:35:54 p. m. [vite] (client) hmr update /src/refinements.css
+2:42:05 p. m. [vite] (client) hmr update /src/App.tsx
+2:42:05 p. m. [vite] (client) hmr update /src/components/EventCalendar.tsx
+3:01:50 p. m. [vite] (client) hmr update /src/App.tsx, /src/components/Operations.tsx, /src/components/EventCalendar.tsx, /src/components/SecureSignature.tsx, /src/components/ObjectivesModule.tsx, /src/components/ManagerModules.tsx, /src/components/CollaborationModules.tsx, /src/components/Messages.tsx, /src/components/AnalyticsCalendar.tsx
+3:01:50 p. m. [vite] (client) hmr update /src/App.tsx
+3:04:13 p. m. [vite] (client) hmr update /src/App.tsx
+3:05:03 p. m. [vite] (client) hmr update /src/App.tsx
+3:05:34 p. m. [vite] (client) hmr update /src/App.tsx
+3:08:11 p. m. [vite] (client) hmr update /src/refinements.css
+3:17:37 p. m. [vite] (client) hmr update /src/App.tsx
+3:18:20 p. m. [vite] (client) hmr update /src/App.tsx
+3:19:31 p. m. [vite] (client) hmr update /src/refinements.css
+3:20:41 p. m. [vite] (client) hmr update /src/App.tsx
+3:30:52 p. m. [vite] (client) hmr update /src/App.tsx
+3:30:52 p. m. [vite] (client) hmr update /src/refinements.css
+3:31:07 p. m. [vite] (client) hmr update /src/App.tsx
+3:38:05 p. m. [vite] (client) hmr update /src/App.tsx
+3:38:05 p. m. [vite] (client) hmr update /src/refinements.css
+3:38:42 p. m. [vite] (client) hmr update /src/refinements.css
+4:02:42 p. m. [vite] (client) hmr update /src/refinements.css
+4:06:51 p. m. [vite] (client) hmr update /src/refinements.css
+4:15:22 p. m. [vite] (client) hmr update /src/App.tsx, /src/components/Operations.tsx, /src/components/EventCalendar.tsx, /src/components/SecureSignature.tsx, /src/components/ObjectivesModule.tsx, /src/components/ManagerModules.tsx, /src/components/CollaborationModules.tsx, /src/components/Messages.tsx, /src/components/AnalyticsCalendar.tsx
+4:15:22 p. m. [vite] (client) hmr update /src/components/AnalyticsCalendar.tsx
+4:15:22 p. m. [vite] (client) hmr update /src/App.tsx
+4:15:22 p. m. [vite] (client) hmr update /src/components/AnalyticsCalendar.tsx
+4:18:30 p. m. [vite] (client) hmr update /src/components/AnalyticsCalendar.tsx
+4:18:30 p. m. [vite] (client) hmr update /src/refinements.css
+4:23:25 p. m. [vite] (client) hmr update /src/components/CollaborationModules.tsx
+4:26:36 p. m. [vite] (client) hmr update /src/components/CollaborationModules.tsx
+4:26:36 p. m. [vite] (client) hmr invalidate /src/components/CollaborationModules.tsx Could not Fast Refresh (new export)
+4:26:36 p. m. [vite] (client) hmr update /src/App.tsx, /src/components/Messages.tsx
+4:27:22 p. m. [vite] (client) hmr update /src/components/Messages.tsx
+4:27:22 p. m. [vite] (client) hmr update /src/refinements.css
+4:27:49 p. m. [vite] (client) hmr update /src/components/CollaborationModules.tsx
+4:29:05 p. m. [vite] (client) hmr update /src/components/CollaborationModules.tsx

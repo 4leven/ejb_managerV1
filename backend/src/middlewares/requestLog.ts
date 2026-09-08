@@ -1,0 +1,2 @@
+import crypto from "node:crypto";import{NextFunction,Request,Response}from"express";
+export function requestLog(req:Request,res:Response,next:NextFunction){const id=String(req.get("x-request-id")||crypto.randomUUID()),started=Date.now();res.setHeader("x-request-id",id);res.on("finish",()=>console.log(JSON.stringify({level:res.statusCode>=500?"error":"info",requestId:id,method:req.method,path:req.path,status:res.statusCode,durationMs:Date.now()-started,at:new Date().toISOString()})));next()}
