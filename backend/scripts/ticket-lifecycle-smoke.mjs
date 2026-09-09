@@ -94,6 +94,8 @@ try {
   });
   if (finished.response.status !== 200 || finished.body.estado !== "FINALIZADO")
     throw new Error(`Cierre falló: ${JSON.stringify(finished.body)}`);
+  if (!finished.body.finalizadoAt || finished.body.finalizadoPor?.id !== boss.id)
+    throw new Error("El cierre no registró fecha y usuario de finalización.");
   console.log("Finalizar y registrar historial: OK");
 
   const forbidden = await request(`/api/tickets/${ticketId}/avance`, consultantToken, {
@@ -103,6 +105,24 @@ try {
   if (forbidden.response.status !== 403)
     throw new Error(`Solo lectura falló: se recibió ${forbidden.response.status}`);
   console.log("Solo lectura para otro consultor: OK");
+
+  const reopened = await request(`/api/tickets/${ticketId}/reabrir`, bossToken, {
+    method: "POST",
+  });
+  if (
+    reopened.response.status !== 200 ||
+    reopened.body.estado !== "PENDIENTE" ||
+    reopened.body.asignadoAId !== null
+  )
+    throw new Error(`Reapertura falló: ${JSON.stringify(reopened.body)}`);
+  const reopenAudit = reopened.body.historial?.find(
+    (entry) =>
+      entry.accion === "Ticket reabierto" &&
+      entry.estadoAnterior === "FINALIZADO" &&
+      entry.estadoNuevo === "PENDIENTE",
+  );
+  if (!reopenAudit) throw new Error("No se registró el historial de reapertura a PENDIENTE.");
+  console.log("Reabrir a pendientes y registrar historial: OK");
 
   const unchangedClient = await prisma.cliente.findUniqueOrThrow({ where: { id: clientId } });
   if (

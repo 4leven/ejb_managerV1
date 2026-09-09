@@ -444,14 +444,21 @@ export async function reopen(req: Request, res: Response, next: NextFunction) {
     const row = await prisma.$transaction(async (tx) => {
       await tx.ticket.update({
         where: { id },
-        data: { estado: "EN_CURSO", finalizadoAt: null, finalizadoPorId: null },
+        data: {
+          estado: "PENDIENTE",
+          asignadoAId: null,
+          asignadoAt: null,
+          contactadoAt: null,
+          finalizadoAt: null,
+          finalizadoPorId: null,
+        },
       });
       await tx.ticketHistorial.create({
         data: {
           ticketId: id,
           accion: "Ticket reabierto",
           estadoAnterior: "FINALIZADO",
-          estadoNuevo: "EN_CURSO",
+          estadoNuevo: "PENDIENTE",
           usuarioId: currentUser.id,
         },
       });

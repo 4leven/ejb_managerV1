@@ -7,6 +7,23 @@
   color:var(--e-ink,var(--text));
 }
 .systems-kanban button,.systems-kanban input,.systems-kanban select{font:inherit}
+.systems-recognition{
+  justify-self:end;
+  max-width:100%;
+  margin:0 3px -6px;
+  padding:5px 10px;
+  border:1px solid color-mix(in srgb,var(--e-muted,var(--muted)) 14%,transparent);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--e-surface,var(--surface)) 58%,transparent);
+  color:var(--e-muted,var(--muted));
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.015em;
+  line-height:1.35;
+  opacity:.62;
+  backdrop-filter:blur(5px);
+}
+.systems-recognition strong{font-weight:800;color:inherit}
 .systems-feedback{display:flex;align-items:center;gap:9px;padding:11px 13px;border:1px solid #a7dfc8;border-radius:11px;background:#eaf9f2;color:#087653;font-size:12px;font-weight:700}
 .systems-feedback.error{border-color:#f2b8bf;background:#fff0f2;color:#b82d3d}
 .dark .systems-feedback{border-color:#23694f;background:#123a2d;color:#8ce2bc}.dark .systems-feedback.error{border-color:#743742;background:#3c1d25;color:#ffabb6}
@@ -53,7 +70,7 @@
 .systems-assignment-overlay{z-index:10030!important}.systems-assignment{position:relative;width:min(480px,calc(100vw - 30px));padding:27px;border:1px solid var(--e-line,var(--line));border-radius:18px;background:var(--e-surface,var(--surface));color:var(--e-ink,var(--text));box-shadow:0 28px 90px #03112880}.systems-assignment>.close{position:absolute;right:16px;top:16px}.systems-assignment-icon{width:45px;height:45px;display:grid;place-items:center;border-radius:12px;background:var(--systems-blue-soft);color:var(--systems-blue)}.systems-assignment-icon svg{width:21px}.systems-assignment h2{margin:14px 0 5px;color:var(--e-ink,var(--text));font:850 22px Manrope,sans-serif}.systems-assignment>p{margin:0 0 19px;color:var(--e-muted,var(--muted));font-size:13px;line-height:1.5}.systems-assignment label{display:grid;gap:6px;color:var(--e-ink,var(--text));font-size:12px;font-weight:800}.systems-assignment select{height:43px;padding:0 11px;border:1px solid var(--e-line-strong,var(--line));border-radius:9px;background:var(--e-soft,var(--surface-2));color:var(--e-ink,var(--text))}.systems-no-team{display:flex;align-items:center;gap:7px;margin-top:10px;padding:10px;border-radius:8px;background:#fff0f2;color:#b82d3d;font-size:11px}.systems-no-team svg{width:16px}.systems-assignment>footer{display:flex;justify-content:flex-end;gap:8px;margin-top:21px;padding:0}.systems-assignment>footer button{min-height:40px;padding:0 14px;border:1px solid var(--e-line-strong,var(--line));border-radius:9px;background:var(--e-surface,var(--surface));color:var(--e-ink,var(--text));font-size:11px;font-weight:800;cursor:pointer}.systems-assignment>footer button:disabled{opacity:.5;cursor:not-allowed}
 
 @media(max-width:1200px){.systems-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.systems-toolbar{grid-template-columns:minmax(260px,1.5fr) repeat(2,minmax(150px,1fr))}.systems-mine{grid-column:1/2}.systems-board{grid-template-columns:repeat(5,300px)}}
-@media(max-width:760px){.systems-kanban{margin-top:17px}.systems-kpis{display:flex;overflow:auto}.systems-kpis article{min-width:190px}.systems-toolbar{grid-template-columns:1fr}.systems-mine{grid-column:auto}.systems-board{display:grid;grid-template-columns:1fr;overflow:visible}.systems-column-body{height:auto;min-height:180px;max-height:none;overflow:visible}.systems-column>header{min-height:78px}.systems-card dl{grid-template-columns:1fr}.systems-assignment{padding:22px 17px}}
+@media(max-width:760px){.systems-kanban{margin-top:17px}.systems-recognition{justify-self:start;margin-inline:0;font-size:9px}.systems-kpis{display:flex;overflow:auto}.systems-kpis article{min-width:190px}.systems-toolbar{grid-template-columns:1fr}.systems-mine{grid-column:auto}.systems-board{display:grid;grid-template-columns:1fr;overflow:visible}.systems-column-body{height:auto;min-height:180px;max-height:none;overflow:visible}.systems-column>header{min-height:78px}.systems-card dl{grid-template-columns:1fr}.systems-assignment{padding:22px 17px}}
 
 /* El color de cada área funciona como una señal visual estable en todos los listados de proyectos. */
 .initiative[style*="--initiative-area"]{

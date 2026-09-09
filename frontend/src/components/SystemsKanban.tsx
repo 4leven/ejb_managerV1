@@ -204,6 +204,10 @@ export default function SystemsKanban({
 
   return (
     <div className="systems-kanban">
+      <p className="systems-recognition">
+        Reconocimiento a <strong>Christian Matamoros</strong> por su brillante idea
+      </p>
+
       {feedback && (
         <div className={`systems-feedback ${feedback.type}`} role="status">
           {feedback.type === "success" ? <CheckCircle2 /> : <AlertTriangle />}

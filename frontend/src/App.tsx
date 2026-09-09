@@ -1076,6 +1076,45 @@ function App() {
     notificationsOpen,
     userMenuOpen,
   ]);
+  useEffect(() => {
+    const dismissPopupWithEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const selectors = [
+        ".app-dialog-overlay",
+        ".overlay",
+        ".task-modal-backdrop",
+        ".ticket-detail-backdrop",
+        ".notifications-popover",
+        ".chat-notifications-popover",
+        ".wallpaper-popover",
+        ".schedule-popover",
+        ".chat-chip-popover",
+      ].join(",");
+      const popups = Array.from(document.querySelectorAll<HTMLElement>(selectors))
+        .filter((element) => {
+          const style = window.getComputedStyle(element);
+          return style.display !== "none" && style.visibility !== "hidden";
+        })
+        .map((element, index) => ({
+          element,
+          index,
+          zIndex: Number.parseInt(window.getComputedStyle(element).zIndex, 10) || 0,
+        }))
+        .sort((left, right) => left.zIndex - right.zIndex || left.index - right.index);
+      const popup = popups.at(-1)?.element;
+      if (!popup) return;
+
+      const closeButton = popup.querySelector<HTMLButtonElement>(
+        ".close, .app-dialog-close, [aria-label*='Cerrar'], .notifications-close-action, :scope > header button:last-child, :scope > div:first-child > button:last-child, :scope > button:last-child",
+      );
+      if (closeButton) closeButton.click();
+      else popup.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    document.addEventListener("keydown", dismissPopupWithEscape, true);
+    return () => document.removeEventListener("keydown", dismissPopupWithEscape, true);
+  }, []);
   const alertSignature = (rows: any[]) =>
     rows
       .map(
@@ -2656,8 +2695,8 @@ function App() {
                   <h2>Talento que impulsa soluciones</h2>
                   <p>Conoce a las personas que hacen posible el crecimiento de EJB. Explora sus perfiles, áreas y roles.</p>
                 </section>
-                <section className="team-directory-banner" aria-label="EJB Solutions, 15 años desarrollando soluciones">
-                  <img src="/team-ejb-banner.png" alt="EJB Solutions: 15 años desarrollando soluciones para impulsar la gestión de tu empresa" />
+                <section className="team-directory-banner" aria-label="Banner del equipo EJB Solutions">
+                  <img src="/team-ejb-banner-2026.jpeg" alt="Equipo de EJB Solutions colaborando" />
                 </section>
                 <section className="team-overview">
                   <div className="team-overview-copy">

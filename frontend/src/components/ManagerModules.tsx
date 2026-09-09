@@ -48,6 +48,36 @@ export function Timeline({
     })
     .filter((item) => item.inactiveHours >= 18)
     .sort((a, b) => b.inactiveHours - a.inactiveHours);
+  const shortDate = (value?: string) => {
+    if (!value) return "-";
+    const [year, month, day] = value.slice(0, 10).split("-");
+    return year && month && day ? `${day}/${month}` : "-";
+  };
+  const timelinePresentation = (item: any) => {
+    const endParts = item.fechaFin?.slice(0, 10).split("-").map(Number);
+    const end = endParts?.length === 3
+      ? Date.UTC(endParts[0], endParts[1] - 1, endParts[2])
+      : null;
+    const today = new Date(now);
+    const todayDate = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const completed = item.avance >= 100 || item.estado === "Finalizado";
+    const delayed = !completed && end !== null && end < todayDate;
+    const notStarted = !delayed && item.avance <= 0 && item.estado === "Pendiente";
+    const status = completed
+      ? { label: "Completado", className: "completed" }
+      : delayed
+        ? { label: "Con retraso", className: "delayed" }
+        : notStarted
+          ? { label: "Sin iniciar", className: "not-started" }
+          : { label: "En progreso", className: "in-progress" };
+    const remainingDays = !completed && end !== null
+      ? Math.ceil((end - todayDate) / 86400000)
+      : null;
+    const days = remainingDays === null
+      ? "-"
+      : `${Math.abs(remainingDays)} ${Math.abs(remainingDays) === 1 ? "día" : "días"}`;
+    return { status, days, delayed };
+  };
   return (
     <>
       <div className="timeline-insights">
@@ -82,58 +112,51 @@ export function Timeline({
         </article>
       </div>
       <div className="timeline-layout">
-        <section className="gantt">
+        <section className="gantt schedule-reading">
           <div className="gantt-explainer">
             <div><b>Lectura del cronograma</b><span>Compara el avance realizado con el tiempo consumido.</span></div>
-            <div className="gantt-legend"><span><i className="time" /> Tiempo transcurrido</span><span><i className="progress" /> Avance completado</span><span><i className="risk" /> Riesgo: el tiempo supera al avance</span></div>
           </div>
-          <div className="gantt-head">
-            <b>Proyecto</b>
-            <span>Inicio</span>
-            <span>Duración y avance</span>
-            <span>Fin</span>
-          </div>
-          {items.map((i) => {
-            const start = i.fechaInicio
-                ? new Date(i.fechaInicio).getTime()
-                : now,
-              end = i.fechaFin
-                ? new Date(i.fechaFin).getTime()
-                : start + 30 * 86400000,
-              total = Math.max(1, end - start),
-              elapsed = Math.max(
-                0,
-                Math.min(100, ((now - start) / total) * 100),
-              );
-            return (
-              <article key={i.id}>
-                <div>
-                  <b>{i.codigo}</b>
-                  <small>{i.titulo}</small>
-                </div>
-                <span>
-                  {i.fechaInicio
-                    ? new Date(i.fechaInicio).toLocaleDateString()
-                    : "Sin fecha"}
-                </span>
-                <div className="gantt-bar">
-                  <i className="gantt-time" style={{ width: `${elapsed}%` }} title={`${Math.round(elapsed)}% del tiempo estimado consumido`} />
-                  <strong className={elapsed > i.avance + 15 ? "at-risk" : ""} style={{ width: `${i.avance}%` }} title={`${i.avance}% completado`} />
-                  <small>{i.avance}% realizado · {Math.round(elapsed)}% del tiempo</small>
-                </div>
-                <span>
-                  {i.fechaFin
-                    ? new Date(i.fechaFin).toLocaleDateString()
-                    : "Sin fecha"}
-                </span>
-              </article>
-            );
-          })}
-          {!items.length && (
-            <div className="module-empty">
-              Registra proyectos con fechas para visualizar el cronograma.
+          <div className="schedule-table">
+            <div className="schedule-table-head">
+              <b>Proyecto</b>
+              <b>Área asignada</b>
+              <b>Inicio</b>
+              <b>Fin</b>
+              <b>Avance</b>
+              <b>Estado</b>
+              <b>Días</b>
+              <b>Acciones</b>
             </div>
-          )}
+            {items.map((i) => {
+              const presentation = timelinePresentation(i);
+              return (
+                <article className="schedule-row" key={i.id}>
+                  <div className="schedule-project" title={i.descripcion || i.titulo}>
+                    <b>{i.codigo}</b>
+                    <small>{i.descripcion || i.titulo}</small>
+                  </div>
+                  <div className="schedule-area">
+                    <i style={{ background: i.color }} />
+                    <span>{i.area}</span>
+                  </div>
+                  <time>{shortDate(i.fechaInicio)}</time>
+                  <time>{shortDate(i.fechaFin)}</time>
+                  <div className={`schedule-progress ${presentation.delayed ? "delayed" : ""}`} aria-label={`${i.avance}% de avance`}>
+                    <span><i style={{ width: `${Math.max(0, Math.min(100, i.avance))}%` }} /></span>
+                    <b>{i.avance}%</b>
+                  </div>
+                  <span className={`schedule-status ${presentation.status.className}`}>{presentation.status.label}</span>
+                  <span className={`schedule-days ${presentation.delayed ? "delayed" : ""}`}>{presentation.days}</span>
+                  <button className="schedule-actions" type="button" aria-label={`Acciones de ${i.codigo}`}>...</button>
+                </article>
+              );
+            })}
+            {!items.length && (
+              <div className="module-empty">
+                Registra proyectos con fechas para visualizar el cronograma.
+              </div>
+            )}
+          </div>
         </section>
         <aside className="alerts-panel">
           <button className="alerts-home" onClick={onBack}>

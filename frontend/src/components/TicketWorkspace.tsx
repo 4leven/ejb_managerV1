@@ -303,6 +303,25 @@ export default function TicketWorkspace({ user }: { user: any }) {
       setSaving(false);
     }
   };
+  const runAndCloseDetail = async (action: Promise<Ticket>) => {
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await action;
+      const visibleState = quickTab === "all" ? statusFilter : quickTab;
+      setRows((current) => {
+        if (visibleState && updated.estado !== visibleState)
+          return current.filter((row) => row.id !== updated.id);
+        return current.map((row) => (row.id === updated.id ? updated : row));
+      });
+      await load();
+      setSelected(undefined);
+    } catch (cause: any) {
+      setError(cause.message ?? "No se pudo completar la operación.");
+    } finally {
+      setSaving(false);
+    }
+  };
   const replaceTicket = (ticket: Ticket) => {
     setRows((current) => current.map((row) => (row.id === ticket.id ? ticket : row)));
     if (selected?.id === ticket.id) selectTicket(ticket);
@@ -527,8 +546,8 @@ export default function TicketWorkspace({ user }: { user: any }) {
             <footer>
               <button type="button" onClick={() => setSelected(undefined)}>Cerrar</button>
               {selected.estado === "PENDIENTE" && !selected.asignadoAId && canTakeCases && <button type="button" className="primary" disabled={saving} onClick={() => void claimTicket(selected)}><Headphones />{saving ? "Asignando…" : "Tomar caso"}</button>}
-              {selected.estado === "EN_CURSO" && canEditSelected && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar avance</button><button type="button" className="primary" disabled={saving || (observations.trim().length < 5 && solution.trim().length < 5)} onClick={() => void run(finishTicket(selected.id, { observaciones: observations, solucion: solution }))}><CheckCircle2 />Finalizar caso</button></>}
-              {selected.estado === "FINALIZADO" && isBoss && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar corrección</button><button type="button" disabled={saving} onClick={() => void run(reopenTicket(selected.id))}><RefreshCcw />Reabrir</button></>}
+              {selected.estado === "EN_CURSO" && canEditSelected && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar avance</button><button type="button" className="primary" disabled={saving || (observations.trim().length < 5 && solution.trim().length < 5)} onClick={() => void runAndCloseDetail(finishTicket(selected.id, { observaciones: observations, solucion: solution }))}><CheckCircle2 />Finalizar caso</button></>}
+              {selected.estado === "FINALIZADO" && isBoss && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar corrección</button><button type="button" disabled={saving} onClick={() => void runAndCloseDetail(reopenTicket(selected.id))}><RefreshCcw />Reabrir</button></>}
             </footer>
           </aside>
         </div>,

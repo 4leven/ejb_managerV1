@@ -17,8 +17,11 @@ import "./projects-center.css";
 import "./requirements-center.css";
 
 const syncVisualViewport = () => {
-  const height = window.visualViewport?.height ?? window.innerHeight;
+  const viewport = window.visualViewport;
+  const height = viewport?.height ?? window.innerHeight;
+  const offsetTop = viewport?.offsetTop ?? 0;
   document.documentElement.style.setProperty("--app-visual-height", `${Math.round(height)}px`);
+  document.documentElement.style.setProperty("--app-visual-offset-top", `${Math.round(offsetTop)}px`);
 };
 syncVisualViewport();
 window.addEventListener("resize", syncVisualViewport, { passive: true });
