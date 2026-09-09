@@ -925,6 +925,80 @@ html[data-current-page="mensajes"] .chat-workspace .google-chat-layout.chat-side
   html[data-current-page="mensajes"] .chat-workspace .google-chat-layout>.messenger{height:calc(100dvh - 76px)!important;padding:0!important}
 }
 
+/* Popups del chat: una sola paleta coherente con el tema activo. */
+.chat-workspace .new-chat-overlay>.new-chat-modal,
+.chat-workspace .new-chat-overlay>.new-chat-modal>header,
+.chat-workspace .new-chat-overlay>.new-chat-modal>div{
+  border-color:var(--gc-border)!important;
+  background:var(--gc-surface)!important;
+  color:var(--gc-text)!important;
+}
+.chat-workspace .new-chat-overlay>.new-chat-modal>label{
+  border-color:var(--gc-border)!important;
+  background:var(--gc-bg-rail)!important;
+  color:var(--gc-text-muted)!important;
+}
+.chat-workspace .new-chat-overlay>.new-chat-modal>label input{
+  background:transparent!important;
+  color:var(--gc-text)!important;
+}
+.chat-workspace .new-chat-overlay>.new-chat-modal>header :is(b,button),
+.chat-workspace .new-chat-overlay>.new-chat-modal>div>button{
+  color:var(--gc-text)!important;
+}
+.chat-workspace .new-chat-overlay>.new-chat-modal>header small,
+.chat-workspace .new-chat-overlay>.new-chat-modal>div>button small{color:var(--gc-text-muted)!important}
+.chat-workspace .new-chat-overlay>.new-chat-modal>div>button:hover{background:var(--gc-hover)!important}
+
+.chat-workspace .chat-notifications-popover,
+.chat-workspace .chat-notifications-popover>header{
+  border-color:var(--gc-border)!important;
+  background:var(--gc-surface)!important;
+  color:var(--gc-text)!important;
+}
+.chat-workspace .chat-notifications-popover>header :is(b,button){color:var(--gc-text)!important}
+.chat-workspace .chat-notifications-popover>div{background:var(--gc-surface)!important}
+.chat-workspace .chat-notifications-popover article{background:var(--gc-bg-rail)!important;color:var(--gc-text)!important}
+.chat-workspace .chat-notifications-popover article p b{color:var(--gc-text)!important}
+.chat-workspace .chat-notifications-popover article p span{color:var(--gc-text-muted)!important}
+.chat-workspace .chat-notifications-popover>.notifications-close-action{background:var(--gc-hover)!important;color:var(--gc-text)!important}
+
+body>.wallpaper-popover.wallpaper-gallery>div:first-child>button{
+  display:grid!important;
+  place-items:center!important;
+  width:32px!important;
+  height:32px!important;
+  min-width:32px!important;
+  padding:0!important;
+  border:1px solid var(--gc-border)!important;
+  border-radius:50%!important;
+  background:var(--gc-bg-rail)!important;
+  color:var(--gc-text)!important;
+  cursor:pointer!important;
+}
+body>.wallpaper-popover.wallpaper-gallery>div:first-child>button:hover{background:var(--gc-hover)!important;color:var(--gc-primary)!important}
+body>.wallpaper-popover.wallpaper-gallery>div:first-child>button svg{display:block!important;width:17px!important;height:17px!important;stroke:currentColor!important}
+
+/* Calendario: las tres líneas permanecen dentro de la tarjeta de reunión. */
+.week-calendar .calendar-day article{
+  box-sizing:border-box!important;
+  min-width:0!important;
+}
+.week-calendar .calendar-day article>b,
+.week-calendar .calendar-day article>small,
+.week-calendar .calendar-day article>em{
+  display:block!important;
+  max-width:100%!important;
+  margin:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  line-height:1.2!important;
+}
+.week-calendar .calendar-day article>b{font-size:9px!important;margin-bottom:3px!important}
+.week-calendar .calendar-day article>small,
+.week-calendar .calendar-day article>em{font-size:7px!important;margin-top:2px!important}
+
 .settings-save-status{margin-left:auto;color:var(--gc-primary-hover);font-size:12px;font-weight:700}.chat-settings-modal>header>.settings-save-status+button{margin-left:14px}.settings-select>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.settings-select>div button{padding:0 15px;border:1px solid var(--gc-border);border-radius:10px;background:var(--gc-hover);color:var(--gc-text);font-weight:700;cursor:pointer}.smart-reply-options{position:absolute;z-index:22;right:14px;bottom:76px;left:14px;display:flex;gap:7px;overflow-x:auto;padding:8px;border:1px solid var(--gc-border);border-radius:14px;background:color-mix(in srgb,var(--gc-surface) 94%,transparent);box-shadow:0 10px 30px rgba(0,8,22,.24)}.smart-reply-options button{flex:none;padding:8px 12px;border:1px solid var(--gc-border);border-radius:999px;background:var(--gc-bg-rail);color:var(--gc-primary-hover);font-weight:700;cursor:pointer}.smart-reply-options button:hover{background:var(--gc-hover)}
 
 /* Configuración profesional: controles visibles, ritmo consistente y acciones persistentes. */
@@ -2184,50 +2258,62 @@ body>.chat-settings-overlay .chat-color-options>button{filter:none!important;bac
   html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form>button[data-sticker-trigger]{display:none!important}
 }
 
-/* Safari/iOS: el compositor se ancla al viewport visual, no al lienzo oculto bajo el navegador. */
+/* Móvil: el chat completo sigue al viewport visible. El compositor permanece como
+   la última fila del panel; así no depende de respuestas rápidas ni del navegador. */
 @media(max-width:760px){
-  html[data-current-page="mensajes"],
-  html[data-current-page="mensajes"] body,
-  html[data-current-page="mensajes"] #root,
-  html[data-current-page="mensajes"] .shell,
-  html[data-current-page="mensajes"] .shell>main.chat-workspace,
-  html[data-current-page="mensajes"] .chat-workspace .main-panel-inner,
-  html[data-current-page="mensajes"] .content.chat-page-content,
-  html[data-current-page="mensajes"] .chat-zoom-zone,
-  html[data-current-page="mensajes"] .chat-own-scale,
-  html[data-current-page="mensajes"] .google-chat-layout.chat-conversation-open{
-    height:var(--app-visual-height,100dvh)!important;
-    min-height:0!important;
-    max-height:var(--app-visual-height,100dvh)!important;
-  }
   html[data-current-page="mensajes"],
   html[data-current-page="mensajes"] body{
     width:100%!important;
     overflow:hidden!important;
     overscroll-behavior:none!important;
   }
+  html[data-current-page="mensajes"] .google-chat-layout.chat-conversation-open{
+    position:fixed!important;
+    z-index:100!important;
+    top:0!important;
+    right:0!important;
+    bottom:auto!important;
+    left:0!important;
+    width:100vw!important;
+    height:min(var(--app-visual-height,100svh),100svh)!important;
+    min-height:0!important;
+    max-height:100svh!important;
+    margin:0!important;
+  }
   html[data-current-page="mensajes"] .google-chat-layout.chat-conversation-open>.messenger{
-    height:calc(var(--app-visual-height,100dvh) - 66px)!important;
-    max-height:calc(var(--app-visual-height,100dvh) - 66px)!important;
+    height:calc(100% - 66px)!important;
+    min-height:0!important;
+    max-height:none!important;
   }
   html[data-current-page="mensajes"] .google-chat-layout.chat-conversation-open .chat-panel:not(.announcements-panel){
     position:relative!important;
     padding-bottom:calc(62px + env(safe-area-inset-bottom))!important;
   }
+  html[data-current-page="mensajes"] .google-chat-layout.chat-conversation-open .chat-panel:not(.announcements-panel)>.messages{
+    padding-bottom:calc(74px + env(safe-area-inset-bottom))!important;
+  }
   html[data-current-page="mensajes"] .google-chat-layout.chat-conversation-open .chat-panel:not(.announcements-panel)>form{
-    position:absolute!important;
+    position:fixed!important;
+    z-index:10000!important;
     right:0!important;
     bottom:0!important;
     left:0!important;
+    top:auto!important;
+    display:flex!important;
+    width:100%!important;
     height:calc(62px + env(safe-area-inset-bottom))!important;
     min-height:calc(62px + env(safe-area-inset-bottom))!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+    visibility:visible!important;
+    opacity:1!important;
+    transform:none!important;
+    pointer-events:auto!important;
   }
   html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form>input{
     font-size:16px!important;
   }
-  html[data-current-page="mensajes"] .messages article{
-    min-width:0!important;
-  }
+  html[data-current-page="mensajes"] .messages article{min-width:0!important}
   html[data-current-page="mensajes"] .document-message{
     width:min(100%,320px)!important;
     min-width:0!important;
@@ -2235,7 +2321,12 @@ body>.chat-settings-overlay .chat-color-options>button{filter:none!important;bac
     overflow:hidden!important;
   }
   html[data-current-page="mensajes"] .google-chat-layout.chat-conversation-open .chat-panel:not(.announcements-panel)>.smart-reply-options{
-    bottom:calc(69px + env(safe-area-inset-bottom))!important;
+    position:relative!important;
+    z-index:30!important;
+    inset:auto!important;
+    flex:0 0 auto!important;
+    width:calc(100% - 16px)!important;
+    margin:0 8px!important;
     max-height:52px!important;
     padding:6px!important;
   }

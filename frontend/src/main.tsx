@@ -20,8 +20,12 @@ const syncVisualViewport = () => {
   const viewport = window.visualViewport;
   const height = viewport?.height ?? window.innerHeight;
   const offsetTop = viewport?.offsetTop ?? 0;
+  const bottomInset = viewport
+    ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+    : 0;
   document.documentElement.style.setProperty("--app-visual-height", `${Math.round(height)}px`);
   document.documentElement.style.setProperty("--app-visual-offset-top", `${Math.round(offsetTop)}px`);
+  document.documentElement.style.setProperty("--app-visual-bottom-inset", `${Math.round(bottomInset)}px`);
 };
 syncVisualViewport();
 window.addEventListener("resize", syncVisualViewport, { passive: true });

@@ -329,6 +329,7 @@ export const saveTicketAdvance=(id:string,data:Record<string,unknown>)=>jsonRequ
 export const finishTicket=(id:string,data:Record<string,unknown>)=>jsonRequest(`/tickets/${id}/finalizar`,{method:"POST",body:JSON.stringify(data)});
 export const reopenTicket=(id:string)=>jsonRequest(`/tickets/${id}/reabrir`,{method:"POST"});
 export const reassignTicket=(id:string,asignadoAId:string)=>jsonRequest(`/tickets/${id}/reasignar`,{method:"POST",body:JSON.stringify({asignadoAId})});
+export const linkTicketConsultant=(id:string,asignadoAId:string)=>jsonRequest(`/tickets/${id}/vincular-consultor`,{method:"POST",body:JSON.stringify({asignadoAId})});
 export async function subscribeTickets(onChange:()=>void,signal:AbortSignal){const response=await fetch(`${API_URL}/tickets/stream`,{headers:{Accept:"text/event-stream",...authHeaders()},signal});if(!response.ok||!response.body)throw new Error("No se pudo conectar a la Ticketera");const reader=response.body.getReader(),decoder=new TextDecoder();let buffer="";while(!signal.aborted){const {done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const blocks=buffer.split("\n\n");buffer=blocks.pop()??"";for(const block of blocks)if(block.includes("event: tickets"))onChange()}}
 export const fetchEvents = () => jsonRequest("/eventos");
 export const createEvent = (data: Record<string, unknown>) =>

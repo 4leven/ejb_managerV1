@@ -256,3 +256,11 @@
 }
 .ticket-register-error{margin:0 24px;padding:12px;border-radius:10px;background:#fef2f2;color:#a51919;white-space:normal;overflow-wrap:anywhere}
 .ticket-register .ticket-form-grid{min-height:0;overflow-y:auto}
+.ticket-table-person-legacy>i{background:#fdecc8;color:#96650a;box-shadow:inset 0 0 0 1px #d69a1e2e}
+.dark .ticket-table-person-legacy>i{background:#4a3712;color:#ffd98a;box-shadow:inset 0 0 0 1px #d69a1e40}
+.ticket-legacy-link{display:flex;align-items:flex-end;gap:10px;margin:10px 0 4px;padding:10px 12px;border:1px dashed #d69a1e5e;border-radius:10px;background:#fdf6e6}
+.dark .ticket-legacy-link{background:#332711;border-color:#8a651f}
+.ticket-legacy-link>label{flex:1;display:grid;gap:6px;color:var(--e-muted,var(--muted));font-size:10px;font-weight:800}
+.ticket-legacy-link select{width:100%;height:34px;padding:3px 8px;border:1px solid var(--e-line,var(--line));border-radius:8px;background:var(--e-surface,var(--surface));color:var(--e-ink,var(--text));font-size:11px}
+.ticket-legacy-link>button{min-height:34px;padding:0 14px;border:1px solid #2f6fed;border-radius:8px;background:#2f6fed;color:#fff;font-size:10px;font-weight:850;cursor:pointer}
+.ticket-legacy-link>button:disabled{opacity:.5;cursor:default}

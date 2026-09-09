@@ -178,48 +178,71 @@ model Usuario {
 }
 
 model Cliente {
-  id          String   @id @default(uuid()) @db.Uuid
-  ruc         String?  @unique @db.VarChar(11)
-  razonSocial String   @unique @map("razon_social") @db.VarChar(180)
-  telefono    String?  @db.VarChar(30)
-  contacto    String?  @db.VarChar(150)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id          String            @id @default(uuid()) @db.Uuid
+  ruc         String?           @unique @db.VarChar(11)
+  razonSocial String            @unique @map("razon_social") @db.VarChar(180)
+  telefono    String?           @db.VarChar(30)
+  contacto    String?           @db.VarChar(150)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
   tickets     Ticket[]
+  contactos   ClienteContacto[]
 
   @@map("clientes")
 }
 
+model ClienteContacto {
+  id        String   @id @default(uuid()) @db.Uuid
+  clienteId String   @map("cliente_id") @db.Uuid
+  nombre    String?  @db.VarChar(150)
+  telefono  String?  @db.VarChar(30)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  cliente   Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  tickets   Ticket[]
+
+  @@unique([clienteId, nombre, telefono])
+  @@index([clienteId])
+  @@map("cliente_contactos")
+}
+
 model Ticket {
-  id              String            @id @default(uuid()) @db.Uuid
-  correlativo     Int               @unique @default(autoincrement())
-  clienteId       String            @map("cliente_id") @db.Uuid
-  ruc             String            @db.VarChar(11)
-  razonSocial     String            @map("razon_social") @db.VarChar(180)
-  modulo          String            @db.VarChar(100)
-  telefono        String?           @db.VarChar(30)
-  contacto        String            @db.VarChar(150)
-  consulta        String            @db.VarChar(3000)
-  prioridad       PrioridadTicket   @default(NORMAL)
-  canal           CanalTicket       @default(TELEFONO)
-  estado          EstadoTicket      @default(PENDIENTE)
-  creadoPorId     String            @map("creado_por_id") @db.Uuid
-  registradoAt    DateTime          @default(now()) @map("registrado_at")
-  asignadoAId     String?           @map("asignado_a_id") @db.Uuid
-  asignadoAt      DateTime?         @map("asignado_at")
-  contactadoAt    DateTime?         @map("contactado_at")
-  observaciones   String?           @db.VarChar(3000)
-  solucion        String?           @db.VarChar(3000)
-  finalizadoAt    DateTime?         @map("finalizado_at")
-  finalizadoPorId String?           @map("finalizado_por_id") @db.Uuid
-  slaVenceAt      DateTime?         @map("sla_vence_at")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  cliente         Cliente           @relation(fields: [clienteId], references: [id])
-  creadoPor       Usuario           @relation("TicketsCreados", fields: [creadoPorId], references: [id])
-  asignadoA       Usuario?          @relation("TicketsAsignados", fields: [asignadoAId], references: [id])
-  finalizadoPor   Usuario?          @relation("TicketsFinalizados", fields: [finalizadoPorId], references: [id])
-  historial       TicketHistorial[]
+  id                String            @id @default(uuid()) @db.Uuid
+  correlativo       Int               @unique @default(autoincrement())
+  clienteId         String            @map("cliente_id") @db.Uuid
+  ruc               String?           @db.VarChar(11)
+  razonSocial       String            @map("razon_social") @db.VarChar(180)
+  modulo            String            @db.VarChar(100)
+  telefono          String?           @db.VarChar(30)
+  contacto          String?           @db.VarChar(150)
+  contactoId        String?           @map("contacto_id") @db.Uuid
+  consulta          String?           @db.VarChar(3000)
+  prioridad         PrioridadTicket   @default(NORMAL)
+  canal             CanalTicket       @default(TELEFONO)
+  estado            EstadoTicket      @default(PENDIENTE)
+  creadoPorId       String            @map("creado_por_id") @db.Uuid
+  registradoAt      DateTime          @default(now()) @map("registrado_at")
+  asignadoAId       String?           @map("asignado_a_id") @db.Uuid
+  asignadoAt        DateTime?         @map("asignado_at")
+  contactadoAt      DateTime?         @map("contactado_at")
+  observaciones     String?           @db.VarChar(3000)
+  solucion          String?           @db.VarChar(3000)
+  finalizadoAt      DateTime?         @map("finalizado_at")
+  finalizadoPorId   String?           @map("finalizado_por_id") @db.Uuid
+  slaVenceAt        DateTime?         @map("sla_vence_at")
+  resultadoContacto String?           @map("resultado_contacto") @db.VarChar(40)
+  atendidoPorNombre String?           @map("atendido_por_nombre") @db.VarChar(120)
+  intentosContacto  Int?              @map("intentos_contacto")
+  origen            String?           @db.VarChar(40)
+  origenRef         String?           @unique @map("origen_ref") @db.VarChar(60)
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  cliente           Cliente           @relation(fields: [clienteId], references: [id])
+  contactoRegistro  ClienteContacto?  @relation(fields: [contactoId], references: [id])
+  creadoPor         Usuario           @relation("TicketsCreados", fields: [creadoPorId], references: [id])
+  asignadoA         Usuario?          @relation("TicketsAsignados", fields: [asignadoAId], references: [id])
+  finalizadoPor     Usuario?          @relation("TicketsFinalizados", fields: [finalizadoPorId], references: [id])
+  historial         TicketHistorial[]
 
   @@index([estado, registradoAt])
   @@index([asignadoAId, estado])

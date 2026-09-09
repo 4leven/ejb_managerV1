@@ -509,6 +509,38 @@ export async function reassign(req: Request, res: Response, next: NextFunction) 
   }
 }
 
+export async function linkConsultant(req: Request, res: Response, next: NextFunction) {
+  try {
+    const currentUser = await actor(req.userId!);
+    if (!isTicketBoss(currentUser))
+      throw fail(403, "Solo jefatura puede vincular un consultor histórico");
+    const id = uuid.parse(req.params.id);
+    const asignadoAId = uuid.parse(req.body.asignadoAId);
+    const [current, assignee] = await Promise.all([
+      prisma.ticket.findUniqueOrThrow({ where: { id } }),
+      actor(asignadoAId),
+    ]);
+    if (current.asignadoAId) throw fail(409, "Este caso ya tiene un consultor vinculado");
+    if (!canTakeTickets(assignee)) throw fail(400, "El usuario elegido no es consultor de atención");
+    const row = await prisma.$transaction(async (tx) => {
+      await tx.ticket.update({ where: { id }, data: { asignadoAId } });
+      await tx.ticketHistorial.create({
+        data: {
+          ticketId: id,
+          accion: `Consultor histórico "${current.atendidoPorNombre ?? "sin nombre"}" vinculado a ${assignee.nombres} ${assignee.apellidos}`,
+          estadoAnterior: current.estado,
+          estadoNuevo: current.estado,
+          usuarioId: currentUser.id,
+        },
+      });
+      return tx.ticket.findUniqueOrThrow({ where: { id }, include: detailInclude });
+    });
+    res.json(present(row));
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function stream(req: Request, res: Response, next: NextFunction) {
   try {
     const currentUser = await actor(req.userId!);

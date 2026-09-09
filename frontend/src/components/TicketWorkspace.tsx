@@ -37,6 +37,7 @@ import {
   fetchTickets,
   fetchTicketSummary,
   finishTicket,
+  linkTicketConsultant,
   reassignTicket,
   reopenTicket,
   saveTicketAdvance,
@@ -86,6 +87,10 @@ type Ticket = {
   asignadoAt?: string | null;
   contactadoAt?: string | null;
   finalizadoAt?: string | null;
+  resultadoContacto?: string | null;
+  atendidoPorNombre?: string | null;
+  intentosContacto?: number | null;
+  origen?: string | null;
   historial?: Array<{
     id: string;
     accion: string;
@@ -161,6 +166,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const [moduleValue, setModuleValue] = useState("");
   const [observations, setObservations] = useState("");
   const [solution, setSolution] = useState("");
+  const [linkConsultantId, setLinkConsultantId] = useState("");
   const [rowMenuId, setRowMenuId] = useState<string>();
   const claimInFlight = useRef(false);
 
@@ -282,6 +288,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
     setModuleValue(ticket.modulo);
     setObservations(ticket.observaciones ?? "");
     setSolution(ticket.solucion ?? "");
+    setLinkConsultantId("");
     setDetailTab("information");
   };
   const openTicket = async (ticket: Ticket) => {
@@ -530,10 +537,23 @@ export default function TicketWorkspace({ user }: { user: any }) {
                     <div><dt>Usuario</dt><dd>{selected.contacto || "—"}</dd></div>
                     <div className="ticket-info-query"><dt>Consulta del usuario</dt><dd>{selected.consulta || "—"}</dd></div>
                     <div><dt>Estado</dt><dd>{statusLabel(selected.estado)}</dd></div>
-                    <div><dt>Atendido por</dt><dd>{selected.asignadoA ? fullName(selected.asignadoA) : "—"}</dd></div>
+                    <div><dt>Atendido por</dt><dd>{selected.asignadoA ? fullName(selected.asignadoA) : (selected.atendidoPorNombre || "—")}</dd></div>
                     <div><dt>Fecha contacto</dt><dd>{selectedContacted.date}</dd></div>
                     <div><dt>Hora contacto</dt><dd>{selectedContacted.time}</dd></div>
+                    {selected.resultadoContacto && <div><dt>Resultado del contacto</dt><dd>{label(selected.resultadoContacto)}</dd></div>}
+                    {typeof selected.intentosContacto === "number" && <div><dt>Intentos de contacto</dt><dd>{selected.intentosContacto}</dd></div>}
                   </dl>
+                  {isBoss && !selected.asignadoAId && selected.atendidoPorNombre && (
+                    <div className="ticket-legacy-link">
+                      <label>Vincular cuenta real a "{selected.atendidoPorNombre}" (histórico)
+                        <select value={linkConsultantId} onChange={(event) => setLinkConsultantId(event.target.value)}>
+                          <option value="">Selecciona un consultor…</option>
+                          {consultants.map((person) => <option key={person.id} value={person.id}>{fullName(person)}</option>)}
+                        </select>
+                      </label>
+                      <button type="button" disabled={saving || !linkConsultantId} onClick={() => void run(linkTicketConsultant(selected.id, linkConsultantId))}>Vincular</button>
+                    </div>
+                  )}
                   <label className="ticket-panel-observations">Observaciones
                     <textarea value={observations} readOnly={!canManageSelected} onChange={(event) => setObservations(event.target.value)} placeholder={canManageSelected ? "Describe la atención realizada para finalizar el caso (mínimo 5 caracteres)." : "—"} />
                   </label>
@@ -614,6 +634,11 @@ export default function TicketWorkspace({ user }: { user: any }) {
                         <i>{initials(ticket.asignadoA)}</i>
                       )}
                       <b>{fullName(ticket.asignadoA)}</b>
+                    </span>
+                  ) : ticket.atendidoPorNombre ? (
+                    <span className="ticket-table-person ticket-table-person-legacy" title={`Histórico: ${ticket.atendidoPorNombre} (sin cuenta vinculada)`}>
+                      <i>{ticket.atendidoPorNombre.trim().slice(0, 2).toUpperCase()}</i>
+                      <b>{ticket.atendidoPorNombre}</b>
                     </span>
                   ) : (
                     <span className="ticket-unassigned">—</span>
