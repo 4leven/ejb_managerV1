@@ -61,6 +61,7 @@
   font-family: var(--gc-font);
 }
 
+
 /* Modo oscuro: el resto de la app alterna .dark en <html> */
 .dark .chat-workspace{
   --gc-bg: #202124;
@@ -2581,3 +2582,38 @@ body>.chat-settings-overlay .chat-color-options>button{filter:none!important;bac
 .chat-mode-oscuro .sticker-picker{
   color-scheme:dark!important;
 }
+
+/* Selector GIF amplio y completamente coherente con el tema del chat. */
+.chat-panel>form .gif-picker-expanded,
+.space-composer-inline .gif-picker-expanded{width:min(920px,calc(100vw - 40px))!important;height:min(700px,calc(100dvh - 130px))!important;max-height:none!important}
+.chat-mode-claro .gif-picker-expanded :is(button,.gif-favorite,.gif-load-more),
+.chat-mode-claro .gif-picker-expanded :is(.favorite-gifs,.recent-gifs){border-color:var(--gc-border)!important;background:var(--gc-surface)!important;color:var(--gc-text)!important}
+.chat-mode-claro .gif-picker-expanded :is(button,.gif-favorite,.gif-load-more):hover{border-color:var(--gc-primary)!important;background:var(--gc-hover)!important;color:var(--gc-primary)!important}
+.chat-mode-claro .gif-picker-expanded .gif-favorite.active{border-color:var(--gc-primary)!important;background:var(--gc-primary)!important;color:var(--gc-on-primary)!important}
+.chat-mode-claro .gif-picker-expanded :is(.gif-section-title,.gif-grid,.favorite-gifs,.recent-gifs)>*{color:var(--gc-text)}
+@media(max-width:760px){.chat-panel>form .gif-picker-expanded,.space-composer-inline .gif-picker-expanded{width:auto!important;height:min(640px,calc(100dvh - 96px))!important;left:4px!important;right:4px!important}}
+
+/* Corrección final: cierre y separadores del selector GIF en modo claro. */
+:is(.chat-workspace.chat-mode-claro,.chat-workspace .chat-mode-claro) .gif-picker-expanded>header>button{
+  border:1px solid var(--gc-border)!important;
+  background:#eef4fb!important;
+  color:#243b55!important;
+  box-shadow:none!important;
+}
+:is(.chat-workspace.chat-mode-claro,.chat-workspace .chat-mode-claro) .gif-picker-expanded>header>button:hover{
+  border-color:var(--gc-primary)!important;
+  background:#dceafb!important;
+  color:var(--gc-primary)!important;
+}
+:is(.chat-workspace.chat-mode-claro,.chat-workspace .chat-mode-claro) .gif-picker-expanded .gif-section-title{
+  border-top:1px solid var(--gc-border-soft)!important;
+  border-bottom:1px solid var(--gc-border-soft)!important;
+  background:#f5f8fc!important;
+  color:#10243c!important;
+}
+:is(.chat-workspace.chat-mode-claro,.chat-workspace .chat-mode-claro) .gif-picker-expanded .gif-section-title :is(b,span){color:#10243c!important}
+:is(.chat-workspace.chat-mode-claro,.chat-workspace .chat-mode-claro) .gif-picker-expanded .recent-gifs{
+  border-color:var(--gc-border-soft)!important;
+  background:#fff!important;
+}
+:is(.chat-workspace.chat-mode-claro,.chat-workspace .chat-mode-claro) .gif-picker-expanded .recent-gifs>div:first-child :is(b,button){color:#10243c!important}

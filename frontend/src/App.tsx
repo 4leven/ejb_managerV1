@@ -336,7 +336,7 @@ const mapItem = (r: any): Item => ({
   color: r.area.colorHex,
   impacto: r.impacto,
   esfuerzo: r.esfuerzo,
-  score: Number(r.score),
+  score: Number.isFinite(Number(r.score)) ? Number(r.score) : 0,
   estado: mapProjectStatus(r.estado),
   avance: r.porcentajeAvance,
   responsable: r.responsable
@@ -978,6 +978,7 @@ function App() {
     [appearanceItem, setAppearanceItem] = useState<Item | null>(null),
     [helpTopic, setHelpTopic] = useState<HelpTopic | null>(null),
     [modal, setModal] = useState(false),
+    [createAreaName, setCreateAreaName] = useState(""),
     [progressItem, setProgressItem] = useState<Item | null>(null),
     [history, setHistory] = useState<Progress[]>([]),
     [alerts, setAlerts] = useState<any[]>([]),
@@ -1534,6 +1535,7 @@ function App() {
         descripcion: String(f.get("descripcion")),
         cliente: String(f.get("cliente") || "").trim() || undefined,
         areaId: selected.id,
+        responsableId: String(f.get("responsableId") || "") || undefined,
         impacto: Number(f.get("impacto")),
         esfuerzo: String(f.get("esfuerzo")),
         fechaInicio: String(f.get("fechaInicio") || "") || undefined,
@@ -2268,9 +2270,9 @@ function App() {
                 Registrar caso
               </button>
             ) : page !== "mensajes" && (
-              <button className="primary" onClick={() => setModal(true)}>
+              <button className="primary" onClick={() => { setCreateAreaName(page === "kanban-sistemas" ? "Sistemas" : user.area.nombre); setModal(true); }}>
                 <Plus />
-                Nuevo Proyecto
+                {page === "kanban-sistemas" ? "Nuevo registro Kanban" : "Nuevo Proyecto"}
               </button>
             )}
           </header>
@@ -2903,6 +2905,8 @@ function App() {
                 items={items}
                 onBack={() => setPage("resumen")}
                 canManageActions={canOperateGlobally(user) || isAreaLeaderUser(user)}
+                onOpen={setSelectedItem}
+                onProgress={openProgress}
               />
             )}
             {page === "calendario" && (
@@ -3018,8 +3022,8 @@ function App() {
               <div className="modal-icon">
                 <Lightbulb />
               </div>
-              <h2>Nueva iniciativa</h2>
-              <p>Se registrará inicialmente como Pendiente.</p>
+              <h2>{page === "kanban-sistemas" ? "Nuevo registro de Sistemas" : "Nueva iniciativa"}</h2>
+              <p>{page === "kanban-sistemas" ? "Se agregará al Kanban de Sistemas como Pendiente." : "Se registrará inicialmente como Pendiente."}</p>
               <label>
                 Título
                 <input name="titulo" required minLength={3} />
@@ -3044,7 +3048,8 @@ function App() {
                   )}
                   <select
                     name="area"
-                    defaultValue={page === "kanban-sistemas" ? "Sistemas" : undefined}
+                    value={page === "kanban-sistemas" ? "Sistemas" : (createAreaName || user.area.nombre)}
+                    onChange={(event) => setCreateAreaName(event.target.value)}
                     disabled={page === "kanban-sistemas"}
                   >
                     {areas.map((a) => (
@@ -3052,6 +3057,18 @@ function App() {
                     ))}
                   </select>
                 </label>
+                {(user.isSuperAdmin || isAreaLeaderUser(user)) && (
+                  <label>
+                    Derivar a
+                    <select name="responsableId" defaultValue="" key={page === "kanban-sistemas" ? "Sistemas" : createAreaName}>
+                      <option value="">Sin derivar</option>
+                      {team
+                        .filter((member) => member.area.nombre === (page === "kanban-sistemas" ? "Sistemas" : (createAreaName || user.area.nombre)))
+                        .sort((a, b) => `${a.nombres} ${a.apellidos}`.localeCompare(`${b.nombres} ${b.apellidos}`, "es"))
+                        .map((member) => <option key={member.id} value={member.id}>{member.nombres} {member.apellidos}</option>)}
+                    </select>
+                  </label>
+                )}
                 <label>
                   Impacto
                   <input

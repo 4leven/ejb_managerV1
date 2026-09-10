@@ -527,7 +527,7 @@ export function BIReports({
           <span>Score promedio</span>
           <b>
             {items.length
-              ? (items.reduce((s, i) => s + i.score, 0) / items.length).toFixed(
+              ? (items.reduce((s, i) => s + (Number.isFinite(Number(i.score)) ? Number(i.score) : 0), 0) / items.length).toFixed(
                   1,
                 )
               : 0}

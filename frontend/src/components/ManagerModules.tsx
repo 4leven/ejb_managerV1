@@ -1,13 +1,17 @@
 import GmailConnection from "./GmailConnection";
 import { FormEvent, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   ArrowLeft,
   CalendarDays,
   Check,
   Clock3,
+  Eye,
+  MoreHorizontal,
   Moon,
   Sun,
+  TrendingUp,
   Upload,
   UserCog,
   X,
@@ -27,15 +31,33 @@ export function Timeline({
   items,
   onBack,
   canManageActions,
+  onOpen,
+  onProgress,
 }: {
   items: any[];
   onBack: () => void;
   canManageActions: boolean;
+  onOpen: (item: any) => void;
+  onProgress: (item: any) => void;
 }) {
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [actionsOpen, setActionsOpen] = useState<{ id: string; top: number; right: number } | null>(null);
   useEffect(() => {
     fetchAlerts().then(setAlerts);
   }, []);
+  useEffect(() => {
+    if (!actionsOpen) return;
+    const close = (event: MouseEvent) => {
+      if (!(event.target as HTMLElement).closest(".schedule-actions-wrap,.schedule-actions-menu")) setActionsOpen(null);
+    };
+    const escape = (event: KeyboardEvent) => event.key === "Escape" && setActionsOpen(null);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [actionsOpen]);
   const now = Date.now();
   const inactivityWarnings = items
     .filter((item) => item.avance < 100)
@@ -149,7 +171,15 @@ export function Timeline({
                   </div>
                   <span className={`schedule-status ${presentation.status.className}`}>{presentation.status.label}</span>
                   <span className={`schedule-days ${presentation.delayed ? "delayed" : ""}`}>{presentation.days}</span>
-                  {canManageActions && <button className="schedule-actions" type="button" aria-label={`Acciones de ${i.codigo}`}>...</button>}
+                  {canManageActions && (
+                    <div className="schedule-actions-wrap">
+                      <button className="schedule-actions" type="button" aria-label={`Acciones de ${i.codigo}`} aria-haspopup="menu" aria-expanded={actionsOpen?.id === i.id} onClick={(event) => { const rect = event.currentTarget.getBoundingClientRect(); setActionsOpen((current) => current?.id === i.id ? null : { id: i.id, top: rect.bottom + 5, right: window.innerWidth - rect.right }); }}><MoreHorizontal /></button>
+                      {actionsOpen?.id === i.id && createPortal(<div className="schedule-actions-menu" role="menu" style={{ top: actionsOpen?.top, right: actionsOpen?.right }}>
+                        <button type="button" role="menuitem" onClick={() => { setActionsOpen(null); onOpen(i); }}><Eye />Ver detalle</button>
+                        <button type="button" role="menuitem" onClick={() => { setActionsOpen(null); onProgress(i); }}><TrendingUp />Registrar avance</button>
+                      </div>, document.body)}
+                    </div>
+                  )}
                 </article>
               );
             })}

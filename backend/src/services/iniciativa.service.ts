@@ -10,7 +10,7 @@ const allowed: Record<Estado, Estado[]> = {
 };
 export const iniciativaService = {
   async list() {const rows=await prisma.iniciativa.findMany({where:{deletedAt:null},include:{area:true, objetivo:true, responsable:true,tareas:{where:{deletedAt:null},include:{responsable:{select:{id:true,nombres:true,apellidos:true,fotoPerfil:true}},comentarios:{include:{usuario:{select:{id:true,nombres:true,apellidos:true,fotoPerfil:true}}},orderBy:{createdAt:'desc'}}},orderBy:{createdAt:'asc'}},progresos:{orderBy:{createdAt:'desc'}},_count:{select:{eventos:true}}}, orderBy:{score:'desc'}});return rows.map(row=>{const porcentajeAvance=progressFromTasks(row.tareas.length,row.tareas.filter(task=>task.completada).length,row.porcentajeAvance),hasActiveTasks=row.tareas.some(task=>task.estado==='Iniciado'||task.estado==='En_progreso');return{...row,porcentajeAvance,estado:automaticProjectStatus(porcentajeAvance,row.estado as ProjectStatus,hasActiveTasks)}})},
-  async create(data:{creadorId?:string;titulo:string;descripcion:string;cliente?:string;areaId:string;objetivoId?:string;impacto:number;esfuerzo:Esfuerzo;fechaInicio?:Date;fechaFin?:Date;tareas?:string[]}) {
+  async create(data:{creadorId?:string;titulo:string;descripcion:string;cliente?:string;areaId:string;responsableId?:string;objetivoId?:string;impacto:number;esfuerzo:Esfuerzo;fechaInicio?:Date;fechaFin?:Date;tareas?:string[]}) {
     const attempt = () => prisma.$transaction(async tx => {
       const last = await tx.iniciativa.findFirst({ orderBy:{codigo:'desc'}, select:{codigo:true} });
       const sequence = last ? Number(last.codigo.slice(4)) : 0;

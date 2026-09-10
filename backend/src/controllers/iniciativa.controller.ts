@@ -22,6 +22,7 @@ const createSchema = z
       .optional()
       .transform((v) => v || undefined),
     areaId: z.string().uuid(),
+    responsableId: z.string().uuid().optional(),
     objetivoId: z.string().uuid().optional(),
     impacto: z.number().int().min(1).max(10),
     esfuerzo: z.nativeEnum(Esfuerzo),
@@ -61,6 +62,13 @@ export const create = async (
       });
     if (!hasPermission(actor,"crearProyectos") && actor.areaId !== input.areaId && !canManageArea(actor, input.areaId))
       throw new Error("Solo puedes registrar proyectos para tu área");
+    if (input.responsableId) {
+      if (!actor.isSuperAdmin && !isAreaLeader(actor))
+        throw new Error("Solo jefes, gerentes y el administrador principal pueden derivar proyectos");
+      const responsable = await prisma.usuario.findUnique({ where: { id: input.responsableId }, select: { areaId: true } });
+      if (!responsable || responsable.areaId !== input.areaId)
+        throw new Error("El responsable seleccionado no pertenece al área del proyecto");
+    }
     const row = await iniciativaService.create({...input,creadorId:actor.id});
     await audit(actor.id, "Crear", "Iniciativa", row.id, {
       codigo: row.codigo,

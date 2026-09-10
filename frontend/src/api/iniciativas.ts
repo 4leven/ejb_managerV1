@@ -85,6 +85,7 @@ export async function createIniciativa(data: {
   descripcion: string;
   cliente?: string;
   areaId: string;
+  responsableId?: string;
   impacto: number;
   esfuerzo: string;
   fechaInicio?: string;

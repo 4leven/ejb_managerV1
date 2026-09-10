@@ -13,9 +13,17 @@ const jsonFields = new Set([
   'decisiones',
 ]);
 
+function isDatabaseScalar(value: unknown): boolean {
+  return value instanceof Date || value instanceof Uint8Array || (
+    Boolean(value) &&
+    typeof value === 'object' &&
+    typeof (value as { toFixed?: unknown }).toFixed === 'function'
+  );
+}
+
 function serializeJsonFields(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(serializeJsonFields);
-  if (!value || typeof value !== 'object' || value instanceof Date) return value;
+  if (!value || typeof value !== 'object' || isDatabaseScalar(value)) return value;
 
   return Object.fromEntries(Object.entries(value).map(([key, item]) => {
     if (jsonFields.has(key) && item !== null && item !== undefined && typeof item !== 'string') {
@@ -27,7 +35,7 @@ function serializeJsonFields(value: unknown): unknown {
 
 function parseJsonFields(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(parseJsonFields);
-  if (!value || typeof value !== 'object' || value instanceof Date) return value;
+  if (!value || typeof value !== 'object' || isDatabaseScalar(value)) return value;
 
   return Object.fromEntries(Object.entries(value).map(([key, item]) => {
     if (jsonFields.has(key) && typeof item === 'string') {
@@ -60,7 +68,7 @@ function serializeMutationArgs(args: unknown): unknown {
 
 function normalizeSqlServerFilters(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(normalizeSqlServerFilters);
-  if (!value || typeof value !== 'object' || value instanceof Date) return value;
+  if (!value || typeof value !== 'object' || isDatabaseScalar(value)) return value;
   return Object.fromEntries(
     Object.entries(value)
       .filter(([key]) => key !== 'mode')
