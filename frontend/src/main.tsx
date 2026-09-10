@@ -15,6 +15,7 @@ import "./systems-kanban.css";
 import "./notifications-center.css";
 import "./projects-center.css";
 import "./requirements-center.css";
+import "./permissions-module.css";
 
 const syncVisualViewport = () => {
   const viewport = window.visualViewport;

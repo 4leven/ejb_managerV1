@@ -390,6 +390,9 @@ export const updateRequirement = (id: string, data: Record<string, unknown>) =>
   });
 export const deleteRequirement = (id: string) =>
   jsonRequest(`/operacion/requerimientos/${id}`, { method: "DELETE" });
+export const fetchPermissions = () => jsonRequest("/operacion/permisos");
+export const createPermission = () =>
+  jsonRequest("/operacion/permisos", { method: "POST" });
 export const fetchFlows = () => jsonRequest("/operacion/flujos");
 export const createFlow = (data: Record<string, unknown>) =>
   jsonRequest("/operacion/flujos", {

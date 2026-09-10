@@ -26,6 +26,30 @@ const include = {
   usuario: { select: { id: true, nombres: true, apellidos: true } },
 } as const;
 
+const permissionFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLSeDPVkBSwxJw28elU-oZsyuq1_O-UuUYSJ8P085onZeWEFuNg/viewform";
+
+export async function permissions(req: Request, res: Response, next: NextFunction) {
+  try {
+    const actor = await prisma.usuario.findUniqueOrThrow({ where: { id: req.userId! } });
+    const canSeeAll = actor.isSuperAdmin || isTechnical(actor) || isAdministration(actor);
+    res.json(await prisma.registroPortal.findMany({
+      where: { tipo: "permiso", ...(canSeeAll ? {} : { creadorId: actor.id }) },
+      include: { creador: { select: { id: true, nombres: true, apellidos: true, fotoPerfil: true, area: true } } },
+      orderBy: { createdAt: "desc" },
+    }));
+  } catch (e) { next(e); }
+}
+
+export async function createPermission(req: Request, res: Response, next: NextFunction) {
+  try {
+    const datos = { estado: "Formulario enviado", formularioUrl: permissionFormUrl, confirmadoAt: new Date().toISOString() };
+    res.status(201).json(await prisma.registroPortal.create({
+      data: { tipo: "permiso", datos: datos as any, creadorId: req.userId! },
+      include: { creador: { select: { id: true, nombres: true, apellidos: true, fotoPerfil: true, area: true } } },
+    }));
+  } catch (e) { next(e); }
+}
+
 export async function requirements(
   req: Request,
   res: Response,

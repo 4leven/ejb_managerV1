@@ -3,10 +3,12 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardList,
+  ExternalLink,
   FileText,
   Package,
   Pencil,
   Plus,
+  ShieldCheck,
   Trash2,
   Upload,
   UserRound,
@@ -17,9 +19,11 @@ import {
   addFlowVersion,
   deleteFlow,
   createRequirement,
+  createPermission,
   deleteRequirement,
   fetchFlows,
   fetchRequirements,
+  fetchPermissions,
   requestChange,
   updateRequirement,
 } from "../api/iniciativas";
@@ -50,11 +54,32 @@ const requirementAreaColor = (areaName = "", fallback = "#2f6fed") => {
 };
 export function Requirements({ user }: { user: any }) {
   const [rows, setRows] = useState<any[]>([]),
-    [modal, setModal] = useState(false);
+    [modal, setModal] = useState(false),
+    [permissionRows, setPermissionRows] = useState<any[]>([]),
+    [formOpened, setFormOpened] = useState(false),
+    [registeringPermission, setRegisteringPermission] = useState(false);
   const load = () => fetchRequirements().then(setRows);
+  const loadPermissions = () => fetchPermissions().then(setPermissionRows);
   useEffect(() => {
     load();
+    loadPermissions();
   }, []);
+  const permissionFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLSeDPVkBSwxJw28elU-oZsyuq1_O-UuUYSJ8P085onZeWEFuNg/viewform";
+  const openPermissionForm = () => {
+    window.open(permissionFormUrl, "_blank", "noopener,noreferrer");
+    setFormOpened(true);
+  };
+  const confirmPermission = async () => {
+    setRegisteringPermission(true);
+    try {
+      await createPermission();
+      await loadPermissions();
+      setFormOpened(false);
+      await uiAlert("Solicitud registrada", "Administración ya puede ver que enviaste el formulario de permiso.");
+    } finally {
+      setRegisteringPermission(false);
+    }
+  };
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -207,6 +232,28 @@ export function Requirements({ user }: { user: any }) {
         )})}
         {!rows.length && <div className="requirement-empty"><ClipboardList /><b>No hay requerimientos registrados</b><span>Las solicitudes internas aparecerán aquí cuando se registren.</span></div>}
       </div>
+      <section className="permissions-module">
+        <div className="permissions-module-header">
+          <div className="request-intro">
+            <ShieldCheck />
+            <div><b>Permisos</b><small>Solicita un permiso mediante el formulario oficial de EJB.</small></div>
+          </div>
+          <button className="primary" type="button" onClick={openPermissionForm}><ExternalLink /> Abrir formulario</button>
+        </div>
+        {formOpened && <div className="permission-confirmation">
+          <span>Cuando termines de enviar el formulario, confirma el registro para que Administración pueda verlo.</span>
+          <button type="button" disabled={registeringPermission} onClick={() => void confirmPermission()}><CheckCircle2 /> {registeringPermission ? "Registrando…" : "Ya envié mi solicitud"}</button>
+        </div>}
+        <div className="permission-list">
+          {permissionRows.map((row) => <article key={row.id}>
+            <span className="permission-avatar">{row.creador?.fotoPerfil ? <img src={row.creador.fotoPerfil} alt="" /> : `${row.creador?.nombres?.[0] ?? ""}${row.creador?.apellidos?.[0] ?? ""}`}</span>
+            <div><b>{row.creador?.nombres} {row.creador?.apellidos}</b><small>{row.creador?.area?.nombre || "Sin área"}</small></div>
+            <span className="permission-status"><CheckCircle2 /> Formulario enviado</span>
+            <time>{new Date(row.datos?.confirmadoAt || row.createdAt).toLocaleString("es-PE")}</time>
+          </article>)}
+          {!permissionRows.length && <div className="permission-list-empty">Aún no hay solicitudes de permiso registradas.</div>}
+        </div>
+      </section>
       {modal && (
         <div className="overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setModal(false); }}>
           <form className="event-modal" onSubmit={submit}>

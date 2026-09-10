@@ -29,7 +29,6 @@ import {
   MessageCircle,
   Menu,
   FileText,
-  FileSignature,
   Palette,
   Paintbrush,
   PanelLeftClose,
@@ -92,7 +91,6 @@ import { BIReports } from "./components/AnalyticsCalendar";
 import { CalendarModule } from "./components/EventCalendar";
 import { AreaFlows, Requirements } from "./components/Operations";
 import { Surveys } from "./components/CollaborationModules";
-import SecureSignature from "./components/SecureSignature";
 import ObjectivesModule from "./components/ObjectivesModule";
 import TicketWorkspace from "./components/TicketWorkspace";
 import SystemsKanban from "./components/SystemsKanban";
@@ -131,7 +129,6 @@ type Page =
   | "reporteria"
   | "requerimientos"
   | "flujos"
-  | "firmas"
   | "encuestas"
   | "aprobaciones"
   | "perfil"
@@ -168,7 +165,6 @@ const notificationPage = (value: string): Page | null => {
     reporteria: "reporteria",
     requerimientos: "requerimientos",
     flujos: "flujos",
-    firmas: "firmas",
     encuestas: "encuestas",
     perfil: "perfil",
     ayuda: "ayuda",
@@ -1762,10 +1758,6 @@ function App() {
       "Flujos de Áreas",
       "Documenta, comparte y previsualiza procesos de trabajo en PDF.",
     ],
-    firmas: [
-      "Firma Electrónica",
-      "Carga, revisa y firma documentos internos con trazabilidad.",
-    ],
     encuestas: [
       "Encuestas EJB",
       "Consulta al equipo y visualiza los resultados en tiempo real.",
@@ -1952,16 +1944,6 @@ function App() {
           >
             <FileText />
             Flujos de Áreas
-          </button>
-          <button
-            className={page === "firmas" ? "active" : ""}
-            onClick={() => {
-              setPage("firmas");
-              setMobileMenuOpen(false);
-            }}
-          >
-            <FileSignature />
-            Firma Electrónica
           </button>
           <button
             className={page === "encuestas" ? "active" : ""}
@@ -2925,7 +2907,6 @@ function App() {
             {page === "reporteria" && <ReportingCenter items={items} />}
             {page === "requerimientos" && <Requirements user={user} />}
             {page === "flujos" && <AreaFlows user={user} />}
-            {page === "firmas" && <SecureSignature user={user} team={team} />}
             {page === "encuestas" && <Surveys user={user} />}
             {page === "aprobaciones" && <Approvals user={user} />}
             {page === "perfil" && (

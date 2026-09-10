@@ -256,6 +256,7 @@ export default function Messages({
     [threadView, setThreadView] = useState(false),
     [dmReply, setDmReply] = useState<Message | null>(null),
     [reactionTarget, setReactionTarget] = useState<string | null>(null),
+    [actionMenuTarget, setActionMenuTarget] = useState<string | null>(null),
     [forwardTarget, setForwardTarget] = useState<Message | null>(null),
     [forwardRecipients, setForwardRecipients] = useState<string[]>([]),
     [scheduleOpen, setScheduleOpen] = useState(false),
@@ -365,6 +366,7 @@ export default function Messages({
       const target = event.target;
       if (!(target instanceof Element)) return;
       if (reactionTarget && !target.closest(".chat-reaction-picker, [data-reaction-trigger]")) setReactionTarget(null);
+      if (actionMenuTarget && !target.closest(".chat-message-menu, [data-message-menu-trigger]")) setActionMenuTarget(null);
       if (composerMenuOpen && !target.closest(".composer-plus-menu, .composer-plus")) setComposerMenuOpen(false);
       if (formattingOpen && !target.closest(".composer-format-menu, [data-format-trigger]")) setFormattingOpen(false);
       if (stickersOpen && !target.closest(".sticker-picker, [data-sticker-trigger]")) setStickersOpen(false);
@@ -377,7 +379,7 @@ export default function Messages({
     };
     document.addEventListener("pointerdown", closeFloatingPanels);
     return () => document.removeEventListener("pointerdown", closeFloatingPanels);
-  }, [reactionTarget, composerMenuOpen, formattingOpen, stickersOpen, gifsOpen, scheduleOpen, wallpaperOpen, statusOpen, notificationsOpen, chipPreview]);
+  }, [reactionTarget, actionMenuTarget, composerMenuOpen, formattingOpen, stickersOpen, gifsOpen, scheduleOpen, wallpaperOpen, statusOpen, notificationsOpen, chipPreview]);
   useEffect(() => { void fetchIniciativas().then(setInitiatives).catch(() => setInitiatives([])); }, []);
   const loadScheduled = () => fetchScheduledMessages().then(setScheduled).catch(() => setScheduled([]));
   useEffect(() => { void loadScheduled(); const timer = setInterval(loadScheduled, 15000); return () => clearInterval(timer); }, []);
@@ -421,8 +423,10 @@ export default function Messages({
       }).catch(() => undefined).finally(() => { loading = false; });
     };
     load();
-    const timer = setInterval(load, 4000);
-    return () => { disposed = true; clearInterval(timer); };
+    const timer = setInterval(load, 2000);
+    const onVisible = () => { if (!document.hidden) void load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { disposed = true; clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
   }, [active?.id]);
   useEffect(()=>{
     if(!activeSpace)return;
@@ -434,7 +438,10 @@ export default function Messages({
         setActiveSpace(current=>current?.id===id?(row?{...row,datos:{...row.datos,tipo:type,esCanal:type==="canal"}}:null):current);
       }catch{}finally{loading=false}
     };
-    const timer=setInterval(refresh,4000);return()=>{disposed=true;clearInterval(timer)};
+    const timer=setInterval(refresh,2000);
+    const onVisible=()=>{if(!document.hidden)void refresh()};
+    document.addEventListener("visibilitychange",onVisible);
+    return()=>{disposed=true;clearInterval(timer);document.removeEventListener("visibilitychange",onVisible)};
   },[activeSpace?.id]);
   useEffect(() => {
     if (!pendingMessageId || !messages.length) return;
@@ -1537,11 +1544,12 @@ export default function Messages({
                         minute: "2-digit",
                       })}
                     </small>
-                    {!m.eliminadoAt&&<div className="chat-context-actions">
-                      <button type="button" onClick={()=>{setDmReply(m);requestAnimationFrame(()=>messageInput.current?.focus())}} title="Responder"><Reply /></button>
-                      <button type="button" data-reaction-trigger onClick={()=>setReactionTarget((id)=>id===m.id?null:m.id)} title="Reaccionar">😊</button>
-                      <button type="button" onClick={()=>{setForwardTarget(m);setForwardRecipients([])}} title="Reenviar"><Forward /></button>
-                      {m.remitenteId===currentUserId&&<button type="button" title="Eliminar para todos" aria-label="Eliminar mensaje para todos" onClick={()=>void removeDmForEveryone(m)}><Trash2/></button>}
+                    {!m.eliminadoAt&&<button type="button" className="chat-message-menu-trigger" data-message-menu-trigger aria-label="Más opciones del mensaje" aria-expanded={actionMenuTarget===m.id} onClick={()=>setActionMenuTarget((id)=>id===m.id?null:m.id)}><ChevronDown/></button>}
+                    {!m.eliminadoAt&&actionMenuTarget===m.id&&<div className="chat-message-menu" role="menu">
+                      <button type="button" role="menuitem" onClick={()=>{setDmReply(m);setActionMenuTarget(null);requestAnimationFrame(()=>messageInput.current?.focus())}}><Reply /><span>Responder</span></button>
+                      <button type="button" role="menuitem" data-reaction-trigger onClick={()=>{setActionMenuTarget(null);setReactionTarget((id)=>id===m.id?null:m.id)}}><span className="chat-message-menu-emoji">😊</span><span>Reaccionar</span></button>
+                      <button type="button" role="menuitem" onClick={()=>{setForwardTarget(m);setForwardRecipients([]);setActionMenuTarget(null)}}><Forward /><span>Reenviar</span></button>
+                      {m.remitenteId===currentUserId&&<button type="button" role="menuitem" className="chat-message-menu-danger" aria-label="Eliminar mensaje para todos" onClick={()=>{setActionMenuTarget(null);void removeDmForEveryone(m)}}><Trash2/><span>Eliminar para todos</span></button>}
                     </div>}
                     {!m.eliminadoAt&&reactionTarget===m.id&&<div className="chat-reaction-picker">{reactionEmojis.map((emoji)=><button type="button" key={emoji} onClick={()=>void reactDmMessage(m.id,emoji)}>{emoji}</button>)}</div>}
                     {Boolean(m.reacciones?.length)&&<div className="chat-reaction-chips">{m.reacciones!.map((reaction)=><button type="button" className={reaction.mine?"mine":""} key={reaction.emoji} onClick={()=>void reactDmMessage(m.id,reaction.emoji)}>{reaction.emoji} {reaction.count}</button>)}</div>}
@@ -1560,6 +1568,23 @@ export default function Messages({
                 {dmReply && <div className="composer-reply"><span>Respondiendo a <b>{dmReply.remitenteId===currentUserId?"ti":`${active.nombres} ${active.apellidos}`}</b>: {dmReply.contenido || "Documento"}</span><button type="button" onClick={()=>setDmReply(null)}><X /></button></div>}
                 <button type="button" className="chat-tool composer-plus" title="Más opciones" aria-expanded={composerMenuOpen} onClick={()=>{setComposerMenuOpen((open)=>!open);setGifsOpen(false);setStickersOpen(false);setScheduleOpen(false);setFormattingOpen(false)}}><Plus /></button>
                 {composerMenuOpen&&<div className="composer-plus-menu" role="menu" aria-label="Opciones para enviar"><label role="menuitem"><Upload/><span>Subir un archivo</span><input type="file" onChange={(e)=>{sendFile(e.currentTarget);setComposerMenuOpen(false)}}/></label><button type="button" role="menuitem" data-gif-trigger onClick={()=>{setGifsOpen(true);setStickersOpen(false);setScheduleOpen(false);setFormattingOpen(false);setComposerMenuOpen(false)}}><Image/><span>Buscar un GIF</span></button><button type="button" role="menuitem" data-schedule-trigger onClick={()=>{setScheduleOpen(true);setGifsOpen(false);setStickersOpen(false);setFormattingOpen(false);setComposerMenuOpen(false);requestAnimationFrame(()=>messageInput.current?.focus())}}><Clock3/><span>Programar envío</span></button></div>}
+                <div className="composer-input-pill">
+                <input
+                  ref={messageInput}
+                  name="message"
+                  autoComplete="off"
+                  autoCapitalize="sentences"
+                  autoCorrect={chatPreferences.autocorrect ? "on" : "off"}
+                  enterKeyHint="send"
+                  inputMode="text"
+                  data-form-type="other"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  spellCheck={chatPreferences.autocorrect}
+                  placeholder="Escribe un mensaje..."
+                  value={draft}
+                  onChange={(e) => setDraft(chatPreferences.autocorrect ? correctLastWord(e.target.value) : e.target.value)}
+                />
                 <button
                   type="button"
                   className="chat-tool gif-tool"
@@ -1664,22 +1689,7 @@ export default function Messages({
                       ))}
                   </div>
                 )}
-                <input
-                  ref={messageInput}
-                  name="message"
-                  autoComplete="off"
-                  autoCapitalize="sentences"
-                  autoCorrect={chatPreferences.autocorrect ? "on" : "off"}
-                  enterKeyHint="send"
-                  inputMode="text"
-                  data-form-type="other"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  spellCheck={chatPreferences.autocorrect}
-                  placeholder="Escribe un mensaje..."
-                  value={draft}
-                  onChange={(e) => setDraft(chatPreferences.autocorrect ? correctLastWord(e.target.value) : e.target.value)}
-                />
+                </div>
                 <button type="button" className={`chat-tool voice-tool ${isRecording?"recording":""}`} title={isRecording?"Detener y enviar nota de voz":"Grabar nota de voz"} onClick={()=>void toggleVoiceRecording()}><Mic /></button>
                 <button type="button" className="chat-tool" data-schedule-trigger title="Programar envío" onClick={()=>{setScheduleOpen((open)=>!open);setGifsOpen(false);setStickersOpen(false);setFormattingOpen(false);setComposerMenuOpen(false)}}><Clock3 /></button>
                 {scheduleOpen&&<div className="schedule-popover"><b>Programar mensaje</b><input type="datetime-local" value={scheduleAt} min={new Date(Date.now()+60000).toISOString().slice(0,16)} onChange={(event)=>setScheduleAt(event.target.value)}/><button type="button" disabled={!scheduleAt||!draft.trim()} onClick={()=>void programCurrentMessage()}>Programar</button><button type="button" onClick={()=>setScheduleOpen(false)}>Cancelar</button></div>}

@@ -1203,6 +1203,90 @@ html[data-current-page="mensajes"] .chat-workspace .chat-shortcuts button>b{
 .chat-context-actions button{display:grid;place-items:center;min-width:30px;height:30px;padding:0 8px;border:1px solid var(--gc-border);border-radius:999px;background:var(--gc-surface);color:var(--gc-text-muted);cursor:pointer}
 .chat-context-actions button:hover{background:var(--gc-hover);color:var(--gc-primary)}
 .chat-context-actions svg{width:14px;height:14px}
+
+/* Acciones (responder/reaccionar/reenviar) al costado del globo, no debajo:
+   así los mensajes quedan más juntos y ordenados en vez de reservar una fila
+   invisible bajo cada mensaje. */
+.chat-workspace .messages:not(.channel-feed) article{position:relative!important}
+.chat-workspace .messages:not(.channel-feed)>article>.chat-context-actions{
+  position:absolute!important;
+  top:50%!important;
+  margin:0!important;
+  transform:translateY(-50%)!important;
+  z-index:2!important;
+  flex-wrap:nowrap!important;
+}
+.chat-workspace .messages:not(.channel-feed)>article:not(.mine)>.chat-context-actions{left:100%!important;margin-left:8px!important}
+.chat-workspace .messages:not(.channel-feed)>article.mine>.chat-context-actions{left:auto!important;right:100%!important;margin-right:8px!important}
+@media(max-width:900px){
+  .chat-workspace .messages:not(.channel-feed)>article>.chat-context-actions{position:static!important;top:auto!important;left:auto!important;right:auto!important;transform:none!important;margin:5px 0 0!important}
+}
+
+/* Menú del mensaje estilo WhatsApp: una pestaña en la esquina del globo que
+   despliega un recuadro con las opciones escritas (Responder/Reaccionar/Reenviar). */
+.chat-workspace .chat-message-menu-trigger{
+  position:absolute;
+  top:2px;
+  right:4px;
+  display:grid;
+  place-items:center;
+  width:22px;
+  height:22px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:color-mix(in srgb, var(--gc-bg) 55%, transparent);
+  color:var(--gc-text-muted);
+  opacity:0;
+  transition:opacity .15s ease, background .15s ease, color .15s ease;
+  cursor:pointer;
+  z-index:3;
+}
+.chat-workspace .messages article:hover>.chat-message-menu-trigger,
+.chat-workspace .chat-message-menu-trigger[aria-expanded="true"],
+.chat-workspace .chat-message-menu-trigger:focus-visible{ opacity:1; }
+.chat-workspace .chat-message-menu-trigger:hover{ background:var(--gc-hover); color:var(--gc-primary); }
+@media (hover: none){
+  /* Sin mouse no hay :hover para revelarla: se deja siempre visible para poder tocarla. */
+  .chat-workspace .chat-message-menu-trigger{ opacity:1; }
+}
+.chat-workspace .chat-message-menu-trigger svg{ width:14px; height:14px; }
+.chat-workspace .chat-message-menu{
+  position:absolute;
+  z-index:40;
+  top:26px;
+  display:grid;
+  gap:2px;
+  min-width:196px;
+  padding:6px;
+  border:1px solid var(--gc-border);
+  border-radius:12px;
+  background:var(--gc-surface);
+  box-shadow:var(--gc-shadow-lg);
+  color:var(--gc-text);
+}
+.chat-workspace .messages article:not(.mine) .chat-message-menu{ left:4px; right:auto; }
+.chat-workspace .messages article.mine .chat-message-menu{ right:4px; left:auto; }
+.chat-workspace .chat-message-menu button{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:36px;
+  padding:0 10px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--gc-text);
+  font-size:13px;
+  text-align:left;
+  cursor:pointer;
+}
+.chat-workspace .chat-message-menu button:hover{ background:var(--gc-hover); }
+.chat-workspace .chat-message-menu svg{ width:16px; height:16px; color:var(--gc-text-muted); flex:none; }
+.chat-workspace .chat-message-menu-emoji{ display:grid; place-items:center; width:16px; flex:none; }
+.chat-workspace .chat-message-menu-danger{ color:#ff6b6b; }
+.chat-workspace .chat-message-menu-danger svg{ color:#ff6b6b; }
+
 .chat-reaction-picker{display:flex;flex-wrap:wrap;gap:3px;padding:5px;border:1px solid var(--gc-border);border-radius:999px;background:var(--gc-surface);box-shadow:var(--gc-shadow-md)}
 .chat-reaction-picker button{width:29px;height:29px;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer}
 .chat-reaction-picker button:hover{background:var(--gc-hover)}
@@ -1307,9 +1391,9 @@ html[data-current-page="mensajes"] .google-chat-layout{
 .chat-notifications-popover{position:absolute;z-index:120;top:66px;right:78px;display:grid;grid-template-rows:auto minmax(0,1fr) auto;width:min(390px,calc(100vw - 24px));max-height:min(590px,calc(100dvh - 84px));border:1px solid var(--gc-border);border-radius:18px;background:var(--gc-surface);box-shadow:0 18px 58px rgba(0,8,22,.52);color:var(--gc-text);overflow:hidden}.chat-notifications-popover>header{display:flex;align-items:center;justify-content:space-between;padding:16px 17px;border-bottom:1px solid var(--gc-border-soft)}.chat-notifications-popover>header>div{display:flex;align-items:center;gap:9px}.chat-notifications-popover>header svg{width:19px;color:var(--gc-primary)}.chat-notifications-popover>header button{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--gc-text)}.chat-notifications-popover>div{display:grid;align-content:start;gap:5px;padding:9px;overflow:auto}.chat-notifications-popover article{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:11px;border-radius:12px;background:var(--gc-bg-rail)}.chat-notifications-popover article>i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--gc-primary-soft);color:var(--gc-primary);font-style:normal;font-weight:900}.chat-notifications-popover article p{display:grid;gap:3px;margin:0}.chat-notifications-popover article span{color:var(--gc-text-muted);font-size:11px}.chat-notifications-empty{display:grid;place-items:center;gap:7px;padding:44px 20px;text-align:center}.chat-notifications-empty span{color:var(--gc-text-muted)}.notifications-close-action{min-height:42px;margin:8px;border:0;border-radius:10px;background:var(--gc-hover);color:var(--gc-text);font-weight:700;cursor:pointer}
 
 /* Compositor tipo Google Chat */
-.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline){position:relative!important;display:grid!important;grid-template-columns:auto auto auto minmax(120px,1fr) auto auto auto!important;align-items:center!important;gap:6px!important;padding:10px 14px!important;background:var(--gc-bg)!important}
-.chat-workspace .chat-panel>form>.chat-tool,.chat-workspace .chat-panel>form>label.chat-tool{display:grid!important;place-items:center!important;width:40px!important;height:40px!important;min-width:40px!important;padding:0!important;border:0!important;border-radius:50%!important;background:transparent!important;color:var(--gc-text-muted)!important;cursor:pointer}.chat-workspace .chat-panel>form>.chat-tool:hover,.chat-workspace .chat-panel>form>.chat-tool.active{background:var(--gc-hover)!important;color:var(--gc-primary)!important}
-.chat-workspace .chat-panel>form>input[name="message"]{height:48px!important;padding:0 18px!important;border:1px solid var(--gc-border)!important;border-radius:999px!important;background:var(--gc-bg-rail)!important}.chat-workspace .chat-panel>form>button[type="submit"],.chat-workspace .chat-panel>form>button:last-child{border-radius:50%!important}
+.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline){position:relative!important;background:var(--gc-bg)!important}
+.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline) .chat-tool,.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline) label.chat-tool{display:grid!important;place-items:center!important;padding:0!important;border:0!important;border-radius:50%!important;background:transparent!important;color:var(--gc-text-muted)!important;cursor:pointer}.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline) .chat-tool:hover,.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline) .chat-tool.active{background:var(--gc-hover)!important;color:var(--gc-primary)!important}
+.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline)>button[type="submit"],.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline)>button:last-child{border-radius:50%!important}
 .composer-plus-menu,.composer-format-menu{position:absolute;z-index:45;bottom:66px;display:grid;gap:4px;padding:8px;border:1px solid var(--gc-border);border-radius:14px;background:var(--gc-surface);box-shadow:var(--gc-shadow-lg);color:var(--gc-text)}.composer-plus-menu{left:12px;min-width:220px}.composer-plus-menu label,.composer-plus-menu button{display:flex;align-items:center;gap:11px;min-height:42px;padding:0 11px;border:0;border-radius:9px;background:transparent;color:var(--gc-text);cursor:pointer}.composer-plus-menu label:hover,.composer-plus-menu button:hover{background:var(--gc-hover)}.composer-plus-menu svg{width:18px}.composer-plus-menu input{display:none}.composer-format-menu{left:106px;grid-template-columns:repeat(4,36px)}.composer-format-menu button{height:34px;border:0;border-radius:7px;background:transparent;color:var(--gc-text);cursor:pointer}.composer-format-menu button:hover{background:var(--gc-hover)}.voice-tool.recording{background:#8f2634!important;color:#fff!important;animation:recordingPulse 1s ease-in-out infinite}@keyframes recordingPulse{50%{transform:scale(.9);opacity:.72}}
 .voice-message{display:flex;align-items:center;gap:9px;min-width:260px}.voice-message>svg{width:18px}.voice-message audio{width:100%;height:34px}
 .chat-favorite-button{display:grid!important;place-items:center!important;width:38px!important;height:38px!important;flex:0 0 38px!important;border:1px solid var(--gc-border)!important;border-radius:50%!important;background:var(--gc-surface)!important;color:var(--gc-text-muted)!important;cursor:pointer}.chat-favorite-button svg{width:17px}.chat-favorite-button.active{border-color:#f5b942!important;color:#f5b942!important}.chat-favorite-button.active svg{fill:currentColor}
@@ -1354,34 +1438,34 @@ html[data-current-page="mensajes"] .google-chat-layout{
   z-index:500!important;
 }
 
-/* Compositor: botón +, cápsula azul, acciones, desplegable y envío. */
+/* Compositor: botón +, cápsula del input con sus herramientas, acciones y envío. */
 .chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline){
   display:flex!important;
   align-items:center!important;
-  gap:7px!important;
+  gap:8px!important;
   min-height:70px!important;
   padding:9px 14px!important;
-  isolation:isolate;
-}
-.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline):before{
-  content:"";
-  position:absolute;
-  z-index:-1;
-  top:9px;
-  bottom:9px;
-  left:62px;
-  right:101px;
-  border:1px solid #35658f;
-  border-radius:999px;
-  background:#102f52;
 }
 .chat-workspace .chat-panel>form .composer-reply{position:absolute!important;right:14px;bottom:72px;left:14px;z-index:30}
-.chat-workspace .chat-panel>form .composer-plus{order:1!important;flex:0 0 46px!important;width:46px!important;height:46px!important;background:#174a78!important;color:#91caff!important}
-.chat-workspace .chat-panel>form>input[name="message"]{order:2!important;flex:1 1 auto!important;min-width:80px!important;height:46px!important;padding:0 12px!important;border:0!important;background:transparent!important;box-shadow:none!important}
-.chat-workspace .chat-panel>form>.gif-tool{order:4!important}.chat-workspace .chat-panel>form>.chat-tool[title="Formato de texto"]{order:3!important}.chat-workspace .chat-panel>form>.chat-tool[title="Stickers"]{order:5!important}.chat-workspace .chat-panel>form>.voice-tool{order:7!important}.chat-workspace .chat-panel>form>.chat-tool[title="Programar envío"]{order:8!important;flex:0 0 42px!important;border:1px solid #35658f!important;border-radius:14px!important;background:#102f52!important}.chat-workspace .chat-panel>form>button:last-child{order:9!important;flex:0 0 48px!important;width:48px!important;height:48px!important;background:#2f8df4!important;color:#fff!important}.chat-workspace .chat-panel>form>.gif-picker,.chat-workspace .chat-panel>form>.sticker-picker,.chat-workspace .chat-panel>form>.composer-plus-menu,.chat-workspace .chat-panel>form>.composer-format-menu,.chat-workspace .chat-panel>form>.schedule-popover{order:0!important}
-.chat-workspace .chat-panel>form>.chat-tool:not(.composer-plus):not([title="Programar envío"]){position:relative;z-index:2;width:38px!important;height:38px!important;min-width:38px!important}
-.chat-workspace .chat-panel>form>.chat-tool[title="Buscar GIF"]{font-size:0}.chat-workspace .chat-panel>form>.chat-tool[title="Buscar GIF"] b{font-size:10px}
-.chat-workspace .composer-reply{pointer-events:auto!important}.chat-workspace .chat-panel>form>input[name="message"]{position:relative!important;z-index:3!important;pointer-events:auto!important}
+.chat-workspace .chat-panel>form .composer-plus{flex:0 0 46px!important;width:46px!important;height:46px!important;background:var(--gc-primary-soft)!important;color:var(--gc-primary)!important}
+.chat-workspace .chat-panel>form>.composer-input-pill{
+  display:flex!important;
+  align-items:center!important;
+  gap:2px!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+  height:46px!important;
+  padding:0 6px 0 16px!important;
+  border:1px solid var(--gc-border)!important;
+  border-radius:999px!important;
+  background:var(--gc-bg-rail)!important;
+}
+.chat-workspace .chat-panel>form>.composer-input-pill>input[name="message"]{flex:1 1 auto!important;min-width:0!important;height:100%!important;padding:0 8px 0 0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+.chat-workspace .chat-panel>form>.composer-input-pill>.chat-tool{flex:0 0 34px!important;width:34px!important;height:34px!important;min-width:34px!important}
+.chat-workspace .chat-panel>form>.chat-tool[title="Programar envío"]{flex:0 0 38px!important;width:38px!important;height:38px!important;min-width:38px!important}
+.chat-workspace .chat-panel>form>.voice-tool{flex:0 0 38px!important;width:38px!important;height:38px!important;min-width:38px!important}
+.chat-workspace .chat-panel>form>button:last-child{flex:0 0 48px!important;width:48px!important;height:48px!important;background:var(--gc-primary)!important;color:var(--gc-on-primary,#fff)!important}
+.chat-workspace .chat-panel>form>.composer-input-pill>.chat-tool[title="Buscar GIF"]{font-size:0}.chat-workspace .chat-panel>form>.composer-input-pill>.chat-tool[title="Buscar GIF"] b{font-size:10px}
 
 /* Aspecto usa todo el ancho disponible sin producir scroll horizontal. */
 .chat-settings-modal{width:min(1180px,calc(100vw - 28px))!important}
@@ -1390,7 +1474,7 @@ html[data-current-page="mensajes"] .google-chat-layout{
 .chat-settings-body>main>section{width:100%!important;min-width:0!important;overflow:hidden!important}
 .chat-color-options{grid-template-columns:repeat(auto-fit,minmax(52px,1fr))!important;width:100%!important;max-width:650px!important;justify-items:center!important}
 .segmented-setting,.density-options{width:100%!important;min-width:0!important}.segmented-setting button,.density-options button{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important}
-@media(max-width:760px){.chat-settings-body{grid-template-columns:1fr!important}.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline):before{left:58px;right:96px}.chat-workspace .chat-panel>form>.gif-tool,.chat-workspace .chat-panel>form>.chat-tool[title="Formato de texto"]{display:none!important}}
+@media(max-width:760px){.chat-settings-body{grid-template-columns:1fr!important}.chat-workspace .chat-panel>form>.composer-input-pill>.gif-tool,.chat-workspace .chat-panel>form>.composer-input-pill>.chat-tool[title="Formato de texto"]{display:none!important}}
 
 /* El selector de fondos vive en document.body para no quedar recortado por el chat. */
 body>.wallpaper-popover.wallpaper-gallery{
@@ -1466,24 +1550,8 @@ body>.wallpaper-popover.wallpaper-gallery{
 .chat-workspace .chat-panel>form>.composer-plus-menu input[type="file"]{display:none!important}
 @media(max-width:480px){.chat-workspace .chat-panel>form>.composer-plus-menu{right:10px!important;left:10px!important;width:auto!important;min-width:0!important}}
 
-/* Compositor unificado: + separado; texto y todas sus herramientas en una cápsula. */
-.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline){
-  column-gap:8px!important;
-}
-.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline):before{
-  left:72px!important;
-  right:70px!important;
-}
-.chat-workspace .chat-panel>form .composer-plus{
-  margin-right:4px!important;
-}
+/* Compositor: botón de programar envío como círculo fantasma independiente de la cápsula. */
 .chat-workspace .chat-panel>form>.chat-tool[title="Programar envío"]{
-  position:relative!important;
-  z-index:2!important;
-  width:38px!important;
-  height:38px!important;
-  min-width:38px!important;
-  flex:0 0 38px!important;
   border:0!important;
   border-radius:50%!important;
   background:transparent!important;
@@ -1494,13 +1562,6 @@ body>.wallpaper-popover.wallpaper-gallery{
 .chat-workspace .chat-panel>form>.chat-tool[title="Programar envío"].active{
   background:var(--gc-hover,#19466f)!important;
   color:var(--gc-primary-hover,#91caff)!important;
-}
-@media(max-width:760px){
-  .chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline):before{
-    left:68px!important;
-    right:66px!important;
-  }
-  .chat-workspace .chat-panel>form .composer-plus{margin-right:2px!important}
 }
 
 /* Temas finales del chat y de los portales renderizados directamente en body. */
@@ -1664,14 +1725,6 @@ body>.chat-settings-overlay .settings-tab-appearance .density-options>button{
 }
 
 /* El compositor y los menús dejan de arrastrar colores oscuros al tema claro. */
-.chat-workspace .chat-panel>form:not(.announcement-composer):not(.space-composer-inline):before{
-  border-color:var(--gc-border)!important;
-  background:var(--gc-bg-rail)!important;
-}
-.chat-workspace .chat-panel>form .composer-plus{
-  background:var(--gc-primary-soft)!important;
-  color:var(--gc-primary)!important;
-}
 .chat-workspace .chat-panel>form input,
 .chat-workspace .schedule-popover input{
   border-color:var(--gc-border)!important;
@@ -2248,15 +2301,15 @@ body>.chat-settings-overlay .chat-color-options>button{filter:none!important;bac
     background:var(--gc-surface)!important;
     overflow:visible!important;
   }
-  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form>input{
+  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form input[name="message"]{
     display:block!important;
     flex:1 1 auto!important;
     width:auto!important;
     min-width:0!important;
   }
-  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form>.gif-tool,
-  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form>button[data-format-trigger],
-  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form>button[data-sticker-trigger]{display:none!important}
+  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form .gif-tool,
+  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form button[data-format-trigger],
+  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form button[data-sticker-trigger]{display:none!important}
 }
 
 /* Móvil: el chat completo sigue al viewport visible. El compositor permanece como
@@ -2311,7 +2364,7 @@ body>.chat-settings-overlay .chat-color-options>button{filter:none!important;bac
     transform:none!important;
     pointer-events:auto!important;
   }
-  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form>input{
+  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form input[name="message"]{
     font-size:16px!important;
   }
   html[data-current-page="mensajes"] .messages article{min-width:0!important}
@@ -2441,33 +2494,30 @@ body>.chat-settings-overlay .chat-color-options>button{filter:none!important;bac
     padding:5px 8px max(5px,env(safe-area-inset-bottom))!important;
     overflow:visible!important;
   }
-  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form:before{
-    top:5px!important;
-    bottom:max(5px,env(safe-area-inset-bottom))!important;
-    left:54px!important;
-    right:57px!important;
-    border-color:var(--gc-border)!important;
-    background:var(--gc-bg-rail)!important;
-  }
   html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form .composer-plus{
     width:40px!important;
     height:40px!important;
     min-width:40px!important;
     flex-basis:40px!important;
   }
-  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form>input[name="message"]{
+  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form .composer-input-pill{
+    height:40px!important;
+    min-height:40px!important;
+    padding:0 4px 0 12px!important;
+  }
+  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form input[name="message"]{
     height:40px!important;
     min-height:40px!important;
     padding-inline:9px!important;
     font-size:16px!important;
   }
-  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form>.chat-tool:not(.composer-plus){
+  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form .chat-tool:not(.composer-plus){
     width:32px!important;
     height:32px!important;
     min-width:32px!important;
     flex-basis:32px!important;
   }
-  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form>.chat-tool[title="Programar envío"]{
+  html[data-current-page="mensajes"] .chat-panel:not(.announcements-panel)>form .chat-tool[title="Programar envío"]{
     border:0!important;
     border-radius:50%!important;
     background:transparent!important;

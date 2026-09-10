@@ -729,7 +729,7 @@ body>.initiative-create-overlay{position:fixed!important;z-index:2000!important;
   html[data-current-page="mensajes"] .chat-workspace .google-chat-layout.chat-conversation-open>.messenger{
     display:grid!important;
     width:100%!important;
-    height:100%!important;
+    height:calc(100% - 54px)!important;
     min-height:0!important;
     padding:0!important;
     overflow:hidden!important;
