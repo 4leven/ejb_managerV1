@@ -838,6 +838,7 @@ html:not([data-current-page="perfil"]):not([data-current-page="mensajes"]) .main
 .schedule-reading .gantt-explainer b{font-size:12px}.schedule-reading .gantt-explainer span{font-size:8px}
 .schedule-table{width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);scrollbar-width:thin}
 .schedule-table-head,.schedule-row{display:grid;grid-template-columns:minmax(210px,1.65fr) minmax(175px,1fr) 52px 52px minmax(180px,1.3fr) 102px 62px 46px;align-items:center;gap:8px;min-width:910px}
+.schedule-table-readonly .schedule-table-head,.schedule-table-readonly .schedule-row{grid-template-columns:minmax(210px,1.65fr) minmax(175px,1fr) 52px 52px minmax(180px,1.3fr) 102px 62px;min-width:856px}
 .schedule-table-head{min-height:31px;padding:0 9px;border-bottom:1px solid var(--line);background:var(--surface-2);color:var(--muted)}
 .schedule-table-head b{font-size:8px;font-weight:800;letter-spacing:.045em}
 .schedule-row{min-height:46px;padding:5px 9px;border-bottom:1px solid var(--line);color:var(--text);font-size:9px;transition:background .15s ease}

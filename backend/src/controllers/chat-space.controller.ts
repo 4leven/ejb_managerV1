@@ -28,7 +28,7 @@ export async function spaceActivity(req:Request,res:Response,next:NextFunction) 
   const input=actionSchema.parse(req.body);
   const actor=await prisma.usuario.findUniqueOrThrow({where:{id:userId},select:{id:true,areaId:true,cargo:true,rol:true,isSuperAdmin:true,nombres:true,apellidos:true}});
   const result=await prisma.$transaction(async tx=>{
-    await tx.$queryRaw`SELECT id FROM registros_portal WHERE id = ${id}::uuid FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM registros_portal WITH (UPDLOCK, ROWLOCK) WHERE id = ${id}`;
     const row=await tx.registroPortal.findUniqueOrThrow({where:{id}}); checkSpace(row,type,userId);
     const data=row.datos as any, owner=manages(row,userId);
     let mensajes:any[]=[...(data.mensajes??[])];
@@ -85,7 +85,7 @@ export async function removeSpace(req:Request,res:Response,next:NextFunction){
 // El editor de integrantes nunca reemplaza mensajes, reacciones ni seguidores.
 export async function updateSpaceSettings(id:string,type:string,userId:string,input:Record<string,unknown>){
  return prisma.$transaction(async tx=>{
-  await tx.$queryRaw`SELECT id FROM registros_portal WHERE id = ${id}::uuid FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM registros_portal WITH (UPDLOCK, ROWLOCK) WHERE id = ${id}`;
   const row=await tx.registroPortal.findUniqueOrThrow({where:{id}});checkSpace(row,type,userId);
   if(!manages(row,userId))throw new Error("Solo el creador y los moderadores pueden editar el espacio.");
   const data=row.datos as any;

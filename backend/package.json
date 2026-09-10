@@ -13,7 +13,8 @@
     "production:check": "node scripts/production-check.mjs",
     "summary:weekly": "node scripts/weekly-summary.mjs",
     "start": "node dist/server.js",
-    "prisma:generate": "prisma generate",
+    "postinstall": "npm run prisma:generate",
+    "prisma:generate": "prisma generate && prisma generate --schema prisma/schema.sqlserver.prisma",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts"
   },

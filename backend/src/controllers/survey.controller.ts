@@ -4,7 +4,7 @@ import { isAdministration, isAreaLeader } from "../services/permissions.js";
 export async function updateSurvey(id:string,userId:string,input:any){
  const actor=await prisma.usuario.findUniqueOrThrow({where:{id:userId}});
  return prisma.$transaction(async tx=>{
-  await tx.$queryRaw`SELECT id FROM registros_portal WHERE id=${id}::uuid FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM registros_portal WITH (UPDLOCK, ROWLOCK) WHERE id = ${id}`;
   const row=await tx.registroPortal.findUniqueOrThrow({where:{id},include:{creador:{select:{areaId:true}}}});
   if(row.tipo!=="encuesta")throw new Error("Encuesta no disponible.");
   const data=row.datos as any;

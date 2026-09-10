@@ -2884,7 +2884,7 @@ function App() {
                   <div className="chat-own-scale">
                     <Messages
                       currentUserId={user.id}
-                      notificationCount={alerts.length}
+                      notificationCount={notificationUnreadCount}
                       notifications={alerts}
                       onBackToDashboard={() => setPage("resumen")}
                       onNavigate={(destination) => setPage(destination)}
@@ -2899,7 +2899,11 @@ function App() {
                 </div>
             )}
             {page === "cronograma" && (
-              <Timeline items={items} onBack={() => setPage("resumen")} />
+              <Timeline
+                items={items}
+                onBack={() => setPage("resumen")}
+                canManageActions={canOperateGlobally(user) || isAreaLeaderUser(user)}
+              />
             )}
             {page === "calendario" && (
               <CalendarModule

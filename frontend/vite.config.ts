@@ -11,6 +11,7 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+    allowedHosts: [".trycloudflare.com"],
     https: existsSync(certificado)
       ? { pfx: readFileSync(certificado), passphrase: "EJB-Manager-Local-2026" }
       : undefined,
@@ -21,6 +22,7 @@ export default defineConfig({
   preview: {
     host: "0.0.0.0",
     port: 5173,
+    allowedHosts: [".trycloudflare.com"],
     https: existsSync(certificado)
       ? { pfx: readFileSync(certificado), passphrase: "EJB-Manager-Local-2026" }
       : undefined,

@@ -1668,7 +1668,13 @@ export default function Messages({
                   ref={messageInput}
                   name="message"
                   autoComplete="off"
+                  autoCapitalize="sentences"
                   autoCorrect={chatPreferences.autocorrect ? "on" : "off"}
+                  enterKeyHint="send"
+                  inputMode="text"
+                  data-form-type="other"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
                   spellCheck={chatPreferences.autocorrect}
                   placeholder="Escribe un mensaje..."
                   value={draft}

@@ -3,3 +3,5 @@ dist/
 .env
 work/
 .certs/
+backend/generated/
+backend/backend-mssql*.log

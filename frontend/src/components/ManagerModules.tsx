@@ -26,9 +26,11 @@ import { isTechnicalUser } from "../utils/access";
 export function Timeline({
   items,
   onBack,
+  canManageActions,
 }: {
   items: any[];
   onBack: () => void;
+  canManageActions: boolean;
 }) {
   const [alerts, setAlerts] = useState<any[]>([]);
   useEffect(() => {
@@ -116,7 +118,7 @@ export function Timeline({
           <div className="gantt-explainer">
             <div><b>Lectura del cronograma</b><span>Compara el avance realizado con el tiempo consumido.</span></div>
           </div>
-          <div className="schedule-table">
+          <div className={`schedule-table ${canManageActions ? "" : "schedule-table-readonly"}`}>
             <div className="schedule-table-head">
               <b>Proyecto</b>
               <b>Área asignada</b>
@@ -125,7 +127,7 @@ export function Timeline({
               <b>Avance</b>
               <b>Estado</b>
               <b>Días</b>
-              <b>Acciones</b>
+              {canManageActions && <b>Acciones</b>}
             </div>
             {items.map((i) => {
               const presentation = timelinePresentation(i);
@@ -147,7 +149,7 @@ export function Timeline({
                   </div>
                   <span className={`schedule-status ${presentation.status.className}`}>{presentation.status.label}</span>
                   <span className={`schedule-days ${presentation.delayed ? "delayed" : ""}`}>{presentation.days}</span>
-                  <button className="schedule-actions" type="button" aria-label={`Acciones de ${i.codigo}`}>...</button>
+                  {canManageActions && <button className="schedule-actions" type="button" aria-label={`Acciones de ${i.codigo}`}>...</button>}
                 </article>
               );
             })}
