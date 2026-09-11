@@ -21,8 +21,10 @@ import { notificationRoutes } from "./routes/notification.routes.js";
 import { adminRoutes } from "./routes/admin.routes.js";
 import { productRoutes } from "./routes/product.routes.js";
 import { startMessageScheduler } from "./services/scheduler.js";
+import { startMarketingScheduler } from "./services/marketingScheduler.js";
 import { huddleRoutes } from "./routes/huddle.routes.js";
 import { ticketRoutes } from "./routes/ticket.routes.js";
+import { marketingRoutes } from "./routes/marketing.routes.js";
 const localOrigin =
   /^http:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|26\.\d+\.\d+\.\d+):5173$/;
 const app = express();
@@ -57,6 +59,7 @@ app.use("/api/aprobaciones", requireAuth, aprobacionRoutes);
 app.use("/api/alertas", requireAuth, alertaRoutes);
 app.use("/api/eventos", requireAuth, eventoRoutes);
 app.use("/api/operacion", requireAuth, operacionRoutes);
+app.use("/api/marketing", requireAuth, marketingRoutes);
 app.use("/api/usuarios", usuarioRoutes);
 app.use(notFound);
 app.use(
@@ -79,5 +82,6 @@ app.use(
 );
 app.listen(Number(process.env.PORT ?? 4000), "0.0.0.0", () => {
   startMessageScheduler();
+  startMarketingScheduler();
   console.log("API lista en la red local, puerto 4000");
 });

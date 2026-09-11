@@ -102,8 +102,9 @@ import {
   ReportingCenter,
   UserFeedback,
 } from "./components/ProductSuite";
+import { MarketingCenter } from "./components/MarketingCenter";
 import { uiAlert, uiConfirm, uiPrompt } from "./utils/dialog";
-import { canOperateGlobally, cargoLabel, isTechnicalUser, isAreaLeaderUser, isAdministrationUser, canPublishAnnouncements, canDeleteOwned } from "./utils/access";
+import { canOperateGlobally, cargoLabel, isTechnicalUser, isAreaLeaderUser, isAdministrationUser, canPublishAnnouncements, canDeleteOwned, canReadMarketing } from "./utils/access";
 import {
   clearRememberedCredentials,
   loadRememberedCredentials,
@@ -131,6 +132,7 @@ type Page =
   | "flujos"
   | "encuestas"
   | "aprobaciones"
+  | "marketing"
   | "perfil"
   | "ayuda"
   | "personalizacion";
@@ -166,6 +168,7 @@ const notificationPage = (value: string): Page | null => {
     requerimientos: "requerimientos",
     flujos: "flujos",
     encuestas: "encuestas",
+    marketing: "marketing",
     perfil: "perfil",
     ayuda: "ayuda",
     personalizacion: "personalizacion",
@@ -1766,6 +1769,10 @@ function App() {
       "Aprobaciones",
       "Solicitudes de edición y eliminación de tu área.",
     ],
+    marketing: [
+      "Marketing",
+      "Prospectos captados y proyección de cierre de mes.",
+    ],
     perfil: ["Mi perfil", "Actualiza tus datos, foto y preferencias."],
     ayuda: ["Centro de ayuda", "Respuestas rápidas para usar EJB MANAGER."],
     personalizacion: [
@@ -1962,6 +1969,14 @@ function App() {
             <CheckSquare />
             Aprobaciones
           </button>
+          {canReadMarketing(user) && (
+            <button
+              className={page === "marketing" ? "active" : ""}
+              onClick={() => setPage("marketing")}
+            >
+              <TrendingUp /> Marketing
+            </button>
+          )}
           {(user.isSuperAdmin || isAreaLeaderUser(user)) && (
             <button
               className={page === "administracion" ? "active" : ""}
@@ -2909,6 +2924,7 @@ function App() {
             {page === "flujos" && <AreaFlows user={user} />}
             {page === "encuestas" && <Surveys user={user} />}
             {page === "aprobaciones" && <Approvals user={user} />}
+            {page === "marketing" && <MarketingCenter user={user} />}
             {page === "perfil" && (
               <Profile user={user} onUpdate={setUser} areas={areas} />
             )}

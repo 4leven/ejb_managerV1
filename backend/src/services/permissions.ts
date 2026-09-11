@@ -1,4 +1,4 @@
-export type Actor={id:string;areaId:string;cargo:string;rol:string;isSuperAdmin:boolean;permisos?:unknown};
+export type Actor={id:string;areaId:string;cargo:string;rol:string;isSuperAdmin:boolean;permisos?:unknown;area?:{nombre:string}|null};
 export const hasPermission=(actor:Actor,key:string)=>actor.isSuperAdmin||Boolean((actor.permisos as Record<string,boolean>|null)?.[key]);
 export const isTechnical=(actor:Actor)=>actor.cargo==="Tecnico";
 export const hasGlobalOperationalAccess=(actor:Actor)=>actor.isSuperAdmin||isTechnical(actor);
@@ -12,5 +12,7 @@ export const requiresProjectDeleteApproval=(actor:Actor)=>!actor.isSuperAdmin&&[
 export const canApproveProjectDeletion=(actor:Actor,areaId:string)=>actor.isSuperAdmin||(actor.cargo==="Gerente"&&actor.areaId===areaId);
 export const canReadInitiative=(actor:Actor,item:{areaId:string;responsableId?:string|null})=>hasGlobalOperationalAccess(actor)||isManagement(actor)||actor.areaId===item.areaId||actor.id===item.responsableId;
 export const canManageInitiative=(actor:Actor,item:{areaId:string;responsableId?:string|null})=>canManageArea(actor,item.areaId)||hasPermission(actor,"editarProyectos")||actor.id===item.responsableId;
+export const canManageMarketing=(actor:Actor)=>actor.isSuperAdmin||actor.area?.nombre.trim().toLocaleLowerCase("es-PE")==="marketing";
+export const canReadMarketing=(_actor:Actor)=>true;
 export const groupMembers=(data:any,creatorId:string):string[]=>Array.from(new Set([creatorId,...(Array.isArray(data?.miembros)?data.miembros:[])]));
 export const canReadPrivateGroup=(actorId:string,data:any,creatorId:string)=>groupMembers(data,creatorId).includes(actorId);

@@ -1,0 +1,32 @@
+/* Marketing · prospectos y proyección de cierre de mes. */
+.marketing-center .suite-hero{background:linear-gradient(125deg,#0b2347,#123f78 64%,#1e5db3)!important}
+.marketing-center .suite-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.marketing-kpi-detail{display:block;margin-top:9px;color:var(--e-muted);font-size:9px;font-weight:600;line-height:1.35}
+.marketing-month-tabs{overflow-x:auto}
+.marketing-status-body{display:flex;align-items:center;gap:26px;margin-top:16px;flex-wrap:wrap}
+.marketing-status-info{flex:1;min-width:260px;display:grid;gap:10px}
+.marketing-status-banner{margin:0;padding:12px 14px;border-radius:12px;font-weight:700;font-size:12px}
+.marketing-status-banner.positivo{background:#ecfdf3;color:#067647}
+.marketing-status-banner.negativo{background:#fef3f2;color:#b42318}
+.dark .marketing-status-banner.positivo{background:#07945520;color:#6ce9a6}
+.dark .marketing-status-banner.negativo{background:#d92d2020;color:#f97066}
+.marketing-status-facts{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--e-muted);font-size:11px}
+.marketing-status-facts b{color:var(--e-ink)}
+.marketing-meta-form{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin-top:6px;padding-top:14px;border-top:1px solid var(--e-line)}
+.marketing-meta-form label{display:grid;gap:5px;color:var(--e-muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.marketing-meta-form input{width:110px;height:38px;padding:0 10px}
+.marketing-empty-hint{color:var(--e-muted);font-size:11px}
+.marketing-import-ok{margin:12px 0;padding:12px 14px;border-radius:12px;background:#ecfdf3;color:#067647;font-size:11px}
+.dark .marketing-import-ok{background:#07945520;color:#6ce9a6}
+.marketing-import-preview{margin:14px 0;padding:16px;border:1px solid var(--e-line);border-radius:14px;background:var(--e-soft)}
+.marketing-import-preview h4{display:flex;align-items:center;gap:8px;margin:0 0 12px;font:800 12px Manrope;color:var(--e-ink)}
+.marketing-import-row-error{background:color-mix(in srgb,#d92d20 6%,transparent)}
+.marketing-import-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+.marketing-tag{display:inline-flex;align-items:center;max-width:220px;padding:4px 8px;border-radius:6px;background:var(--marketing-tag-bg);color:var(--marketing-tag-fg);font-size:10px;font-weight:800;line-height:1.15;white-space:normal}
+.marketing-tags{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.marketing-color-select{background-color:var(--marketing-tag-bg)!important;color:var(--marketing-tag-fg)!important;font-weight:800}
+.marketing-color-select:focus{outline:2px solid color-mix(in srgb,var(--marketing-tag-bg) 45%,transparent);outline-offset:1px}
+.marketing-prospects-table th:first-child,.marketing-prospects-table td:first-child{width:46px;min-width:46px;text-align:center;padding-inline:8px}
+@media(max-width:1050px){.marketing-center .suite-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.marketing-center .suite-kpis article:last-child{grid-column:auto}}
+@media(max-width:760px){.marketing-status-body{flex-direction:column;align-items:stretch}}
+@media(max-width:620px){.marketing-center .suite-kpis{grid-template-columns:1fr}}
