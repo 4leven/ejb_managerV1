@@ -30,3 +30,17 @@
 @media(max-width:1050px){.marketing-center .suite-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.marketing-center .suite-kpis article:last-child{grid-column:auto}}
 @media(max-width:760px){.marketing-status-body{flex-direction:column;align-items:stretch}}
 @media(max-width:620px){.marketing-center .suite-kpis{grid-template-columns:1fr}}
+
+/* Pestañas de mes: tira deslizable sin la barra de scroll nativa, con
+   flechas propias y un desvanecido en los bordes que insinúa que hay más
+   meses para el lado. */
+.marketing-month-nav-wrap{position:relative;display:flex;align-items:center;gap:8px;margin:18px 0 20px}
+.marketing-month-nav-wrap>.marketing-month-tabs{position:static;flex:1;min-width:0;margin:0}
+.marketing-month-tabs{scrollbar-width:none;-ms-overflow-style:none;scroll-behavior:smooth;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 20px,#000 calc(100% - 20px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 20px,#000 calc(100% - 20px),transparent 100%)}
+.marketing-month-tabs::-webkit-scrollbar{display:none}
+.marketing-month-tabs>button{flex:0 0 auto!important;min-width:118px;padding:10px 16px!important;font-size:12px!important;font-weight:800!important}
+.marketing-month-nav{flex:0 0 34px;display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--e-line);border-radius:50%;background:var(--e-surface);color:var(--e-muted);box-shadow:0 4px 12px rgba(11,35,71,.08);cursor:pointer;transition:.15s}
+.marketing-month-nav svg{width:16px;height:16px}
+.marketing-month-nav:hover{border-color:#84adff;color:var(--e-brand);background:#eff4ff}
+.dark .marketing-month-nav:hover{background:#2563eb20}
+@media(max-width:520px){.marketing-month-nav{display:none}}

@@ -1,5 +1,5 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState, type CSSProperties } from "react";
-import { Edit3, FileSpreadsheet, FileText, Layers3, Plus, Target, TrendingUp, Trash2, Upload, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit3, FileSpreadsheet, FileText, Layers3, Plus, Target, TrendingUp, Trash2, Upload, Users } from "lucide-react";
 import {
   ImportResult,
   MetaMarketing,
@@ -322,10 +322,18 @@ export function MarketingCenter({ user }: { user: any }) {
   const [exporting, setExporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const monthTabsRef = useRef<HTMLDivElement>(null);
+  const scrollMonths = (direction: 1 | -1) => {
+    monthTabsRef.current?.scrollBy({ left: direction * 240, behavior: "smooth" });
+  };
 
   useEffect(() => {
     void fetchMesesMarketing().then(setPeriodos).catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    monthTabsRef.current?.querySelector(".active")?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [periodos, anio, mes]);
 
   const load = async (targetAnio: number, targetMes: number) => {
     setLoading(true);
@@ -492,17 +500,25 @@ export function MarketingCenter({ user }: { user: any }) {
         </div>
       </section>
 
-      <div className="suite-tabs marketing-month-tabs">
-        {periodos.map((p) => (
-          <button
-            type="button"
-            key={`${p.anio}-${p.mes}`}
-            className={anio === p.anio && mes === p.mes ? "active" : ""}
-            onClick={() => { setAnio(p.anio); setMes(p.mes); }}
-          >
-            {MESES[p.mes - 1]} {p.anio}
-          </button>
-        ))}
+      <div className="marketing-month-nav-wrap">
+        <button type="button" className="marketing-month-nav prev" aria-label="Meses anteriores" onClick={() => scrollMonths(-1)}>
+          <ChevronLeft />
+        </button>
+        <div className="suite-tabs marketing-month-tabs" ref={monthTabsRef}>
+          {periodos.map((p) => (
+            <button
+              type="button"
+              key={`${p.anio}-${p.mes}`}
+              className={anio === p.anio && mes === p.mes ? "active" : ""}
+              onClick={() => { setAnio(p.anio); setMes(p.mes); }}
+            >
+              {MESES[p.mes - 1]} {p.anio}
+            </button>
+          ))}
+        </div>
+        <button type="button" className="marketing-month-nav next" aria-label="Meses siguientes" onClick={() => scrollMonths(1)}>
+          <ChevronRight />
+        </button>
       </div>
 
       {error && <div className="reporting-error">{error}</div>}
