@@ -5,3 +5,5 @@ work/
 .certs/
 backend/generated/
 backend/backend-mssql*.log
+outputs/backups/
+tmp/
