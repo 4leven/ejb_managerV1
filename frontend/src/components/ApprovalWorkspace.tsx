@@ -1,7 +1,17 @@
 import { createApprovalSimulation } from "../api/iniciativas";
 import { uiAlert } from "../utils/dialog";
 import { useEffect, useState } from "react";
-import { AlertTriangle, Check, Clock3, UserCog, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock3,
+  History,
+  Inbox,
+  UserCog,
+  X,
+} from "lucide-react";
 import { fetchApprovals, resolveApproval } from "../api/iniciativas";
 import { isTechnicalUser } from "../utils/access";
 
@@ -72,24 +82,49 @@ export default function ApprovalWorkspace({ user }: { user: any }) {
     setSelected(null);
     await load();
   };
+  const scopeTitle =
+    scope === "pending"
+      ? "Solicitudes por atender"
+      : scope === "mine"
+        ? "Mis solicitudes"
+        : "Historial de decisiones";
+  const scopeDescription =
+    scope === "pending"
+      ? "Revisa el cambio solicitado antes de aprobar o rechazar."
+      : scope === "mine"
+        ? "Consulta el estado y el recorrido de tus solicitudes."
+        : "Consulta las solicitudes que ya completaron su proceso.";
   return (
     <div className="approvals-workspace">
-      <section className="approval-summary">
+      <section className="approval-hero">
+        <div className="approval-hero-icon"><ClipboardCheck /></div>
         <div>
-          <Check />
+          <span>CENTRO DE DECISIONES</span>
+          <h2>Aprobaciones claras y trazables</h2>
+          <p>Revisa qué se solicita, compara la información y consulta cada etapa antes de tomar una decisión.</p>
+        </div>
+        {user.isSuperAdmin && (
+          <button onClick={async()=>{try{await createApprovalSimulation();if(scope==="pending") await load();else setScope("pending");}catch(error){await uiAlert("No se pudo crear la prueba",String(error));}}}>
+            Crear solicitud de prueba
+          </button>
+        )}
+      </section>
+      <section className="approval-summary">
+        <div className="pending">
+          <Inbox />
           <span>
             <b>{rows.length}</b>
-            <small>{scope === "pending" ? "Por atender" : "Solicitudes"}</small>
+            <small>{scope === "pending" ? "En esta bandeja" : "Solicitudes visibles"}</small>
           </span>
         </div>
-        <div>
+        <div className="in-progress">
           <Clock3 />
           <span>
             <b>{rows.filter((r) => r.estado === "Pendiente").length}</b>
             <small>En proceso</small>
           </span>
         </div>
-        <div>
+        <div className="requesters">
           <UserCog />
           <span>
             <b>{new Set(rows.map((r) => r.solicitanteId)).size}</b>
@@ -98,32 +133,40 @@ export default function ApprovalWorkspace({ user }: { user: any }) {
         </div>
       </section>
       <div className="approval-tabs">
-        {user.isSuperAdmin&&<button onClick={async()=>{try{await createApprovalSimulation();if(scope==="pending") await load();else setScope("pending");}catch(error){await uiAlert("No se pudo crear la prueba",String(error));}}}>Crear solicitud de prueba</button>}
         {canApprove && (
           <button
             className={scope === "pending" ? "active" : ""}
             onClick={() => setScope("pending")}
           >
-            Pendientes
+            <Inbox /> Pendientes
           </button>
         )}
         <button
           className={scope === "mine" ? "active" : ""}
           onClick={() => setScope("mine")}
         >
-          Mis solicitudes
+          <UserCog /> Mis solicitudes
         </button>
         {canApprove && (
           <button
             className={scope === "history" ? "active" : ""}
             onClick={() => setScope("history")}
           >
-            Historial
+            <History /> Historial
           </button>
         )}
       </div>
       <div className="approval-layout">
-        <div className="approval-list">
+        <section className="approval-inbox">
+          <header>
+            <div>
+              <span>BANDEJA</span>
+              <h3>{scopeTitle}</h3>
+              <p>{scopeDescription}</p>
+            </div>
+            <b>{rows.length}</b>
+          </header>
+          <div className="approval-list">
           {rows.map((r) => {
             const stages: string[] = r.etapas?.length ? r.etapas : ["Gerente"];
             return (
@@ -159,7 +202,8 @@ export default function ApprovalWorkspace({ user }: { user: any }) {
               No hay solicitudes en esta vista.
             </div>
           )}
-        </div>
+          </div>
+        </section>
         <aside className="approval-detail">
           {selected ? (
             <>
@@ -267,7 +311,7 @@ export default function ApprovalWorkspace({ user }: { user: any }) {
             </>
           ) : (
             <div className="approval-detail-empty">
-              <Check />
+              <CheckCircle2 />
               <b>Selecciona una solicitud</b>
               <span>
                 Aquí verás el cambio, las etapas y toda su trazabilidad.

@@ -1,10 +1,13 @@
 import { FormEvent, useEffect, useState, type CSSProperties } from "react";
 import {
+  BookOpen,
   CalendarDays,
   CheckCircle2,
   ClipboardList,
   ExternalLink,
+  Eye,
   FileText,
+  GitBranch,
   Package,
   Pencil,
   Plus,
@@ -361,11 +364,34 @@ export function AreaFlows({ user }: { user: any }) {
     await load();
   };
   return (
-    <div className="flows-layout">
+    <div className="area-flows">
+      <section className="flow-hero">
+        <div className="flow-hero-icon"><GitBranch /></div>
+        <div>
+          <span>BIBLIOTECA DE PROCESOS</span>
+          <h2>Flujos de trabajo de tu área</h2>
+          <p>Centraliza procedimientos, consulta la versión vigente y mantén al equipo trabajando con la misma información.</p>
+        </div>
+        <div className="flow-hero-summary">
+          <b>{rows.length}</b>
+          <span>documento{rows.length === 1 ? "" : "s"} disponible{rows.length === 1 ? "" : "s"}</span>
+        </div>
+      </section>
+      <div className="flow-benefits">
+        <article><BookOpen /><span><b>Consulta fácil</b><small>Encuentra procesos publicados por tu área.</small></span></article>
+        <article><Eye /><span><b>Vista inmediata</b><small>Previsualiza el PDF sin salir del portal.</small></span></article>
+        <article><Upload /><span><b>Siempre actualizado</b><small>Publica nuevas versiones conservando el historial.</small></span></article>
+      </div>
+      <div className="flows-layout flow-workspace">
       <form className="flow-upload" onSubmit={submit}>
-        <Upload />
-        <h3>Subir flujo de trabajo</h3>
-        <p>Comparte procedimientos y manuales PDF con tu área.</p>
+        <div className="flow-upload-heading">
+          <span><Upload /></span>
+          <div>
+            <small>NUEVO DOCUMENTO</small>
+            <h3>Publicar flujo</h3>
+            <p>Comparte procedimientos y manuales PDF con tu área.</p>
+          </div>
+        </div>
         {message && (
           <div className="inline-success">
             <CheckCircle2 />
@@ -385,12 +411,21 @@ export function AreaFlows({ user }: { user: any }) {
           Seleccionar PDF
           <input name="pdf" type="file" accept="application/pdf" required />
         </label>
-        <button className="primary">Publicar flujo</button>
+        <button className="primary"><Upload /> Publicar flujo</button>
       </form>
-      <div className="flow-list">
+      <section className="flow-library">
+        <header>
+          <div>
+            <small>DOCUMENTOS DISPONIBLES</small>
+            <h3>Biblioteca de flujos</h3>
+            <p>Selecciona un documento para verlo, descargarlo o consultar sus versiones.</p>
+          </div>
+          <span>{rows.length}</span>
+        </header>
+        <div className="flow-list">
         {rows.map((r) => (
           <article key={r.id} onClick={() => setPreview(r)}>
-            <FileText />
+            <span className="flow-file-icon"><FileText /></span>
             <div>
               <b>{r.titulo}</b>
               <p>{r.descripcion || r.archivoNombre}</p>
@@ -399,9 +434,14 @@ export function AreaFlows({ user }: { user: any }) {
               </small>
               <small>{r.versiones?.length || 1} versión(es)</small>
             </div>
-            <span>Previsualizar</span>
+            <span className="flow-preview-action"><Eye /> Previsualizar</span>
           </article>
         ))}
+        {!rows.length && (
+          <div className="flow-empty"><FileText /><b>Aún no hay flujos publicados</b><span>El primer documento que publiques aparecerá aquí.</span></div>
+        )}
+        </div>
+      </section>
       </div>
       {preview && (
         <div className="overlay">

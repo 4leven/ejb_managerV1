@@ -2141,44 +2141,78 @@ function App() {
               {notificationUnreadCount > 0 && <i />}
             </button>
             {notificationsOpen && (
-              <div className="notifications-popover">
-                <div>
-                  <b>Notificaciones</b>
-                  <button onClick={() => setNotificationsOpen(false)}>
+              <div className="notifications-popover notifications-popover--refined" role="dialog" aria-label="Notificaciones y alertas">
+                <div className="notifications-popover-header">
+                  <div className="notifications-popover-heading">
+                    <span><BellRing /></span>
+                    <p>
+                      <b>Notificaciones</b>
+                      <small>{alerts.length ? `${alerts.length} alerta${alerts.length === 1 ? "" : "s"} activa${alerts.length === 1 ? "" : "s"}` : "Sin alertas pendientes"}</small>
+                    </p>
+                  </div>
+                  <button type="button" className="notifications-popover-close" aria-label="Cerrar notificaciones" onClick={() => setNotificationsOpen(false)}>
                     <X />
                   </button>
                 </div>
-                {alerts.map((alert, index) => (
-                  <button
-                    key={index}
-                    className={alert.severity}
-                    onClick={() => {
-                      setPage("cronograma");
-                      setNotificationsOpen(false);
-                    }}
-                  >
-                    <span>{alert.type === "completado" ? "✓" : "!"}</span>
-                    <p>
-                      <b>{alert.title}</b>
-                      <small>{alert.message}</small>
-                    </p>
-                  </button>
-                ))}
-                {!alerts.length && (
-                  <div className="notifications-empty">
-                    <Bell />
-                    <b>Todo al día</b>
-                    <small>No tienes alertas pendientes.</small>
+                {!!alerts.length && (
+                  <div className="notifications-popover-summary">
+                    <span><b>{alerts.filter((alert) => alert.severity === "high").length}</b> prioritarias</span>
+                    <span><b>{alerts.filter((alert) => alert.severity !== "high").length}</b> de seguimiento</span>
                   </div>
                 )}
+                <div className="notifications-popover-list">
+                  {alerts.map((alert, index) => {
+                    const AlertIcon = alert.type === "completado"
+                      ? CheckCircle2
+                      : alert.type === "reunion"
+                        ? CalendarDays
+                        : alert.type === "tarea"
+                          ? CheckSquare
+                          : Clock3;
+                    const category = alert.severity === "high"
+                      ? "Prioridad"
+                      : alert.type === "reunion"
+                        ? "Reunión"
+                        : alert.type === "tarea"
+                          ? "Tarea"
+                          : "Seguimiento";
+                    return (
+                      <button
+                        type="button"
+                        key={`${alert.type}-${alert.initiativeId ?? alert.code ?? index}-${index}`}
+                        className={`notification-popover-item ${alert.severity}`}
+                        onClick={() => {
+                          setPage("cronograma");
+                          setNotificationsOpen(false);
+                        }}
+                      >
+                        <span className="notification-popover-item-icon"><AlertIcon /></span>
+                        <p>
+                          <b>{alert.title}</b>
+                          <small>{alert.message}</small>
+                        </p>
+                        <em>{category}</em>
+                        <ArrowRight />
+                      </button>
+                    );
+                  })}
+                  {!alerts.length && (
+                    <div className="notifications-empty">
+                      <span><CheckCircle2 /></span>
+                      <b>Todo al día</b>
+                      <small>No tienes alertas pendientes.</small>
+                    </div>
+                  )}
+                </div>
                 <button
                   className="view-all"
+                  type="button"
                   onClick={() => {
                     setPage("cronograma");
                     setNotificationsOpen(false);
                   }}
                 >
-                  Ver alertas <ArrowRight />
+                  Ver todas las alertas <ArrowRight />
                 </button>
               </div>
             )}

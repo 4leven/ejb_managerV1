@@ -15,12 +15,15 @@ import {
   Filter,
   Mail,
   MailOpen,
+  MessageSquareText,
   MoreVertical,
   Plug,
   Search,
   Send,
   Settings2,
   ShieldCheck,
+  Sparkles,
+  Target,
   Users,
   X,
 } from "lucide-react";
@@ -869,8 +872,33 @@ function Research({ user }: { user: any }) {
     void load();
   }, []);
   return (
-    <section className="suite-card">
-      <h3>Pruebas con usuarios y mejora continua</h3>
+    <section className="suite-card continuous-improvement">
+      <div className="continuous-guide">
+        <div className="continuous-guide-icon" aria-hidden="true">
+          <Sparkles />
+        </div>
+        <div className="continuous-guide-copy">
+          <span className="continuous-eyebrow">MEJORA CONTINUA</span>
+          <h2>Ayúdanos a mejorar EJB Manager</h2>
+          <p>
+            Registra una dificultad, sugerencia o necesidad que encuentres al
+            trabajar. Tu reporte permitirá analizarla, priorizarla y darle
+            seguimiento hasta su solución.
+          </p>
+        </div>
+        <div className="continuous-guide-steps" aria-label="Cómo registrar una mejora">
+          <span><MessageSquareText /><b>1. Describe</b><small>Indica qué sucede y en qué módulo.</small></span>
+          <span><Target /><b>2. Define</b><small>Explica cómo debería funcionar.</small></span>
+          <span><CheckCircle2 /><b>3. Envía</b><small>Revisa luego el estado de tu hallazgo.</small></span>
+        </div>
+      </div>
+      <div className="continuous-section-heading">
+        <div>
+          <span className="continuous-eyebrow">NUEVO HALLAZGO</span>
+          <h3>Cuéntanos qué podemos mejorar</h3>
+        </div>
+        <small>Completa los campos con información clara y concreta.</small>
+      </div>
       <form
         className="suite-form"
         onSubmit={async (e) => {
@@ -902,7 +930,14 @@ function Research({ user }: { user: any }) {
         {error && <p className="inline-error" role="alert">{error}</p>}
         <button className="primary" disabled={saving}>{saving ? "Registrando..." : "Registrar hallazgo"}</button>
       </form>
-      <div className="suite-list">
+      <div className="continuous-history-heading">
+        <div>
+          <span className="continuous-eyebrow">SEGUIMIENTO</span>
+          <h3>Hallazgos recientes</h3>
+        </div>
+        <span>{rows.length} registro{rows.length === 1 ? "" : "s"}</span>
+      </div>
+      <div className="suite-list continuous-history">
         {rows.slice(0, 10).map((r) => (
           <article key={r.id}>
             <div>
@@ -922,6 +957,9 @@ function Research({ user }: { user: any }) {
             </div>
           </article>
         ))}
+        {!rows.length && !error && (
+          <div className="suite-empty">Aún no hay hallazgos registrados.</div>
+        )}
       </div>
     </section>
   );
