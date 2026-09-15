@@ -982,7 +982,8 @@ function App() {
     [history, setHistory] = useState<Progress[]>([]),
     [alerts, setAlerts] = useState<any[]>([]),
     [notificationUnreadCount, setNotificationUnreadCount] = useState(0),
-    [alertNotice, setAlertNotice] = useState<any | null>(null),
+    [notificationReturnVisible, setNotificationReturnVisible] = useState(false),
+    [alertNotices, setAlertNotices] = useState<any[]>([]),
     [notificationsOpen, setNotificationsOpen] = useState(false),
     [userMenuOpen, setUserMenuOpen] = useState(false),
     [toast, setToast] = useState(""),
@@ -1014,13 +1015,25 @@ function App() {
     currentAlerts = useRef<any[]>([]),
     alertsSoundedAfterUnlock = useRef(false),
     messageNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
-    alertNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
+    alertNoticeTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+      new Map(),
+    ),
     lastMessageNotice = useRef({ key: "", at: 0 });
   const closeTransientPanels = () => {
     setNotificationsOpen(false);
     setUserMenuOpen(false);
     setFiltersOpen(false);
     setGlobalResults([]);
+  };
+  const openFromNotification = (target: Page) => {
+    closeTransientPanels();
+    setNotificationReturnVisible(target !== "notificaciones");
+    setPage(target);
+  };
+  const returnToNotifications = () => {
+    closeTransientPanels();
+    setNotificationReturnVisible(false);
+    setPage("notificaciones");
   };
   useEffect(() => {
     const dismissOutside = (event: PointerEvent) => {
@@ -1115,11 +1128,11 @@ function App() {
     document.addEventListener("keydown", dismissPopupWithEscape, true);
     return () => document.removeEventListener("keydown", dismissPopupWithEscape, true);
   }, []);
+  const alertKey = (row: any) =>
+    `${row.type}|${row.initiativeId}|${row.title}|${row.message}`;
   const alertSignature = (rows: any[]) =>
     rows
-      .map(
-        (row) => `${row.type}|${row.initiativeId}|${row.title}|${row.message}`,
-      )
+      .map(alertKey)
       .sort()
       .join("::");
   const playNotificationSound = (kind: "message" | "alert") => {
@@ -1189,7 +1202,7 @@ function App() {
       });
       notification.onclick = () => {
         window.focus();
-        setPage("mensajes");
+        openFromNotification("mensajes");
         notification.close();
       };
     }
@@ -1197,31 +1210,45 @@ function App() {
   const applyLiveAlerts = (rows: any[]) => {
     const previous = lastAlertSignature.current,
       signature = alertSignature(rows),
-      newAlert = alertsInitialized.current
-        ? rows.find(
-            (row: any) =>
-              !previous.includes(
-                `${row.type}|${row.initiativeId}|${row.title}|${row.message}`,
-              ),
-          )
-        : undefined;
-    if (newAlert) {
-      setAlertNotice(newAlert);
+      previousKeys = new Set(previous ? previous.split("::") : []),
+      newAlerts = alertsInitialized.current
+        ? rows.filter((row: any) => !previousKeys.has(alertKey(row)))
+        : [];
+    if (newAlerts.length) {
+      setAlertNotices((current) => {
+        const seen = new Set(current.map(alertKey));
+        return [
+          ...current,
+          ...newAlerts.filter((row: any) => !seen.has(alertKey(row))),
+        ];
+      });
       playNotificationSound("alert");
-      if (alertNoticeTimer.current) clearTimeout(alertNoticeTimer.current);
-      alertNoticeTimer.current = setTimeout(() => setAlertNotice(null), 5000);
+      newAlerts.forEach((alert: any) => {
+        const key = alertKey(alert);
+        const previousTimer = alertNoticeTimers.current.get(key);
+        if (previousTimer) clearTimeout(previousTimer);
+        const timer = setTimeout(() => {
+          setAlertNotices((current) =>
+            current.filter((row: any) => alertKey(row) !== key),
+          );
+          alertNoticeTimers.current.delete(key);
+        }, 6500);
+        alertNoticeTimers.current.set(key, timer);
+      });
       if ("Notification" in window && Notification.permission === "granted") {
-        const notification = new Notification(newAlert.title, {
-          body: newAlert.message,
-          icon: "/ejb-manager-isotipo.svg",
-          badge: "/ejb-manager-isotipo.svg",
-          tag: `ejb-alert-${newAlert.type}-${newAlert.initiativeId}`,
+        newAlerts.forEach((alert: any) => {
+          const notification = new Notification(alert.title, {
+            body: alert.message,
+            icon: "/ejb-manager-isotipo.svg",
+            badge: "/ejb-manager-isotipo.svg",
+            tag: `ejb-alert-${alertKey(alert)}`,
+          });
+          notification.onclick = () => {
+            window.focus();
+            openFromNotification("cronograma");
+            notification.close();
+          };
         });
-        notification.onclick = () => {
-          window.focus();
-          setPage("cronograma");
-          notification.close();
-        };
       }
     }
     lastAlertCount.current = rows.length;
@@ -1383,6 +1410,7 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.currentPage = page;
     sessionStorage.setItem("ejb_active_page", page);
+    if (page === "notificaciones") setNotificationReturnVisible(false);
   }, [page]);
   useEffect(() => {
     const adjust = (direction: number) => {
@@ -2156,8 +2184,16 @@ function App() {
                 </div>
                 {!!alerts.length && (
                   <div className="notifications-popover-summary">
-                    <span><b>{alerts.filter((alert) => alert.severity === "high").length}</b> prioritarias</span>
-                    <span><b>{alerts.filter((alert) => alert.severity !== "high").length}</b> de seguimiento</span>
+                    <span className="summary-priority">
+                      <i><BellRing /></i>
+                      <p><b>{alerts.filter((alert) => alert.severity === "high").length}</b> prioritarias</p>
+                      <ArrowRight />
+                    </span>
+                    <span className="summary-follow">
+                      <i><Clock3 /></i>
+                      <p><b>{alerts.filter((alert) => alert.severity !== "high").length}</b> de seguimiento</p>
+                      <ArrowRight />
+                    </span>
                   </div>
                 )}
                 <div className="notifications-popover-list">
@@ -2182,8 +2218,7 @@ function App() {
                         key={`${alert.type}-${alert.initiativeId ?? alert.code ?? index}-${index}`}
                         className={`notification-popover-item ${alert.severity}`}
                         onClick={() => {
-                          setPage("cronograma");
-                          setNotificationsOpen(false);
+                          openFromNotification("cronograma");
                         }}
                       >
                         <span className="notification-popover-item-icon"><AlertIcon /></span>
@@ -2208,11 +2243,10 @@ function App() {
                   className="view-all"
                   type="button"
                   onClick={() => {
-                    setPage("cronograma");
-                    setNotificationsOpen(false);
+                    openFromNotification("notificaciones");
                   }}
                 >
-                  Ver todas las alertas <ArrowRight />
+                  <span>Ver todas las notificaciones</span><ArrowRight />
                 </button>
               </div>
             )}
@@ -2312,6 +2346,18 @@ function App() {
               page === "mensajes" ? "content chat-page-content" : "content"
             }
           >
+            {notificationReturnVisible && page !== "notificaciones" && (
+              <button
+                type="button"
+                className="notification-return-button"
+                onClick={returnToNotifications}
+                title="Volver a notificaciones"
+                aria-label="Volver a notificaciones"
+              >
+                <ArrowLeft />
+                <span>Notificaciones</span>
+              </button>
+            )}
             {page === "perfil" && <div className="title-row">
               <div>
                 <button
@@ -2344,8 +2390,7 @@ function App() {
                 onNavigate={(destination) => {
                   const target = notificationPage(destination);
                   if (!target) return;
-                  closeTransientPanels();
-                  setPage(target);
+                  openFromNotification(target);
                 }}
               />
             )}
@@ -2920,7 +2965,7 @@ function App() {
                       notificationCount={notificationUnreadCount}
                       notifications={alerts}
                       onBackToDashboard={() => setPage("resumen")}
-                      onNavigate={(destination) => setPage(destination)}
+                      onNavigate={(destination) => openFromNotification(destination)}
                       canPublishAnnouncements={canPublishAnnouncements(user)}
                       currentStatus={user.estadoMensaje}
                       onStatusChange={(estadoMensaje) =>
@@ -3512,22 +3557,32 @@ function App() {
           </div>
         </button>
       )}
-      {alertNotice && (
-        <button
-          className={`live-alert-notice ${alertNotice.severity}`}
-          onClick={() => {
-            setPage("cronograma");
-            setAlertNotice(null);
-          }}
-        >
-          <span>{alertNotice.type === "completado" ? "✓" : "!"}</span>
-          <div>
-            <small>ALERTA EN TIEMPO REAL</small>
-            <b>{alertNotice.title}</b>
-            <p>{alertNotice.message}</p>
-          </div>
-          <ArrowRight />
-        </button>
+      {alertNotices.length > 0 && (
+        <div className="live-alert-stack" aria-live="polite" aria-label="Alertas en tiempo real">
+          {alertNotices.map((alert) => {
+            const key = alertKey(alert);
+            return (
+              <button
+                key={key}
+                className={`live-alert-notice ${alert.severity}`}
+                onClick={() => {
+                  setPage("cronograma");
+                  setAlertNotices((current) =>
+                    current.filter((row: any) => alertKey(row) !== key),
+                  );
+                }}
+              >
+                <span>{alert.type === "completado" ? "✓" : "!"}</span>
+                <div>
+                  <small>ALERTA EN TIEMPO REAL</small>
+                  <b>{alert.title}</b>
+                  <p>{alert.message}</p>
+                </div>
+                <ArrowRight />
+              </button>
+            );
+          })}
+        </div>
       )}
       {toast && <div className="toast">✓ {toast}</div>}
     </div>

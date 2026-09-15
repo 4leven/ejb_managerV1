@@ -19,7 +19,9 @@ import {
   Clock3,
   Check,
   ChevronDown,
+  ChevronRight,
   Download,
+  ExternalLink,
   Forward,
   FileText,
   Inbox,
@@ -185,6 +187,53 @@ const statusOptions = [
 ];
 const statusLabel = (value: string) =>
   statusOptions.find((option) => option.value === value)?.label ?? "Disponible";
+const formatLastMessageDateTime = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("es-PE", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+};
+const getChatNotificationMeta = (item: { title?: string; message?: string; severity?: string; type?: string }) => {
+  const text = `${item.type ?? ""} ${item.severity ?? ""} ${item.title ?? ""} ${item.message ?? ""}`.toLowerCase();
+  if (text.includes("pendiente") || text.includes("tarea")) return { kind: "task", Icon: BriefcaseBusiness };
+  if (text.includes("retras")) return { kind: "late", Icon: Clock3 };
+  if (text.includes("complet")) return { kind: "done", Icon: CircleCheck };
+  if (text.includes("avance")) return { kind: "progress", Icon: CircleMinus };
+  return { kind: "info", Icon: Bell };
+};
+const extractDateFromNotificationText = (value?: string) => {
+  if (!value) return "";
+  const match = value.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/);
+  if (!match) return "";
+  const [, day, month, year] = match;
+  return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
+};
+const formatChatNotificationDate = (item: { alertDate?: string; createdAt?: string; message?: string }) => {
+  const source = item.alertDate ?? item.createdAt;
+  if (source) {
+    const date = new Date(source);
+    if (!Number.isNaN(date.getTime())) {
+      const now = new Date();
+      const isToday = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+      if (isToday) return "Hoy";
+      return new Intl.DateTimeFormat("es-PE", { day: "2-digit", month: "2-digit" }).format(date);
+    }
+  }
+  return extractDateFromNotificationText(item.message) || "Hoy";
+};
+const chatNotificationDestination = (item: { type?: string; title?: string; message?: string }) => {
+  const text = `${item.type ?? ""} ${item.title ?? ""} ${item.message ?? ""}`.toLowerCase();
+  if (text.includes("reuni")) return "calendario";
+  if (text.includes("invit") || text.includes("mensaje") || text.includes("chat")) return "mensajes";
+  if (text.includes("proyecto") || text.includes("iniciativa")) return "iniciativas";
+  return "cronograma";
+};
 function StatusGlyph({ value, compact = false }: { value: string; compact?: boolean }) {
   const option = statusOptions.find((item) => item.value === value) ?? statusOptions[0];
   const Icon = option.Icon;
@@ -227,9 +276,9 @@ export default function Messages({
   ) => void;
   canPublishAnnouncements?: boolean;
   notificationCount?: number;
-  notifications?: { title?: string; message?: string; severity?: string; type?: string }[];
+  notifications?: { title?: string; message?: string; severity?: string; type?: string; alertDate?: string; createdAt?: string }[];
   onBackToDashboard?: () => void;
-  onNavigate?: (page: "calendario" | "iniciativas" | "mi-trabajo" | "equipo" | "notificaciones") => void;
+  onNavigate?: (page: "calendario" | "iniciativas" | "mi-trabajo" | "equipo" | "notificaciones" | "cronograma" | "mensajes") => void;
 }) {
   const [chatBusy, setChatBusy] = useState(false);
   const spaceVersion = useRef(0);
@@ -253,7 +302,6 @@ export default function Messages({
     [accessOpen, setAccessOpen] = useState(true),
     [directOpen, setDirectOpen] = useState(true),
     [spacesOpen, setSpacesOpen] = useState(true),
-    [threadView, setThreadView] = useState(false),
     [dmReply, setDmReply] = useState<Message | null>(null),
     [reactionTarget, setReactionTarget] = useState<string | null>(null),
     [actionMenuTarget, setActionMenuTarget] = useState<string | null>(null),
@@ -501,13 +549,12 @@ export default function Messages({
         const matchesQuery = `${c.nombres} ${c.apellidos}`
           .toLowerCase()
           .includes(query.toLowerCase());
-        if (threadView && !c.lastMessage) return false;
         if (inboxView === "unread" || homeFilter === "unread") return matchesQuery && c.unread > 0;
         if (homeFilter === "spaces") return false;
         if (homeFilter === "pinned" || inboxView === "starred") return matchesQuery && pinnedContacts.includes(c.id);
         return matchesQuery;
       }),
-    [contacts, query, inboxView, homeFilter, pinnedContacts, threadView],
+    [contacts, query, inboxView, homeFilter, pinnedContacts],
   );
   useEffect(() => {
     if (query.trim().length < 2 || filtered.length) { setContentResults([]); return; }
@@ -658,6 +705,7 @@ export default function Messages({
     }
     const updated = await updateCollaboration(type, activeSpace.id, datos);
     setActiveSpace(updated);
+    window.dispatchEvent(new Event("ejb-spaces-changed"));
   };
   const wallpaperKey = activeSpace
     ? `space-${activeSpace.id}`
@@ -743,11 +791,15 @@ export default function Messages({
   const saveSpacePhoto = (input: HTMLInputElement) => {
     const file = input.files?.[0];
     if (!file || !activeSpace) return;
-    if (!file.type.startsWith("image/") || file.size > 2000000)
+    if (!file.type.startsWith("image/") || file.size > 2000000) {
+      input.value = "";
       return alert("Selecciona una imagen menor a 2 MB");
+    }
     const reader = new FileReader();
-    reader.onload = () =>
-      saveSpace({ ...activeSpace.datos, foto: String(reader.result) });
+    reader.onload = () => {
+      void saveSpace({ ...activeSpace.datos, foto: String(reader.result) });
+      input.value = "";
+    };
     reader.readAsDataURL(file);
   };
   const members: string[] = activeSpace
@@ -1064,7 +1116,7 @@ export default function Messages({
         <button type="button" aria-label="Configuración de chat" title="Configuración de chat" onClick={()=>{setSettingsOpen(true);setNotificationsOpen(false)}}><Settings /></button>
         <button type="button" aria-label="Espacios" title="Ver grupos y canales" onClick={()=>{setInboxView("home");setHomeFilter("spaces");setActive(null);setActiveSpace(null);setAnnouncementsOpen(false)}}><Users /></button>
       </header>
-      {notificationsOpen&&<aside className={`chat-notifications-popover ${usesDarkChatTheme ? "chat-mode-oscuro" : "chat-mode-claro"}`}><header><div><Bell/><b>Notificaciones</b></div><button type="button" onClick={()=>setNotificationsOpen(false)}><X/></button></header><div>{notifications.map((item,index)=><article className={item.severity??"info"} key={index}><i>{item.type==="completado"?"✓":"!"}</i><p><b>{item.title??"Notificación"}</b><span>{item.message??"Tienes una nueva actividad."}</span></p></article>)}{!notifications.length&&<div className="chat-notifications-empty"><Bell/><b>Todo al día</b><span>No tienes alertas pendientes.</span></div>}</div><button type="button" className="notifications-close-action" onClick={()=>setNotificationsOpen(false)}>Cerrar</button></aside>}
+      {notificationsOpen&&<aside className={`chat-notifications-popover ${usesDarkChatTheme ? "chat-mode-oscuro" : "chat-mode-claro"}`}><header><div className="chat-notifications-title"><span><MessageCircle/></span><div><b>Mensajes</b><small>Conversaciones y avisos recientes</small></div></div><button type="button" aria-label="Cerrar mensajes" onClick={()=>setNotificationsOpen(false)}><X/></button></header><div className="chat-notification-tabs"><button type="button" className="active">No leídos <b>{notificationCount || notifications.length}</b></button><button type="button">Todos</button></div><div className="chat-notification-list">{notifications.map((item,index)=>{const meta=getChatNotificationMeta(item),Icon=meta.Icon,message=item.message??"Tienes una nueva actividad.",destination=chatNotificationDestination(item);return <article className={`chat-notification-item ${meta.kind}`} key={index} role="button" tabIndex={0} onClick={()=>{setNotificationsOpen(false);onNavigate?.(destination)}} onKeyDown={(event)=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();setNotificationsOpen(false);onNavigate?.(destination)}}}><i><Icon/></i><p><b>{item.title??"Notificación"}</b><span>{message}</span><small>{meta.kind==="progress"?"Revisa y actualiza el avance del proyecto.":meta.kind==="late"?"La tarea presenta un retraso en su ejecución.":meta.kind==="task"?"Aún no se ha registrado avance.":"Revisa el detalle para mantenerte al día."}</small></p><time>{formatChatNotificationDate(item)}</time><em/><button type="button" aria-label="Abrir notificación" onClick={(event)=>{event.stopPropagation();setNotificationsOpen(false);onNavigate?.(destination)}}><ChevronRight/></button></article>})}{!notifications.length&&<div className="chat-notifications-empty"><MessageCircle/><b>Todo al día</b><span>No tienes mensajes ni alertas pendientes.</span></div>}</div><button type="button" className="notifications-close-action" onClick={()=>{setNotificationsOpen(false);onNavigate?.("notificaciones")}}><ExternalLink/>Ver todos los mensajes<ChevronRight/></button></aside>}
       <aside className="message-space-column">
         <div className="telegram-space-title">
           <span>
@@ -1102,12 +1154,14 @@ export default function Messages({
         <section className="chat-direct-shortlist">
           <button type="button" className="chat-section-toggle" aria-expanded={directOpen} onClick={()=>setDirectOpen((open)=>!open)}><ChevronDown/><span>Mensajes directos</span></button>
           {directOpen&&<div className="chat-direct-items">
-          {contacts.slice(0, 5).map((contact) => <button type="button" key={contact.id} title="Abrir chat. Clic derecho para destacar" onContextMenu={(event)=>{event.preventDefault();togglePinnedContact(contact.id)}} onClick={() => { setActive(contact); setActiveSpace(null); setAnnouncementsOpen(false); }}>
-            {contact.fotoPerfil ? <img src={contact.fotoPerfil} alt="" /> : <i style={{background:contact.area.colorHex}}>{initials(`${contact.nombres} ${contact.apellidos}`)}</i>}
-            <span><b>{contact.nombres} {contact.apellidos}</b><small>{contact.lastMessage?.contenido || statusLabel(contact.estadoMensaje)}</small></span>
-            <StatusGlyph value={contact.estadoMensaje} compact />
-            {pinnedContacts.includes(contact.id)&&<Star className="pinned-contact"/>}
-          </button>)}
+          {contacts.slice(0, 5).map((contact) => {
+            return <button type="button" key={contact.id} title="Abrir chat. Clic derecho para destacar" onContextMenu={(event)=>{event.preventDefault();togglePinnedContact(contact.id)}} onClick={() => { setActive(contact); setActiveSpace(null); setAnnouncementsOpen(false); }}>
+              {contact.fotoPerfil ? <img src={contact.fotoPerfil} alt="" /> : <i style={{background:contact.area.colorHex}}>{initials(`${contact.nombres} ${contact.apellidos}`)}</i>}
+              <span><b>{contact.nombres} {contact.apellidos}</b><small>{statusLabel(contact.estadoMensaje)}</small></span>
+              <StatusGlyph value={contact.estadoMensaje} compact />
+              {pinnedContacts.includes(contact.id)&&<Star className="pinned-contact"/>}
+            </button>;
+          })}
           {!contacts.length&&<p>Busca un compañero para empezar.</p>}
           </div>}
         </section>
@@ -1188,11 +1242,11 @@ export default function Messages({
           document.body
         )}
       </aside>
-      <div className={`messenger ${threadView ? "thread-view" : ""}`}>
+      <div className="messenger">
         <aside className="conversation-list">
           <div className="conversation-list-title">
             <span>Página principal</span>
-            <div className="chat-home-view-tools"><label>No leídos<input type="checkbox" checked={homeFilter==="unread"} onChange={(event)=>{setHomeFilter(event.target.checked?"unread":"all");setInboxView(event.target.checked?"unread":"home")}}/><i/></label><button type="button" aria-pressed={threadView} title="Mostrar solo conversaciones que ya tienen mensajes" className={threadView?"active":""} onClick={()=>setThreadView((enabled)=>!enabled)}><MessageCircle/>Hilo</button></div>
+            <div className="chat-home-view-tools"><label>No leídos<input type="checkbox" checked={homeFilter==="unread"} onChange={(event)=>{setHomeFilter(event.target.checked?"unread":"all");setInboxView(event.target.checked?"unread":"home")}}/><i/></label></div>
           </div>
           <div className="chat-home-tabs" role="tablist" aria-label="Filtrar conversaciones">
             {[['all','Todo'],['dms','Mensajes'],['spaces','Espacios'],['unread','No leídos'],['pinned','Fijados']].map(([id,label]) => <button type="button" role="tab" aria-selected={homeFilter===id} className={homeFilter===id?'active':''} key={id} onClick={()=>setHomeFilter(id as typeof homeFilter)}>{label}</button>)}
@@ -1261,7 +1315,9 @@ export default function Messages({
             <p><b>Comunicados</b><small>Avisos importantes para todo EJB</small></p>
             {announcements.length > 0 && <span>{announcements.length}</span>}
           </button>
-          {filtered.map((c) => (
+          {filtered.map((c) => {
+            const lastAt = formatLastMessageDateTime(c.lastMessage?.createdAt);
+            return (
             <button
               key={c.id}
               className={active?.id === c.id ? "active" : ""}
@@ -1283,21 +1339,23 @@ export default function Messages({
                 </div>
               )}
               <p>
-                <b>
-                  {c.nombres} {c.apellidos}
-                </b>
-                <span className="contact-status">
-                  <StatusGlyph value={c.estadoMensaje} compact />
-                  {statusLabel(c.estadoMensaje)}
+                <span className="chat-contact-title-line">
+                  <b>{c.nombres} {c.apellidos}</b>
+                  <span className="contact-status">
+                    <StatusGlyph value={c.estadoMensaje} compact />
+                    {statusLabel(c.estadoMensaje)}
+                  </span>
                 </span>
                 <small>
                   {c.lastMessage?.contenido ?? `${cargoLabel(c.cargo)} · ${c.area.nombre}`}
                 </small>
               </p>
+              {lastAt && <time className="chat-last-message-time" dateTime={c.lastMessage?.createdAt}>{lastAt}</time>}
               {c.unread > 0 && <span>{c.unread}</span>}
               {pinnedContacts.includes(c.id)&&<Star className="pinned-contact"/>}
             </button>
-          ))}
+          );
+          })}
           {contentResults.length > 0 && <section className="message-content-results"><h4>Resultados en mensajes</h4>{contentResults.map((group) => <div key={group.usuario.id}><b>{group.usuario.nombres} {group.usuario.apellidos}</b>{group.resultados.map((result) => <button type="button" key={result.mensajeId} onClick={() => { const contact = contacts.find((item) => item.id === group.usuario.id); if (contact) { setPendingMessageId(result.mensajeId); setActive(contact); setActiveSpace(null); } }}><span>{result.fragmento}</span><small>{new Date(result.createdAt).toLocaleString("es-PE")}</small></button>)}</div>)}</section>}
           {inboxView === "scheduled" && <section className="scheduled-message-list"><h4>Mensajes programados</h4>{scheduled.map((item) => <article key={item.id}><p>{item.contenido}</p><small>{new Date(item.enviarEn).toLocaleString("es-PE")}</small><div><button type="button" onClick={async()=>{const contenido=prompt("Editar mensaje programado",item.contenido);if(!contenido?.trim())return;const fecha=prompt("Nueva fecha y hora (AAAA-MM-DDTHH:mm)",new Date(item.enviarEn).toISOString().slice(0,16));if(!fecha)return;await updateScheduledMessage(item.id,{contenido:contenido.trim(),enviarEn:new Date(fecha).toISOString()});await loadScheduled()}}>Editar</button><button type="button" onClick={async()=>{if(confirm("¿Cancelar este mensaje programado?")){await deleteScheduledMessage(item.id);await loadScheduled()}}}>Cancelar</button></div></article>)}{!scheduled.length&&<p>No tienes mensajes pendientes.</p>}</section>}
           {!filtered.length && (
@@ -1327,7 +1385,15 @@ export default function Messages({
           ) : activeSpace ? (
             <>
               <header className="space-chat-header">
-                <div>{activeSpace.datos.esCanal ? <Hash /> : <Users />}</div>
+                <div className="space-chat-photo">
+                  {activeSpace.datos.foto ? (
+                    <img src={activeSpace.datos.foto} alt="" />
+                  ) : activeSpace.datos.esCanal ? (
+                    <Hash />
+                  ) : (
+                    <Users />
+                  )}
+                </div>
                 <p>
                   <b>{activeSpace.datos.nombre}</b>
                   <small>
@@ -1749,6 +1815,36 @@ export default function Messages({
                   </small>
                 </span>
               </button>
+              <div className="space-photo-settings">
+                <span className="space-photo-preview">
+                  {activeSpace.datos.foto ? (
+                    <img src={activeSpace.datos.foto} alt="" />
+                  ) : activeSpace.datos.esCanal ? (
+                    <Hash />
+                  ) : (
+                    <Users />
+                  )}
+                </span>
+                <div>
+                  <b>Foto del {activeSpace.datos.esCanal ? "canal" : "grupo"}</b>
+                  <small>
+                    {canManage
+                      ? "Sube una imagen JPG, PNG, WEBP o GIF menor a 2 MB."
+                      : "Solo el creador y moderadores pueden cambiarla."}
+                  </small>
+                </div>
+                {canManage && (
+                  <label>
+                    <Image />
+                    Cambiar foto
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => saveSpacePhoto(event.currentTarget)}
+                    />
+                  </label>
+                )}
+              </div>
               {canManage && (
                 <div className="add-space-member">
                   <UserPlus />
