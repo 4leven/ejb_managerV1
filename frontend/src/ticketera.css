@@ -264,3 +264,55 @@
 .ticket-legacy-link select{width:100%;height:34px;padding:3px 8px;border:1px solid var(--e-line,var(--line));border-radius:8px;background:var(--e-surface,var(--surface));color:var(--e-ink,var(--text));font-size:11px}
 .ticket-legacy-link>button{min-height:34px;padding:0 14px;border:1px solid #2f6fed;border-radius:8px;background:#2f6fed;color:#fff;font-size:10px;font-weight:850;cursor:pointer}
 .ticket-legacy-link>button:disabled{opacity:.5;cursor:default}
+
+/* Contraste reforzado para pestañas y filtros superiores de la Ticketera. */
+.ticket-quick-tabs button{color:#07142d!important}
+.ticket-quick-tabs button span{color:inherit!important}
+.ticket-quick-tabs button .tab-dot+*,
+.ticket-quick-tabs button:not(.active){font-weight:850!important}
+.ticket-quick-tabs button.active{background:#2f6fed!important;border-color:#2f6fed!important;color:#fff!important}
+.ticket-quick-tabs button.active span{color:#fff!important}
+.ticket-quick-tabs button:not(.active):hover{background:#eef5ff!important;color:#0b2347!important}
+.ticket-toolbar>select,.ticket-date-filter,.ticket-search,.ticket-date-range,.ticket-date-range label,.ticket-clear{color:#172033!important}
+.ticket-search input,.ticket-date-range input,.ticket-date-filter input{color:#172033!important}
+.ticket-search input::placeholder{color:#64748b!important;opacity:1!important}
+.ticket-date-range>span{color:#475569!important}
+.dark .ticket-quick-tabs button{color:#dce8fa!important}
+.dark .ticket-quick-tabs button.active{background:#2f6fed!important;border-color:#2f6fed!important;color:#fff!important}
+.dark .ticket-quick-tabs button:not(.active):hover{background:#172840!important;color:#fff!important}
+.dark .ticket-toolbar>select,.dark .ticket-date-filter,.dark .ticket-search,.dark .ticket-date-range,.dark .ticket-date-range label,.dark .ticket-clear{color:#eaf2ff!important}
+.dark .ticket-search input,.dark .ticket-date-range input,.dark .ticket-date-filter input{color:#f5f8ff!important}
+.dark .ticket-search input::placeholder{color:#a8b7cc!important}
+.dark .ticket-date-range>span{color:#c5d2e5!important}
+
+/* Las pestañas inactivas deben leerse siempre sin hover cuando el panel es claro. */
+.ticket-table-panel .ticket-quick-tabs button:not(.active){
+  color:#07142d!important;
+  -webkit-text-fill-color:#07142d!important;
+  opacity:1!important;
+  filter:none!important;
+}
+.ticket-table-panel .ticket-quick-tabs button:not(.active)>span{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  opacity:1!important;
+}
+.ticket-table-panel .ticket-quick-tabs button:not(.active) .tab-dot{
+  -webkit-text-fill-color:initial!important;
+  opacity:1!important;
+}
+.ticket-table-panel .ticket-quick-tabs button>span{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+.ticket-table-panel .ticket-quick-tabs button.active>span{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+.ticket-table-panel .ticket-quick-tabs button:not(.active)>span,
+.ticket-table-panel .ticket-quick-tabs button:not(.active):hover>span,
+.ticket-table-panel .ticket-quick-tabs button.active>span{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  text-shadow:none!important;
+}

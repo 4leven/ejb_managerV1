@@ -645,6 +645,12 @@ function Access({
                   : "Ingresar"}
               <ArrowRight />
             </button>
+            {mode === "register" && (
+              <small className="privacy">
+                Acceso protegido exclusivo para colaboradores de <b>EJB</b>. Al continuar,
+                aceptas las polÃ­ticas de seguridad interna.
+              </small>
+            )}
           </form>
           {mode === "login" && (
             <button className="forgot-link" onClick={forgot}>
@@ -964,7 +970,7 @@ function App() {
     [filtersOpen, setFiltersOpen] = useState(false),
     [sidebarCollapsed, setSidebarCollapsed] = useState(false),
     [sidebarScale, setSidebarScale] = useState(() =>
-      Number(localStorage.getItem("ejb_sidebar_scale") || 1),
+      Number(localStorage.getItem("ejb_sidebar_scale") || 0.7),
     ),
     [mainScale, setMainScale] = useState(() =>
       Number(localStorage.getItem("ejb_main_scale") || 1),
@@ -1537,6 +1543,43 @@ function App() {
         return `${left.nombres} ${left.apellidos}`.localeCompare(`${right.nombres} ${right.apellidos}`, "es");
       });
   }, [team, teamArea, teamQuery, teamSort]);
+  const portfolioAverage = items.length
+    ? Math.round(items.reduce((sum, item) => sum + item.avance, 0) / items.length)
+    : 0;
+  const portfolioStatusOrder = useMemo(
+    () => ["Pendiente", "En evaluación", "Priorizado", "En proceso", "Finalizado"] as Estado[],
+    [],
+  );
+  const portfolioStatusPalette: Record<Estado, string> = {
+    Pendiente: "#9aa9bb",
+    "En evaluación": "#2f6fed",
+    Priorizado: "#9333ea",
+    "En proceso": "#f59e0b",
+    Finalizado: "#19bd87",
+  };
+  const portfolioStatusCounts = useMemo(
+    () =>
+      portfolioStatusOrder.map((status) => ({
+        status,
+        count: items.filter((item) => item.estado === status).length,
+      })),
+    [items, portfolioStatusOrder],
+  );
+  const portfolioGradient = useMemo(() => {
+    const total = portfolioStatusCounts.reduce((sum, row) => sum + row.count, 0);
+    if (!total) return "#e6edf7";
+    let cursor = 0;
+    const segments = portfolioStatusCounts
+      .filter((row) => row.count > 0)
+      .map((row) => {
+        const start = cursor;
+        const end = cursor + (row.count / total) * 100;
+        cursor = end;
+        return `${portfolioStatusPalette[row.status]} ${start}% ${end}%`;
+      })
+      .join(", ");
+    return `conic-gradient(${segments})`;
+  }, [portfolioStatusCounts]);
   const openProgress = async (i: Item) => {
     setProgressItem(i);
     setHistory(await fetchProgresos(i.id));
@@ -1846,7 +1889,7 @@ function App() {
         <div className="sidebar-zoom">
           <button
             onClick={() =>
-              setSidebarScale((v) => Math.max(0.82, +(v - 0.06).toFixed(2)))
+              setSidebarScale((v) => Math.max(0.7, +(v - 0.06).toFixed(2)))
             }
             title="Reducir menú"
           >
@@ -2485,22 +2528,16 @@ function App() {
                     </div>
                     <div className="health-body">
                       <div
-                        className="donut"
+                        className="donut portfolio-donut"
                         style={
                           {
-                            "--value": `${items.length ? Math.round(items.reduce((s, i) => s + i.avance, 0) / items.length) : 0}%`,
+                            background: portfolioGradient,
                           } as CSSProperties
                         }
                       >
                         <div>
                           <strong>
-                            {items.length
-                              ? Math.round(
-                                  items.reduce((s, i) => s + i.avance, 0) /
-                                    items.length,
-                                )
-                              : 0}
-                            %
+                            {portfolioAverage}%
                           </strong>
                           <small>avance</small>
                         </div>
@@ -3295,7 +3332,13 @@ function App() {
                           <b>{status}</b>
                           <span>{rows.length} iniciativa(s)</span>
                           <em>
-                            <u style={{ width: `${portion}%` }} />
+                            <u
+                              className={statusClass[status]}
+                              style={{
+                                width: `${portion}%`,
+                                minWidth: portion > 0 ? "8px" : "0",
+                              }}
+                            />
                           </em>
                         </div>
                         <strong>{portion}%</strong>
@@ -4135,12 +4178,13 @@ function SectionTools({
           <option key={value}>{value}</option>
         ))}
       </select>
-      <button className={open ? "active" : ""} onClick={() => setOpen(!open)}>
-        <SlidersHorizontal />
-        Filtros
-      </button>
-      {open && (
-        <div className="filter-popover">
+      <span className="filter-menu">
+        <button className={open ? "active" : ""} onClick={() => setOpen(!open)}>
+          <SlidersHorizontal />
+          Filtros
+        </button>
+        {open && (
+          <div className="filter-popover">
           <label>
             Estado
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -4179,8 +4223,9 @@ function SectionTools({
           >
             Limpiar filtros
           </button>
-        </div>
-      )}
+          </div>
+        )}
+      </span>
     </div>
   );
 }
