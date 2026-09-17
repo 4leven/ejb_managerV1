@@ -328,6 +328,7 @@ export const createTicket=(data:Record<string,unknown>)=>jsonRequest("/tickets",
 export const takeTicket=(id:string)=>jsonRequest(`/tickets/${id}/tomar`,{method:"POST"});
 export const saveTicketAdvance=(id:string,data:Record<string,unknown>)=>jsonRequest(`/tickets/${id}/avance`,{method:"PATCH",body:JSON.stringify(data)});
 export const finishTicket=(id:string,data:Record<string,unknown>)=>jsonRequest(`/tickets/${id}/finalizar`,{method:"POST",body:JSON.stringify(data)});
+export const rejectTicket=(id:string)=>jsonRequest(`/tickets/${id}/rechazar`,{method:"POST"});
 export const reopenTicket=(id:string)=>jsonRequest(`/tickets/${id}/reabrir`,{method:"POST"});
 export const reassignTicket=(id:string,asignadoAId:string)=>jsonRequest(`/tickets/${id}/reasignar`,{method:"POST",body:JSON.stringify({asignadoAId})});
 export const linkTicketConsultant=(id:string,asignadoAId:string)=>jsonRequest(`/tickets/${id}/vincular-consultor`,{method:"POST",body:JSON.stringify({asignadoAId})});

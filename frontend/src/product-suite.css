@@ -244,3 +244,11 @@
 .gmail-inbox{display:grid;gap:10px;margin-bottom:20px}.gmail-inbox article{border:1px solid var(--line);border-radius:12px;padding:14px}.gmail-inbox small{display:block;color:var(--muted);margin-top:6px}
 .gmail-connection form{display:grid;gap:12px}.gmail-connection label{display:grid;gap:7px}.gmail-connection input,.gmail-connection textarea{padding:12px;border:1px solid var(--line);border-radius:9px;color:var(--text);background:var(--surface-2)}.gmail-connection textarea{min-height:120px}.gmail-feedback{padding:12px;border-left:3px solid var(--primary);background:var(--surface-2)}
 .approval-simulation-note{padding:14px;border:1px solid #e9b949;border-radius:10px;background:#e9b94918;color:var(--text);line-height:1.5}
+
+/* Encuestas comparte la misma línea gráfica de los módulos operativos. */
+.survey-ejb-hero{margin:0 0 4px}
+.survey-hero-action{position:relative;z-index:2;min-width:138px;min-height:70px;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 16px;border:1px solid #ffffff25;border-radius:14px;background:#ffffff10;color:#fff;cursor:pointer;transition:.18s}
+.survey-hero-action:hover{background:#ffffff1c;border-color:#ffffff40;transform:translateY(-1px)}
+.survey-hero-action svg{width:18px}
+.survey-hero-action b{font:800 10px Manrope;white-space:nowrap}
+@media(max-width:700px){.survey-ejb-hero{display:grid}.survey-hero-action{width:100%;min-height:46px}}

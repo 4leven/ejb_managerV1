@@ -11,6 +11,7 @@ import { createPortal } from "react-dom";
 import {
   ArrowRight,
   ArrowLeft,
+  Award,
   Bell,
   BellRing,
   BarChart3,
@@ -42,6 +43,7 @@ import {
   Sparkles,
   PanelsTopLeft,
   Target,
+  Trophy,
   Trash2,
   TrendingUp,
   UserCog,
@@ -104,7 +106,7 @@ import {
 } from "./components/ProductSuite";
 import { MarketingCenter } from "./components/MarketingCenter";
 import { uiAlert, uiConfirm, uiPrompt } from "./utils/dialog";
-import { canOperateGlobally, cargoLabel, isTechnicalUser, isAreaLeaderUser, isAdministrationUser, canPublishAnnouncements, canDeleteOwned, canReadMarketing } from "./utils/access";
+import { canOperateGlobally, cargoLabel, hasFullPortalAccess, isTechnicalUser, isAreaLeaderUser, isAdministrationUser, canPublishAnnouncements, canDeleteOwned, canReadMarketing } from "./utils/access";
 import {
   clearRememberedCredentials,
   loadRememberedCredentials,
@@ -136,6 +138,37 @@ type Page =
   | "perfil"
   | "ayuda"
   | "personalizacion";
+
+const isWorkerPortalUser = (user?: { cargo?: string; rol?: string } | null) =>
+  /trabajador|empleado/i.test(`${user?.cargo ?? ""} ${user?.rol ?? ""}`);
+
+const workerPanelPages = new Set<Page>([
+  "resumen",
+  "notificaciones",
+  "iniciativas",
+  "mi-trabajo",
+  "equipo",
+  "clientes",
+  "ticketera",
+  "kanban-sistemas",
+  "mensajes",
+  "calendario",
+  "encuestas",
+  "aprobaciones",
+  "feedback",
+  "personalizacion",
+  "ayuda",
+  "perfil",
+]);
+
+const canAccessPortalPage = (user: User, target: Page) => {
+  if (hasFullPortalAccess(user)) return true;
+  const leadership = isAreaLeaderUser(user);
+  if (["cronograma", "informes", "reporteria", "flujos"].includes(target))
+    return leadership;
+  if (target === "administracion") return leadership;
+  return !isWorkerPortalUser(user) || workerPanelPages.has(target);
+};
 
 const notificationPage = (value: string): Page | null => {
   const key = value
@@ -1414,6 +1447,9 @@ function App() {
     if (page === "mensajes") zoomZone.current = "chat";
   }, [page]);
   useEffect(() => {
+    if (user && !canAccessPortalPage(user, page)) setPage("resumen");
+  }, [user, page]);
+  useEffect(() => {
     document.documentElement.dataset.currentPage = page;
     sessionStorage.setItem("ejb_active_page", page);
     if (page === "notificaciones") setNotificationReturnVisible(false);
@@ -1580,6 +1616,33 @@ function App() {
       .join(", ");
     return `conic-gradient(${segments})`;
   }, [portfolioStatusCounts]);
+  const workerPerformanceRanking = useMemo(() => {
+    const sameAreaWorkers = team.filter((member) =>
+      isWorkerPortalUser(member) && (!user?.area?.id || member.area?.id === user.area.id),
+    );
+    return sameAreaWorkers
+      .map((member) => {
+        const assignedTasks = items.flatMap((project) =>
+          (project.tareas ?? []).filter((task) => task.responsableId === member.id),
+        );
+        const completed = assignedTasks.filter((task) => task.completada).length;
+        const managedProjects = items.filter((project) => project.responsableId === member.id);
+        const projectProgress = managedProjects.length
+          ? managedProjects.reduce((sum, project) => sum + project.avance, 0) / managedProjects.length
+          : 0;
+        const taskProgress = assignedTasks.length ? (completed / assignedTasks.length) * 100 : 0;
+        const points = Math.round(
+          assignedTasks.length && managedProjects.length
+            ? taskProgress * 0.8 + projectProgress * 0.2
+            : assignedTasks.length ? taskProgress : projectProgress,
+        );
+        return { member, assigned: assignedTasks.length, completed, points };
+      })
+      .sort((left, right) =>
+        right.points - left.points || right.completed - left.completed ||
+        `${left.member.nombres} ${left.member.apellidos}`.localeCompare(`${right.member.nombres} ${right.member.apellidos}`, "es"),
+      );
+  }, [team, items, user?.area?.id]);
   const openProgress = async (i: Item) => {
     setProgressItem(i);
     setHistory(await fetchProgresos(i.id));
@@ -1886,25 +1949,27 @@ function App() {
         >
           {sidebarCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
         </button>
-        <div className="sidebar-zoom">
-          <button
-            onClick={() =>
-              setSidebarScale((v) => Math.max(0.7, +(v - 0.06).toFixed(2)))
-            }
-            title="Reducir menú"
-          >
-            <ZoomOut />
-          </button>
-          <span>{Math.round(sidebarScale * 100)}%</span>
-          <button
-            onClick={() =>
-              setSidebarScale((v) => Math.min(1.18, +(v + 0.06).toFixed(2)))
-            }
-            title="Ampliar menú"
-          >
-            <ZoomIn />
-          </button>
-        </div>
+        {!sidebarCollapsed && (
+          <div className="sidebar-zoom">
+            <button
+              onClick={() =>
+                setSidebarScale((v) => Math.max(0.7, +(v - 0.06).toFixed(2)))
+              }
+              title="Reducir menú"
+            >
+              <ZoomOut />
+            </button>
+            <span>{Math.round(sidebarScale * 100)}%</span>
+            <button
+              onClick={() =>
+                setSidebarScale((v) => Math.min(1.18, +(v + 0.06).toFixed(2)))
+              }
+              title="Ampliar menú"
+            >
+              <ZoomIn />
+            </button>
+          </div>
+        )}
         <nav onClickCapture={() => setMobileMenuOpen(false)}>
           <button
             className={page === "resumen" ? "active" : ""}
@@ -1933,13 +1998,15 @@ function App() {
           >
             <BriefcaseBusiness /> Mi trabajo
           </button>
-          <button
-            className={page === "objetivos" ? "active" : ""}
-            onClick={() => setPage("objetivos")}
-          >
-            <Target />
-            Objetivos
-          </button>
+          {!isWorkerPortalUser(user) && (
+            <button
+              className={page === "objetivos" ? "active" : ""}
+              onClick={() => setPage("objetivos")}
+            >
+              <Target />
+              Objetivos
+            </button>
+          )}
           <button
             className={page === "equipo" ? "active" : ""}
             onClick={() => setPage("equipo")}
@@ -1978,26 +2045,31 @@ function App() {
             <MessageCircle />
             Mensajes{unreadMessages > 0 && <span>{unreadMessages}</span>}
           </button>
-          <button
-            className={page === "cronograma" ? "active" : ""}
-            onClick={() => setPage("cronograma")}
-          >
-            <BellRing />
-            Alertas
-          </button>
+          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+            <button
+              className={page === "cronograma" ? "active" : ""}
+              onClick={() => setPage("cronograma")}
+            >
+              <BellRing />
+              Cronogramas y alertas
+            </button>
+          )}
           <button
             className={page === "calendario" ? "active" : ""}
             onClick={() => setPage("calendario")}
           >
             <CalendarDays /> Calendario
           </button>
-          <button
+          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+            <button
             className={page === "informes" ? "active" : ""}
             onClick={() => setPage("informes")}
           >
             <BarChart3 /> Informes BI
-          </button>
-          <button
+            </button>
+          )}
+          {!isWorkerPortalUser(user) && (
+            <button
             className={page === "requerimientos" ? "active" : ""}
             onClick={() => {
               setPage("requerimientos");
@@ -2006,14 +2078,17 @@ function App() {
           >
             <ClipboardList />
             Requerimientos
-          </button>
-          <button
+            </button>
+          )}
+          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+            <>
+              <button
             className={page === "reporteria" ? "active" : ""}
             onClick={() => setPage("reporteria")}
           >
             <Download /> Reportería
-          </button>
-          <button
+              </button>
+              <button
             className={page === "flujos" ? "active" : ""}
             onClick={() => {
               setPage("flujos");
@@ -2022,7 +2097,9 @@ function App() {
           >
             <FileText />
             Flujos de Áreas
-          </button>
+              </button>
+            </>
+          )}
           <button
             className={page === "encuestas" ? "active" : ""}
             onClick={() => {
@@ -2040,7 +2117,7 @@ function App() {
             <CheckSquare />
             Aprobaciones
           </button>
-          {canReadMarketing(user) && (
+          {!isWorkerPortalUser(user) && canReadMarketing(user) && (
             <button
               className={page === "marketing" ? "active" : ""}
               onClick={() => setPage("marketing")}
@@ -2048,7 +2125,7 @@ function App() {
               <TrendingUp /> Marketing
             </button>
           )}
-          {(user.isSuperAdmin || isAreaLeaderUser(user)) && (
+          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
             <button
               className={page === "administracion" ? "active" : ""}
               onClick={() => setPage("administracion")}
@@ -2437,7 +2514,7 @@ function App() {
                 }}
               />
             )}
-            {page === "administracion" && (user.isSuperAdmin || isAreaLeaderUser(user)) && (
+            {page === "administracion" && (hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
               <EnterpriseAdmin user={user} areas={areas} />
             )}
             {page === "feedback" && <UserFeedback user={user} />}
@@ -2507,6 +2584,40 @@ function App() {
                     <span>líneas estratégicas</span>
                   </article>
                 </div>
+                {isWorkerPortalUser(user) && (
+                  <article className="report-card monthly-ranking dashboard-worker-ranking">
+                    <div className="ranking-head">
+                      <div>
+                        <Trophy />
+                        <div>
+                          <h3>Ranking de cumplimiento del equipo</h3>
+                          <p>Resultados según tareas asignadas, tareas realizadas y avance de proyectos.</p>
+                        </div>
+                      </div>
+                      <span>{user.area?.nombre || "Mi área"}</span>
+                    </div>
+                    <div className="ranking-list">
+                      {workerPerformanceRanking.slice(0, 5).map((entry, index) => (
+                        <div
+                          className={`rank rank-${index + 1}${entry.member.id === user.id ? " current-worker" : ""}`}
+                          key={entry.member.id}
+                        >
+                          <strong>{index + 1}</strong>
+                          <i style={{ background: entry.member.area?.colorHex || "#2f6fed" }} />
+                          <div>
+                            <b>{entry.member.nombres} {entry.member.apellidos}{entry.member.id === user.id ? " · Tú" : ""}</b>
+                            <small>{entry.completed}/{entry.assigned} tareas realizadas</small>
+                          </div>
+                          <em>{entry.points} pts</em>
+                          <Award />
+                        </div>
+                      ))}
+                      {!workerPerformanceRanking.length && (
+                        <div className="suite-empty">Aún no hay datos suficientes para calcular el ranking.</div>
+                      )}
+                    </div>
+                  </article>
+                )}
                 <div className="bi-grid">
                   <article
                     className="bi-card portfolio-health dashboard-clickable"
@@ -2792,7 +2903,7 @@ function App() {
                 </section>
               </div>
             )}
-            {page === "objetivos" && (
+            {page === "objetivos" && !isWorkerPortalUser(user) && (
               <ObjectivesModule
                 objetivos={objetivos}
                 items={items}
@@ -3013,7 +3124,7 @@ function App() {
                   </div>
                 </div>
             )}
-            {page === "cronograma" && (
+            {page === "cronograma" && (hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
               <Timeline
                 items={items}
                 onBack={() => setPage("resumen")}
@@ -3032,15 +3143,15 @@ function App() {
                 onProjectsChanged={reloadItems}
               />
             )}
-            {page === "informes" && (
+            {page === "informes" && (hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
               <BIReports items={items} areas={areas} user={user} />
             )}
-            {page === "reporteria" && <ReportingCenter items={items} />}
-            {page === "requerimientos" && <Requirements user={user} />}
-            {page === "flujos" && <AreaFlows user={user} />}
+            {page === "reporteria" && (hasFullPortalAccess(user) || isAreaLeaderUser(user)) && <ReportingCenter items={items} />}
+            {page === "requerimientos" && !isWorkerPortalUser(user) && <Requirements user={user} />}
+            {page === "flujos" && (hasFullPortalAccess(user) || isAreaLeaderUser(user)) && <AreaFlows user={user} />}
             {page === "encuestas" && <Surveys user={user} />}
             {page === "aprobaciones" && <Approvals user={user} />}
-            {page === "marketing" && <MarketingCenter user={user} />}
+            {page === "marketing" && !isWorkerPortalUser(user) && <MarketingCenter user={user} />}
             {page === "perfil" && (
               <Profile user={user} onUpdate={setUser} areas={areas} />
             )}
@@ -3170,7 +3281,7 @@ function App() {
                     ))}
                   </select>
                 </label>
-                {(user.isSuperAdmin || isAreaLeaderUser(user)) && (
+                {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
                   <label>
                     Derivar a
                     <select name="responsableId" defaultValue="" key={page === "kanban-sistemas" ? "Sistemas" : createAreaName}>

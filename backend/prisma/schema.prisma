@@ -64,6 +64,7 @@ enum EstadoTicket {
   PENDIENTE
   EN_CURSO
   FINALIZADO
+  RECHAZADO
 }
 
 enum PrioridadTicket {

@@ -9,6 +9,7 @@ import {
 import { createPortal } from "react-dom";
 import {
   AlertTriangle,
+  Ban,
   BarChart3,
   Building2,
   CalendarRange,
@@ -39,6 +40,7 @@ import {
   finishTicket,
   linkTicketConsultant,
   reassignTicket,
+  rejectTicket,
   reopenTicket,
   saveTicketAdvance,
   subscribeTickets,
@@ -47,7 +49,7 @@ import {
 import { isTechnicalUser } from "../utils/access";
 import { uiConfirm } from "../utils/dialog";
 
-type TicketStatus = "PENDIENTE" | "EN_CURSO" | "FINALIZADO";
+type TicketStatus = "PENDIENTE" | "EN_CURSO" | "FINALIZADO" | "RECHAZADO";
 type TicketPriority = "BAJA" | "NORMAL" | "ALTA" | "URGENTE";
 type TicketPerson = {
   id: string;
@@ -110,7 +112,7 @@ const fullName = (person?: TicketPerson | null) =>
 const initials = (person?: TicketPerson | null) =>
   person ? `${person.nombres[0] ?? ""}${person.apellidos[0] ?? ""}`.toUpperCase() : "—";
 const statusLabel = (status: TicketStatus) =>
-  ({ PENDIENTE: "Pendiente", EN_CURSO: "En curso", FINALIZADO: "Finalizado" })[status];
+  ({ PENDIENTE: "Pendiente", EN_CURSO: "En curso", FINALIZADO: "Finalizado", RECHAZADO: "Rechazado" })[status];
 const label = (value: string) =>
   value.charAt(0) + value.slice(1).toLowerCase().replaceAll("_", " ");
 const dateTime = (value?: string | null) => {
@@ -359,6 +361,29 @@ export default function TicketWorkspace({ user }: { user: any }) {
       setSaving(false);
     }
   };
+  const rejectCase = async (ticket: Ticket) => {
+    if (saving || ticket.estado === "FINALIZADO" || ticket.estado === "RECHAZADO") return;
+    if (!(await uiConfirm(
+      "Rechazar caso",
+      `¿Deseas rechazar el caso ${ticket.numeroTicket}? Esta acción quedará registrada en su trazabilidad.`,
+    ))) return;
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await rejectTicket(ticket.id);
+      const visibleState = quickTab === "all" ? statusFilter : quickTab;
+      setRows((current) => visibleState && updated.estado !== visibleState
+        ? current.filter((row) => row.id !== updated.id)
+        : current.map((row) => row.id === updated.id ? updated : row));
+      if (selected?.id === updated.id) setSelected(undefined);
+      setSuccess(`El caso ${ticket.numeroTicket} fue rechazado.`);
+      await load();
+    } catch (cause: any) {
+      setError(cause.message ?? "No se pudo rechazar el caso.");
+    } finally {
+      setSaving(false);
+    }
+  };
   const assignTicket = async (ticket: Ticket, person: TicketPerson) => {
     if (
       !(await uiConfirm(
@@ -502,7 +527,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const canEditSelected = Boolean(selected) && (
     isBoss || (selected?.estado === "EN_CURSO" && selected.asignadoAId === user.id)
   );
-  const canManageSelected = canEditSelected && selected?.estado !== "PENDIENTE";
+  const canManageSelected = canEditSelected && selected?.estado !== "PENDIENTE" && selected?.estado !== "RECHAZADO";
   const selectedRegistered = dateTime(selected?.registradoAt);
   const selectedContacted = dateTime(selected?.contactadoAt);
   const detailPanel = selected
@@ -592,7 +617,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
           <label className="ticket-search"><Search /><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por RUC, razón social, usuario o consulta..." /></label>
           <select aria-label="Cliente" value={clientFilter} onChange={(event) => { setClientFilter(event.target.value); setPage(1); }}><option value="">Cliente: Todos</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.razonSocial}</option>)}</select>
           <select aria-label="Módulo" value={moduleFilter} onChange={(event) => { setModuleFilter(event.target.value); setPage(1); }}><option value="">Módulo: Todos</option>{catalogs.modules.map((module) => <option key={module}>{module}</option>)}</select>
-          <select aria-label="Estado" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setQuickTab("all"); setPage(1); }}><option value="">Estado: Todos</option><option value="PENDIENTE">Pendiente</option><option value="EN_CURSO">En curso</option><option value="FINALIZADO">Finalizado</option></select>
+          <select aria-label="Estado" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setQuickTab("all"); setPage(1); }}><option value="">Estado: Todos</option><option value="PENDIENTE">Pendiente</option><option value="EN_CURSO">En curso</option><option value="FINALIZADO">Finalizado</option><option value="RECHAZADO">Rechazado</option></select>
           <select aria-label="Asignado a" value={assigneeFilter} onChange={(event) => { setAssigneeFilter(event.target.value); setPage(1); }}><option value="">Asignado a: Todos</option><option value="__mine__">Asignado a: Mis casos</option>{consultants.map((person) => <option key={person.id} value={person.id}>{fullName(person)}</option>)}</select>
           <button className="ticket-clear" onClick={clearFilters}>Limpiar</button>
           <div className="ticket-date-range" role="group" aria-label="Filtrar por fecha de registro">
@@ -647,7 +672,8 @@ export default function TicketWorkspace({ user }: { user: any }) {
                 <td>
                   <div className="ticket-row-actions">
                     <button className="ticket-take-action" disabled={saving} onClick={(event) => { event.stopPropagation(); void claimTicket(ticket); }}><Headphones />{ticket.estado === "PENDIENTE" && !ticket.asignadoAId && canTakeCases ? "Tomar" : "Abrir"}</button>
-                    {isBoss && ticket.estado !== "FINALIZADO" && <div className="ticket-row-menu" data-ticket-menu={ticket.id}>
+                    {ticket.estado !== "FINALIZADO" && ticket.estado !== "RECHAZADO" && canTakeCases && <button className="ticket-reject-action" disabled={saving} onClick={(event) => { event.stopPropagation(); void rejectCase(ticket); }}><Ban />Rechazar</button>}
+                    {isBoss && ticket.estado !== "FINALIZADO" && ticket.estado !== "RECHAZADO" && <div className="ticket-row-menu" data-ticket-menu={ticket.id}>
                       <button
                         type="button"
                         className="ticket-more-action"

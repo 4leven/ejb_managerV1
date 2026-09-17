@@ -236,7 +236,7 @@ export async function summary(req: Request, res: Response, next: NextFunction) {
       prisma.ticket.count({ where: { ...ticketScope, estado: "FINALIZADO", finalizadoAt: { gte: today } } }),
       prisma.ticket.count({ where: { ...ticketScope, estado: "EN_CURSO", asignadoAId: currentUser.id } }),
       prisma.ticket.count({
-        where: { ...ticketScope, estado: { not: "FINALIZADO" }, slaVenceAt: { lt: new Date() } },
+        where: { ...ticketScope, estado: { notIn: ["FINALIZADO", "RECHAZADO"] }, slaVenceAt: { lt: new Date() } },
       }),
       prisma.ticket.findMany({
         where: { ...ticketScope, estado: "FINALIZADO", finalizadoAt: { not: null } },
@@ -351,8 +351,8 @@ export async function advance(req: Request, res: Response, next: NextFunction) {
     }).parse(req.body);
     const current = await prisma.ticket.findUniqueOrThrow({ where: { id } });
     const boss = isTicketBoss(currentUser);
-    if (current.estado === "FINALIZADO" && !boss)
-      throw fail(403, "Los casos finalizados están disponibles en modo solo lectura");
+    if ((current.estado === "FINALIZADO" || current.estado === "RECHAZADO") && !boss)
+      throw fail(403, "Los casos cerrados están disponibles en modo solo lectura");
     if (current.estado !== "EN_CURSO" && !(boss && current.estado === "FINALIZADO"))
       throw fail(409, "Este caso no admite modificaciones");
     if (!boss && current.asignadoAId !== currentUser.id)
@@ -434,6 +434,37 @@ export async function finish(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function reject(req: Request, res: Response, next: NextFunction) {
+  try {
+    const currentUser = await actor(req.userId!);
+    if (!canTakeTickets(currentUser) && !isTicketBoss(currentUser))
+      throw fail(403, "No tienes permiso para rechazar casos");
+    const id = uuid.parse(req.params.id);
+    const current = await prisma.ticket.findUniqueOrThrow({ where: { id } });
+    if (current.estado === "FINALIZADO" || current.estado === "RECHAZADO")
+      throw fail(409, "Este caso ya se encuentra cerrado");
+    const row = await prisma.$transaction(async (tx) => {
+      await tx.ticket.update({
+        where: { id },
+        data: { estado: "RECHAZADO" },
+      });
+      await tx.ticketHistorial.create({
+        data: {
+          ticketId: id,
+          accion: "Ticket rechazado",
+          estadoAnterior: current.estado,
+          estadoNuevo: "RECHAZADO",
+          usuarioId: currentUser.id,
+        },
+      });
+      return tx.ticket.findUniqueOrThrow({ where: { id }, include: detailInclude });
+    });
+    res.json(present(row));
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function reopen(req: Request, res: Response, next: NextFunction) {
   try {
     const currentUser = await actor(req.userId!);
@@ -480,7 +511,7 @@ export async function reassign(req: Request, res: Response, next: NextFunction) 
       prisma.ticket.findUniqueOrThrow({ where: { id } }),
       actor(asignadoAId),
     ]);
-    if (current.estado === "FINALIZADO") throw fail(409, "Un caso finalizado no se puede reasignar");
+    if (current.estado === "FINALIZADO" || current.estado === "RECHAZADO") throw fail(409, "Un caso cerrado no se puede reasignar");
     if (!canTakeTickets(assignee)) throw fail(400, "El usuario elegido no es consultor de atención");
     const row = await prisma.$transaction(async (tx) => {
       await tx.ticket.update({

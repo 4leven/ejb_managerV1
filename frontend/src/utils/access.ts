@@ -11,6 +11,9 @@ export const isTechnicalUser = (user?: AccessUser | null) =>
 export const canOperateGlobally = (user?: AccessUser | null) =>
   Boolean(user?.isSuperAdmin || isTechnicalUser(user));
 
+export const hasFullPortalAccess = (user?: AccessUser | null) =>
+  Boolean(user?.isSuperAdmin || user?.permisos?.accesoTotalPortal);
+
 export const cargoLabel = (cargo?: string | null) =>
   cargo === "Tecnico" ? "Técnico" : cargo === "Administracion" ? "Administración" : cargo || "Sin rol";
 

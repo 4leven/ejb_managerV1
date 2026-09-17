@@ -1648,7 +1648,7 @@ html[data-current-page="resumen"] .area-performance{
   .shell:not(.sidebar-collapsed)>aside{
     width:calc(220px * var(--sidebar-scale))!important;
     padding:calc(8px * var(--sidebar-scale)) calc(10px * var(--sidebar-scale)) calc(12px * var(--sidebar-scale))!important;
-    background:linear-gradient(180deg,#082756 0%,#0b346b 100%)!important;
+    background:var(--portal-color)!important;
     overflow-y:auto!important;
     overflow-x:hidden!important;
   }
@@ -1663,9 +1663,9 @@ html[data-current-page="resumen"] .area-performance{
     flex:0 0 calc(30px * var(--sidebar-scale))!important;
     margin:0 auto calc(8px * var(--sidebar-scale))!important;
     border-radius:calc(7px * var(--sidebar-scale))!important;
-    border:1px solid #2b5b95!important;
-    background:#153f78!important;
-    color:#cfe4ff!important;
+    border:1px solid color-mix(in srgb,var(--portal-on-color) 22%,transparent)!important;
+    background:color-mix(in srgb,var(--portal-on-color) 10%,transparent)!important;
+    color:var(--portal-on-color)!important;
   }
   .shell>aside>.sidebar-toggle:before{
     font-size:calc(13px * var(--sidebar-scale))!important;
@@ -1682,7 +1682,7 @@ html[data-current-page="resumen"] .area-performance{
     justify-content:space-between!important;
     gap:calc(8px * var(--sidebar-scale))!important;
     border-radius:calc(8px * var(--sidebar-scale))!important;
-    background:#123d78!important;
+    background:color-mix(in srgb,var(--portal-on-color) 9%,transparent)!important;
   }
   .shell>aside>.sidebar-zoom button{
     width:calc(18px * var(--sidebar-scale))!important;
@@ -1691,7 +1691,7 @@ html[data-current-page="resumen"] .area-performance{
     display:grid!important;
     place-items:center!important;
     padding:0!important;
-    color:#d2e6ff!important;
+    color:var(--portal-on-color)!important;
   }
   .shell>aside>.sidebar-zoom svg{
     width:calc(12px * var(--sidebar-scale))!important;
@@ -1700,7 +1700,7 @@ html[data-current-page="resumen"] .area-performance{
   .shell>aside>.sidebar-zoom span{
     min-width:calc(42px * var(--sidebar-scale))!important;
     padding:calc(5px * var(--sidebar-scale)) 0 calc(3px * var(--sidebar-scale))!important;
-    color:#fff!important;
+    color:var(--portal-on-color)!important;
     font-size:calc(10px * var(--sidebar-scale))!important;
     font-weight:950!important;
     line-height:1!important;
@@ -1710,7 +1710,7 @@ html[data-current-page="resumen"] .area-performance{
     top:calc(24px * var(--sidebar-scale))!important;
     left:50%!important;
     transform:translateX(-50%)!important;
-    color:#c6dcf8!important;
+    color:color-mix(in srgb,var(--portal-on-color) 78%,transparent)!important;
     font-size:calc(7px * var(--sidebar-scale))!important;
     font-weight:700!important;
     letter-spacing:0!important;
@@ -1730,7 +1730,7 @@ html[data-current-page="resumen"] .area-performance{
     align-items:center!important;
     gap:calc(9px * var(--sidebar-scale))!important;
     border-radius:calc(9px * var(--sidebar-scale))!important;
-    color:#e3efff!important;
+    color:color-mix(in srgb,var(--portal-on-color) 88%,transparent)!important;
     font-size:calc(10.5px * var(--sidebar-scale))!important;
     font-weight:800!important;
     line-height:1.05!important;
@@ -1823,4 +1823,17 @@ html.dark[data-current-page="resumen"] .portfolio-health .bi-heading>span,
   border-color:#31486b!important;
   background:#101d31!important;
   color:#dce8fa!important;
+}
+
+/* Ranking visible en el Resumen de trabajadores y empleados. */
+.dashboard-worker-ranking{
+  margin:18px 0 22px!important;
+  background:var(--surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:18px!important;
+  box-shadow:0 10px 28px #0b234710!important;
+}
+.dashboard-worker-ranking .rank.current-worker{
+  border-color:#2f6fed!important;
+  box-shadow:0 0 0 2px #2f6fed22!important;
 }

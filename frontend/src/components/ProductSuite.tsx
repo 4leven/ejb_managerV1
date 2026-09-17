@@ -13,6 +13,7 @@ import {
   FileSpreadsheet,
   FileText,
   Filter,
+  ExternalLink,
   Mail,
   MailOpen,
   MessageSquareText,
@@ -20,7 +21,6 @@ import {
   Plug,
   Search,
   Send,
-  Settings2,
   ShieldCheck,
   Sparkles,
   Target,
@@ -56,7 +56,7 @@ function Empty({ children }: { children: string }) {
 
 export function MyWork({ user, items }: { user: any; items: any[] }) {
   const [selectedTask, setSelectedTask] = useState<any | null>(null),
-    [workFilter, setWorkFilter] = useState<"all" | "overdue" | "upcoming">("all"),
+    [workFilter, setWorkFilter] = useState<"all" | "pending" | "completed">("pending"),
     [workQuery, setWorkQuery] = useState("");
   const tasks = useMemo(
     () =>
@@ -68,28 +68,21 @@ export function MyWork({ user, items }: { user: any; items: any[] }) {
             projectId: project.id,
           })),
         )
-        .filter(
-          (task: any) =>
-            !task.completada &&
-            (!task.responsableId || task.responsableId === user.id),
-        ),
+        .filter((task: any) => task.responsableId === user.id),
     [items, user.id],
   );
-  const overdue = tasks.filter(
-    (t: any) => t.fechaFin && new Date(t.fechaFin) < new Date(),
+  const pending = tasks.filter((task: any) => !task.completada),
+    completed = tasks.filter((task: any) => task.completada),
+    overdue = pending.filter(
+      (t: any) => t.fechaFin && new Date(t.fechaFin) < new Date(),
     ),
-    dueSoon = tasks.filter((t: any) => {
-      if (!t.fechaFin) return false;
-      const remaining = new Date(t.fechaFin).getTime() - Date.now();
-      return remaining >= 0 && remaining <= 7 * 86400000;
-    }),
     ownedProjects = items.filter(
       (item) => item.responsableId === user.id || item.responsable?.includes(user.nombres),
     ),
     visibleTasks = tasks
       .filter((task: any) => {
-        if (workFilter === "overdue" && !overdue.includes(task)) return false;
-        if (workFilter === "upcoming" && !dueSoon.includes(task)) return false;
+        if (workFilter === "pending" && task.completada) return false;
+        if (workFilter === "completed" && !task.completada) return false;
         const needle = workQuery.trim().toLowerCase();
         return !needle || `${task.titulo} ${task.project} ${task.prioridad || ""}`.toLowerCase().includes(needle);
       })
@@ -125,10 +118,10 @@ export function MyWork({ user, items }: { user: any; items: any[] }) {
         </article>
         <article className="suite-kpi green">
           <span className="suite-kpi-icon">
-            <CalendarDays />
+            <Check />
           </span>
-          <b>{dueSoon.length}</b>
-          <span>Próximas 7 días</span>
+          <b>{completed.length}</b>
+          <span>Realizadas</span>
         </article>
         <article className="suite-kpi violet">
           <span className="suite-kpi-icon">
@@ -151,8 +144,8 @@ export function MyWork({ user, items }: { user: any; items: any[] }) {
         <div className="work-toolbar">
           <div role="tablist" aria-label="Filtrar tareas">
             <button type="button" role="tab" aria-selected={workFilter === "all"} className={workFilter === "all" ? "active" : ""} onClick={() => setWorkFilter("all")}>Todas <b>{tasks.length}</b></button>
-            <button type="button" role="tab" aria-selected={workFilter === "overdue"} className={workFilter === "overdue" ? "active" : ""} onClick={() => setWorkFilter("overdue")}>Vencidas <b>{overdue.length}</b></button>
-            <button type="button" role="tab" aria-selected={workFilter === "upcoming"} className={workFilter === "upcoming" ? "active" : ""} onClick={() => setWorkFilter("upcoming")}>Próximas <b>{dueSoon.length}</b></button>
+            <button type="button" role="tab" aria-selected={workFilter === "pending"} className={workFilter === "pending" ? "active" : ""} onClick={() => setWorkFilter("pending")}>Pendientes <b>{pending.length}</b></button>
+            <button type="button" role="tab" aria-selected={workFilter === "completed"} className={workFilter === "completed" ? "active" : ""} onClick={() => setWorkFilter("completed")}>Realizadas <b>{completed.length}</b></button>
           </div>
           <label>
             <Search />
@@ -162,7 +155,7 @@ export function MyWork({ user, items }: { user: any; items: any[] }) {
         {visibleTasks.length ? (
           <div className="suite-list">
             {visibleTasks.map((t: any) => (
-                <article key={t.id} role="button" tabIndex={0} className="work-task-preview" onClick={() => setSelectedTask(t)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedTask(t); }}>
+                <article key={t.id} role="button" tabIndex={0} className={`work-task-preview${t.completada ? " completed" : ""}`} onClick={() => setSelectedTask(t)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedTask(t); }}>
                   <CheckCircle2 />
                   <div>
                     <b>{t.titulo}</b>
@@ -174,7 +167,7 @@ export function MyWork({ user, items }: { user: any; items: any[] }) {
                     </span>
                   </div>
                   <em className={overdue.includes(t) ? "danger" : ""}>
-                    {t.prioridad || "Normal"}
+                    {t.completada ? "Realizada" : (t.prioridad || "Normal")}
                   </em>
                   <time className={overdue.includes(t) ? "danger" : ""} dateTime={t.fechaFin || undefined}>
                     <CalendarDays />
@@ -484,9 +477,9 @@ export function NotificationCenter({
                     <button type="button" aria-label="Más opciones" aria-expanded={openMenu === row.id} onClick={() => setOpenMenu((current) => current === row.id ? null : row.id)}><MoreVertical /></button>
                     {openMenu === row.id && (
                       <div>
+                        {destinationFor(row) && <button type="button" onClick={() => { setOpenMenu(null); openNotification(row); }}><ExternalLink /> Ir al apartado</button>}
                         {!row.leidaAt && <button type="button" onClick={() => { setOpenMenu(null); void markRead(row); }}><Check /> Marcar como leída</button>}
-                        {tab !== "archived" && <button type="button" onClick={() => void archive(row)}><Archive /> Archivar</button>}
-                        {row.leidaAt && tab === "archived" && <span>Sin acciones pendientes</span>}
+                        {!destinationFor(row) && row.leidaAt && <span>Sin acciones pendientes</span>}
                       </div>
                     )}
                   </div>
@@ -513,8 +506,7 @@ export function Clients360({ items }: { items: any[] }) {
   );
   const [client, setClient] = useState(String(clients[0] || "")),
     [page, setPage] = useState(0),
-    [selected, setSelected] = useState<string[]>([]),
-    [showDates, setShowDates] = useState(true);
+    [selected, setSelected] = useState<string[]>([]);
   const projects = items.filter((i) => i.cliente === client && (!worker || linkedWorkers(i).some((person) => person.id === worker))),
     slice = projects.slice(page * 5, page * 5 + 5);
   const exportCsv = () => {
@@ -597,9 +589,6 @@ export function Clients360({ items }: { items: any[] }) {
       <section className="suite-card suite-span">
         <div className="suite-toolbar">
           <h3>Portafolio del cliente</h3>
-          <button onClick={() => setShowDates((v) => !v)}>
-            <Settings2 /> Columnas
-          </button>
           <button onClick={exportCsv}>
             <Download /> Exportar selección
           </button>
@@ -615,7 +604,7 @@ export function Clients360({ items }: { items: any[] }) {
                     <th>Proyecto</th>
                     <th>Estado</th>
                     <th>Avance</th>
-                    {showDates && <th>Fin estimado</th>}
+                    <th>Fin estimado</th>
                     <th>Reuniones</th>
                   </tr>
                 </thead>
@@ -642,13 +631,11 @@ export function Clients360({ items }: { items: any[] }) {
                       </td>
                       <td>{p.estado}</td>
                       <td>{p.avance}%</td>
-                      {showDates && (
-                        <td>
-                          {p.fechaFin
-                            ? new Date(p.fechaFin).toLocaleDateString("es-PE")
-                            : "—"}
-                        </td>
-                      )}
+                      <td>
+                        {p.fechaFin
+                          ? new Date(p.fechaFin).toLocaleDateString("es-PE")
+                          : "—"}
+                      </td>
                       <td>{p.reuniones || 0}</td>
                     </tr>
                   ))}
