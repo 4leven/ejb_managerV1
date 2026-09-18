@@ -2148,10 +2148,6 @@ function App() {
           </button>
         </nav>
         <div className="nav-foot">
-          <button onClick={() => setPage("ayuda")}>
-            <CircleHelp />
-            Centro de ayuda
-          </button>
           <div className="app-version">
             <span>EJB MANAGER</span>
             <b>V. 0.3.28</b>

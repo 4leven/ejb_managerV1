@@ -1254,9 +1254,6 @@ html[data-current-page="resumen"] .portfolio-health .health-legend b{
     font-size:7px!important;
     font-weight:900!important;
   }
-  .shell>aside>.nav-foot{
-    display:none!important;
-  }
 }
 
 @media(max-width:860px){
@@ -1836,4 +1833,20 @@ html.dark[data-current-page="resumen"] .portfolio-health .bi-heading>span,
 .dashboard-worker-ranking .rank.current-worker{
   border-color:#2f6fed!important;
   box-shadow:0 0 0 2px #2f6fed22!important;
+}
+
+/* La versión es el último elemento del propio menú: solo aparece al deslizar hasta el final de la columna, sin ocupar espacio fijo ni superponerse a nada. */
+.shell>aside,
+.shell:not(.sidebar-collapsed)>aside,
+.shell.sidebar-collapsed>aside{
+  overflow-y:auto!important;
+}
+.shell>aside>nav,
+.shell:not(.sidebar-collapsed)>aside>nav{
+  flex:none!important;
+}
+.shell>aside>.nav-foot,
+.shell:not(.sidebar-collapsed)>aside>.nav-foot{
+  position:static!important;
+  margin-top:16px!important;
 }

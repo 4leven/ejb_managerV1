@@ -42,7 +42,10 @@ const createSchema = z.object({
   clienteId: uuid.optional(),
   ruc:z.string().trim().regex(/^\d{11}$/, "El RUC debe tener 11 dígitos.").optional(),
   razonSocial:z.string().trim().min(2).max(180).optional(),
-  telefono:z.string().trim().max(30).optional(),
+  telefono:z.string().trim().max(30).optional().refine(
+    (value) => !value || /^\d{6,9}$/.test(value),
+    "El teléfono debe tener entre 6 y 9 dígitos.",
+  ),
   observaciones:z.string().trim().max(3000).optional(),
   modulo: z.enum(TICKET_MODULES),
   contacto: z.string().trim().min(2).max(150),
@@ -398,10 +401,7 @@ export async function finish(req: Request, res: Response, next: NextFunction) {
     const data = z.object({
       observaciones: z.string().trim().max(3000).optional(),
       solucion: z.string().trim().max(3000).optional(),
-    }).refine(
-      (value) => (value.observaciones?.length ?? 0) >= 5 || (value.solucion?.length ?? 0) >= 5,
-      { message: "Debes registrar una observación final o la solución brindada" },
-    ).parse(req.body);
+    }).parse(req.body);
     const current = await prisma.ticket.findUniqueOrThrow({ where: { id } });
     if (current.estado !== "EN_CURSO") throw fail(409, "El caso no está en curso");
     if (!isTicketBoss(currentUser) && current.asignadoAId !== currentUser.id)
@@ -471,7 +471,8 @@ export async function reopen(req: Request, res: Response, next: NextFunction) {
     if (!isTicketBoss(currentUser)) throw fail(403, "Solo jefatura puede reabrir casos");
     const id = uuid.parse(req.params.id);
     const current = await prisma.ticket.findUniqueOrThrow({ where: { id } });
-    if (current.estado !== "FINALIZADO") throw fail(409, "Solo se pueden reabrir casos finalizados");
+    if (current.estado !== "FINALIZADO" && current.estado !== "RECHAZADO")
+      throw fail(409, "Solo se pueden reabrir casos finalizados o rechazados");
     const row = await prisma.$transaction(async (tx) => {
       await tx.ticket.update({
         where: { id },
@@ -488,7 +489,7 @@ export async function reopen(req: Request, res: Response, next: NextFunction) {
         data: {
           ticketId: id,
           accion: "Ticket reabierto",
-          estadoAnterior: "FINALIZADO",
+          estadoAnterior: current.estado,
           estadoNuevo: "PENDIENTE",
           usuarioId: currentUser.id,
         },
@@ -519,8 +520,8 @@ export async function reassign(req: Request, res: Response, next: NextFunction) 
         data: {
           asignadoAId,
           asignadoAt: new Date(),
-          contactadoAt: current.contactadoAt ?? new Date(),
-          estado: "EN_CURSO",
+          contactadoAt: null,
+          estado: "PENDIENTE",
         },
       });
       await tx.ticketHistorial.create({
@@ -528,7 +529,7 @@ export async function reassign(req: Request, res: Response, next: NextFunction) 
           ticketId: id,
           accion: `Ticket reasignado a ${assignee.nombres} ${assignee.apellidos}`,
           estadoAnterior: current.estado,
-          estadoNuevo: "EN_CURSO",
+          estadoNuevo: "PENDIENTE",
           usuarioId: currentUser.id,
         },
       });
