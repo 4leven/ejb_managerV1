@@ -273,7 +273,12 @@ export async function create(req: Request, res: Response, next: NextFunction) {
       if(data.clienteId&&!selected)throw fail(404,"Cliente no encontrado.");
       const ruc=data.ruc??selected?.ruc, razonSocial=data.razonSocial??selected?.razonSocial;
       if(!ruc||!/^\d{11}$/.test(ruc)||!razonSocial)throw fail(400,"Completa el RUC de 11 dígitos y la razón social.");
-      const client = selected?.ruc===ruc ? selected : await tx.cliente.upsert({where:{ruc},create:{ruc,razonSocial,telefono:data.telefono||null,contacto:data.contacto},update:{}});
+      let client = selected?.ruc===ruc ? selected : null;
+      if(!client){
+        const conflict = await tx.cliente.findFirst({where:{razonSocial:{equals:razonSocial,mode:"insensitive"},NOT:{ruc}}});
+        if(conflict)throw fail(409,`Ya existe un cliente registrado como "${conflict.razonSocial}" con RUC ${conflict.ruc ?? "sin RUC"}. Búscalo en el maestro de clientes y selecciónalo.`);
+        client = await tx.cliente.upsert({where:{ruc},create:{ruc,razonSocial,telefono:data.telefono||null,contacto:data.contacto},update:{}});
+      }
       const phone=data.telefono!==undefined?data.telefono:client.telefono;
       const ticket = await tx.ticket.create({
         data: {
@@ -302,7 +307,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     });
     res.status(201).json(present(row));
   } catch (error) {
-    if(error instanceof Prisma.PrismaClientKnownRequestError&&error.code==="P2002")return next(fail(409,"Ya existe un cliente con esos datos. Busca su RUC o revisa la razón social antes de registrar."));
+    if((error as any)?.code==="P2002")return next(fail(409,"Ya existe un cliente con esos datos. Busca su RUC o revisa la razón social antes de registrar."));
     next(error);
   }
 }
@@ -470,28 +475,35 @@ export async function reopen(req: Request, res: Response, next: NextFunction) {
     const currentUser = await actor(req.userId!);
     if (!isTicketBoss(currentUser)) throw fail(403, "Solo jefatura puede reabrir casos");
     const id = uuid.parse(req.params.id);
+    const { motivo } = z.object({
+      motivo: z.string().trim().min(3, "Debes indicar el motivo de la reapertura.").max(500),
+    }).parse(req.body);
     const current = await prisma.ticket.findUniqueOrThrow({ where: { id } });
     if (current.estado !== "FINALIZADO" && current.estado !== "RECHAZADO")
       throw fail(409, "Solo se pueden reabrir casos finalizados o rechazados");
+    const backToProgress = current.estado === "FINALIZADO" && Boolean(current.asignadoAId);
     const row = await prisma.$transaction(async (tx) => {
       await tx.ticket.update({
         where: { id },
-        data: {
-          estado: "PENDIENTE",
-          asignadoAId: null,
-          asignadoAt: null,
-          contactadoAt: null,
-          finalizadoAt: null,
-          finalizadoPorId: null,
-        },
+        data: backToProgress
+          ? { estado: "EN_CURSO", finalizadoAt: null, finalizadoPorId: null }
+          : {
+              estado: "PENDIENTE",
+              asignadoAId: null,
+              asignadoAt: null,
+              contactadoAt: null,
+              finalizadoAt: null,
+              finalizadoPorId: null,
+            },
       });
       await tx.ticketHistorial.create({
         data: {
           ticketId: id,
           accion: "Ticket reabierto",
           estadoAnterior: current.estado,
-          estadoNuevo: "PENDIENTE",
+          estadoNuevo: backToProgress ? "EN_CURSO" : "PENDIENTE",
           usuarioId: currentUser.id,
+          comentario: motivo,
         },
       });
       return tx.ticket.findUniqueOrThrow({ where: { id }, include: detailInclude });

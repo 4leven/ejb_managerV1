@@ -47,7 +47,7 @@ import {
   takeTicket,
 } from "../api/iniciativas";
 import { isTechnicalUser } from "../utils/access";
-import { uiConfirm } from "../utils/dialog";
+import { uiConfirm, uiPrompt } from "../utils/dialog";
 
 type TicketStatus = "PENDIENTE" | "EN_CURSO" | "FINALIZADO" | "RECHAZADO";
 type TicketPriority = "BAJA" | "NORMAL" | "ALTA" | "URGENTE";
@@ -137,6 +137,7 @@ const elapsed = (start: string, end?: string | null) => {
 export default function TicketWorkspace({ user }: { user: any }) {
   const [rows, setRows] = useState<Ticket[]>([]);
   const [total, setTotal] = useState(0);
+  const [rejectedRows, setRejectedRows] = useState<Ticket[]>([]);
   const [summary, setSummary] = useState<Record<string, number | null>>({});
   const [clients, setClients] = useState<TicketClient[]>([]);
   const [clientOptions, setClientOptions] = useState<TicketClient[]>([]);
@@ -195,7 +196,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
       const state = quickTab === "PENDIENTE" || quickTab === "EN_CURSO" || quickTab === "FINALIZADO"
         ? quickTab
         : statusFilter;
-      const [data, kpis] = await Promise.all([
+      const [data, kpis, rejected] = await Promise.all([
         fetchTickets({
           q: query,
           estado: state,
@@ -212,10 +213,12 @@ export default function TicketWorkspace({ user }: { user: any }) {
           limit,
         }),
         fetchTicketSummary(),
+        fetchTickets({ estado: "RECHAZADO", orden: "fecha_desc", page: 1, limit: 8 }),
       ]);
       setRows(data.rows);
       setTotal(data.total);
       setSummary(kpis);
+      setRejectedRows(rejected.rows);
     } catch (cause: any) {
       setError(cause.message ?? "No se pudo actualizar la Ticketera.");
     } finally {
@@ -381,6 +384,48 @@ export default function TicketWorkspace({ user }: { user: any }) {
       await load();
     } catch (cause: any) {
       setError(cause.message ?? "No se pudo rechazar el caso.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  const requestReopen = async (ticket: Ticket, options?: { fromPanel?: boolean }) => {
+    if (saving) return;
+    const backToProgress = ticket.estado === "FINALIZADO" && Boolean(ticket.asignadoAId);
+    const motivo = await uiPrompt(
+      `Reabrir ${ticket.numeroTicket}`,
+      "",
+      {
+        message: backToProgress
+          ? `El caso volverá a "En curso" con ${fullName(ticket.asignadoA)} como responsable. Indica el motivo de la reapertura.`
+          : "El caso volverá a la cola de pendientes, sin consultor asignado. Indica el motivo de la reapertura.",
+        placeholder: "Motivo de la reapertura",
+        multiline: true,
+        confirmText: "Reabrir caso",
+      },
+    );
+    if (motivo === null) return;
+    if (motivo.trim().length < 3) {
+      setError("Indica un motivo de al menos 3 caracteres para reabrir el caso.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await reopenTicket(ticket.id, motivo.trim());
+      setSuccess(`El caso ${ticket.numeroTicket} fue reabierto${backToProgress ? "" : " y vuelve a la cola de pendientes"}.`);
+      if (options?.fromPanel) {
+        setRejectedRows((current) => current.filter((row) => row.id !== ticket.id));
+        await load();
+      } else {
+        const visibleState = quickTab === "all" ? statusFilter : quickTab;
+        setRows((current) => visibleState && updated.estado !== visibleState
+          ? current.filter((row) => row.id !== ticket.id)
+          : current.map((row) => row.id === updated.id ? updated : row));
+        await load();
+        setSelected(undefined);
+      }
+    } catch (cause: any) {
+      setError(cause.message ?? "No se pudo reabrir el caso.");
     } finally {
       setSaving(false);
     }
@@ -594,8 +639,8 @@ export default function TicketWorkspace({ user }: { user: any }) {
               <button type="button" onClick={() => setSelected(undefined)}>Cerrar</button>
               {selected.estado === "PENDIENTE" && (!selected.asignadoAId || selected.asignadoAId === user.id) && canTakeCases && <button type="button" className="primary" disabled={saving} onClick={() => void claimTicket(selected)}><Headphones />{saving ? "Asignando…" : "Tomar caso"}</button>}
               {selected.estado === "EN_CURSO" && canEditSelected && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar avance</button><button type="button" className="primary" disabled={saving} onClick={() => void runAndCloseDetail(finishTicket(selected.id, { observaciones: observations, solucion: solution }))}><CheckCircle2 />Finalizar caso</button></>}
-              {selected.estado === "FINALIZADO" && isBoss && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar corrección</button><button type="button" disabled={saving} onClick={() => void runAndCloseDetail(reopenTicket(selected.id))}><RefreshCcw />Reabrir</button></>}
-              {selected.estado === "RECHAZADO" && isBoss && <button type="button" disabled={saving} onClick={() => void runAndCloseDetail(reopenTicket(selected.id))}><RefreshCcw />Reabrir</button>}
+              {selected.estado === "FINALIZADO" && isBoss && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar corrección</button><button type="button" disabled={saving} onClick={() => void requestReopen(selected)}><RefreshCcw />Reabrir</button></>}
+              {selected.estado === "RECHAZADO" && isBoss && <button type="button" disabled={saving} onClick={() => void requestReopen(selected)}><RefreshCcw />Reabrir</button>}
             </footer>
           </aside>
         </div>,
@@ -724,6 +769,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
       <section className="ticket-side-panels">
         <article className="ticket-summary-panel"><header><h3>Resumen de atención</h3><span>Hoy</span></header><div><i className="ticket-summary-chart" style={chartStyle}><b>{summary.total ?? 0}<small>Tickets</small></b></i><ul><li><i className="pending" />Pendientes <b>{summary.pending ?? 0}</b></li><li><i className="progress" />En curso <b>{summary.progress ?? 0}</b></li><li><i className="finished" />Finalizados <b>{finalized}</b></li></ul></div></article>
         <article className="ticket-consultants-panel"><header><h3>Consultores</h3><span>{consultants.length}</span></header><div>{consultants.map((person) => { const active = Number(person._count?.ticketsAsignados ?? 0); return <article key={person.id}><i className="ticket-consultant-avatar">{initials(person)}</i><p><b>{fullName(person)}</b><small><i className={active ? "busy" : "available"} />{active ? `En ${active} caso${active > 1 ? "s" : ""}` : person.estadoMensaje || "Sin estado"}</small></p></article>; })}{!consultants.length && <p className="ticket-empty-copy">No hay consultores registrados.</p>}</div></article>
+        <article className="ticket-rejected-panel"><header><h3>Rechazados</h3><span>{rejectedRows.length}</span></header><div>{rejectedRows.map((ticket) => <article key={ticket.id}><div><b className="ticket-number">{ticket.numeroTicket}</b><p title={ticket.razonSocial}>{ticket.razonSocial}</p></div>{isBoss ? <button type="button" disabled={saving} onClick={() => void requestReopen(ticket, { fromPanel: true })}><RefreshCcw />Reabrir</button> : <span className="ticket-state rechazado"><span className="ticket-state-icon" aria-hidden="true"><i /></span>Rechazado</span>}</article>)}{!rejectedRows.length && <p className="ticket-empty-copy">No hay casos rechazados.</p>}</div></article>
       </section>
     </div>
 

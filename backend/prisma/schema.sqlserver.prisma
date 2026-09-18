@@ -146,7 +146,7 @@ model Ticket {
   consulta          String?           @db.VarChar(3000)
   prioridad         String            @default("NORMAL")
   canal             String            @default("TELEFONO")
-  estado            String            @default("Pendiente")
+  estado            String            @default("PENDIENTE")
   creadoPorId       String            @map("creado_por_id") @db.UniqueIdentifier
   registradoAt      DateTime          @default(now()) @map("registrado_at")
   asignadoAId       String?           @map("asignado_a_id") @db.UniqueIdentifier

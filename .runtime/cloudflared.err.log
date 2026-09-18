@@ -1,68 +1,43 @@
-2026-09-18T14:38:43Z INF Thank you for trying Cloudflare Tunnel. Doing so, without a Cloudflare account, is a quick way to experiment and try it out. However, be aware that these account-less Tunnels have no uptime guarantee, are subject to the Cloudflare Online Services Terms of Use (https://www.cloudflare.com/website-terms/), and Cloudflare reserves the right to investigate your use of Tunnels for violations of such terms. If you intend to use Tunnels in production you should use a pre-created named tunnel by following: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps
-2026-09-18T14:38:43Z INF Requesting new quick Tunnel on trycloudflare.com...
-2026-09-18T14:38:48Z INF +--------------------------------------------------------------------------------------------+
-2026-09-18T14:38:48Z INF |  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
-2026-09-18T14:38:48Z INF |  https://wisdom-clone-mats-polymer.trycloudflare.com                                       |
-2026-09-18T14:38:48Z INF +--------------------------------------------------------------------------------------------+
-2026-09-18T14:38:48Z INF Cannot determine default configuration path. No file [config.yml config.yaml] in [~/.cloudflared ~/.cloudflare-warp ~/cloudflare-warp]
-2026-09-18T14:38:48Z INF Version 2026.8.3 (Checksum 83e726ed18ea78c5ad5213c4c3a3a27051393950d2bc8ed4de69bec12d14eaae)
-2026-09-18T14:38:48Z INF GOOS: windows, GOVersion: go1.26.4, GoArch: amd64
-2026-09-18T14:38:48Z INF Settings: map[ha-connections:1 no-tls-verify:true protocol:quic url:https://localhost:5173]
-2026-09-18T14:38:48Z INF cloudflared will not automatically update on Windows systems.
-2026-09-18T14:38:48Z INF Generated Connector ID: 0c15a6f0-ba31-4d20-9756-e46cde54440c
-2026-09-18T14:38:48Z INF Initial protocol quic
-2026-09-18T14:38:48Z INF ICMP proxy will use 192.168.1.167 as source for IPv4
-2026-09-18T14:38:48Z INF ICMP proxy will use fe80::2785:47e2:3fb3:8a8c in zone Ethernet as source for IPv6
-2026-09-18T14:38:48Z INF cloudflared does not support loading the system root certificate pool on Windows. Please use --origin-ca-pool <PATH> to specify the path to the certificate pool
-2026-09-18T14:38:48Z INF ICMP proxy will use 192.168.1.167 as source for IPv4
-2026-09-18T14:38:48Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveID(65074) CurveP256] connIndex=0 event=0 ip=198.41.200.233
-2026-09-18T14:38:48Z INF ICMP proxy will use fe80::2785:47e2:3fb3:8a8c in zone Ethernet as source for IPv6
-2026-09-18T14:38:48Z INF Starting metrics server on 127.0.0.1:20241/metrics
-2026-09-18T14:38:48Z INF +-------------------------------------------------------------------------------------+
-2026-09-18T14:38:48Z INF |                               CONNECTIVITY PRE-CHECKS                               |
-2026-09-18T14:38:48Z INF +-------------------------------------------------------------------------------------+
-2026-09-18T14:38:48Z INF |  COMPONENT         TARGET                     STATUS  DETAILS                       |
-2026-09-18T14:38:48Z INF |  DNS Resolution    region1.v2.argotunnel.com  PASS    DNS Resolved successfully     |
-2026-09-18T14:38:48Z INF |  DNS Resolution    region2.v2.argotunnel.com  PASS    DNS Resolved successfully     |
-2026-09-18T14:38:48Z INF |  UDP Connectivity  region1.v2.argotunnel.com  PASS    QUIC connection successful    |
-2026-09-18T14:38:48Z INF |  UDP Connectivity  region2.v2.argotunnel.com  PASS    QUIC connection successful    |
-2026-09-18T14:38:48Z INF |  TCP Connectivity  region1.v2.argotunnel.com  PASS    HTTP/2 connection successful  |
-2026-09-18T14:38:48Z INF |  TCP Connectivity  region2.v2.argotunnel.com  PASS    HTTP/2 connection successful  |
-2026-09-18T14:38:48Z INF |  Cloudflare API    api.cloudflare.com:443     PASS    API is reachable              |
-2026-09-18T14:38:48Z INF |                                                                                     |
-2026-09-18T14:38:48Z INF |  SUMMARY: Environment is healthy. cloudflared will use 'quic' as primary protocol.  |
-2026-09-18T14:38:48Z INF +-------------------------------------------------------------------------------------+
-2026-09-18T14:38:48Z INF precheck component="DNS Resolution" details="DNS Resolved successfully" run_id=a11032da-0524-469b-bcfb-e330202ba7d5 status=pass target=region1.v2.argotunnel.com
-2026-09-18T14:38:48Z INF precheck component="DNS Resolution" details="DNS Resolved successfully" run_id=a11032da-0524-469b-bcfb-e330202ba7d5 status=pass target=region2.v2.argotunnel.com
-2026-09-18T14:38:48Z INF precheck component="UDP Connectivity" details="QUIC connection successful" run_id=a11032da-0524-469b-bcfb-e330202ba7d5 status=pass target=region1.v2.argotunnel.com
-2026-09-18T14:38:48Z INF precheck component="UDP Connectivity" details="QUIC connection successful" run_id=a11032da-0524-469b-bcfb-e330202ba7d5 status=pass target=region2.v2.argotunnel.com
-2026-09-18T14:38:48Z INF precheck component="TCP Connectivity" details="HTTP/2 connection successful" run_id=a11032da-0524-469b-bcfb-e330202ba7d5 status=pass target=region1.v2.argotunnel.com
-2026-09-18T14:38:48Z INF precheck component="TCP Connectivity" details="HTTP/2 connection successful" run_id=a11032da-0524-469b-bcfb-e330202ba7d5 status=pass target=region2.v2.argotunnel.com
-2026-09-18T14:38:48Z INF precheck component="Cloudflare API" details="API is reachable" run_id=a11032da-0524-469b-bcfb-e330202ba7d5 status=pass target=api.cloudflare.com:443
-2026-09-18T14:38:48Z INF precheck complete hard_fail=false run_id=a11032da-0524-469b-bcfb-e330202ba7d5 suggested_protocol=quic
-2026-09-18T14:38:48Z INF Registered tunnel connection connIndex=0 connection=b40a7fdb-1b1e-4117-be52-61a2eba9390d event=0 ip=198.41.200.233 location=scl03 protocol=quic
-2026/09/18 10:21:59 Unsolicited response received on idle HTTP channel starting with "HTTP/1.1 400 Bad Request\r\n\r\n"; err=<nil>
-2026/09/18 10:24:29 Unsolicited response received on idle HTTP channel starting with "HTTP/1.1 400 Bad Request\r\n\r\n"; err=<nil>
-2026/09/18 10:24:29 Unsolicited response received on idle HTTP channel starting with "HTTP/1.1 400 Bad Request\r\n\r\n"; err=<nil>
-2026/09/18 10:24:29 Unsolicited response received on idle HTTP channel starting with "HTTP/1.1 400 Bad Request\r\n\r\n"; err=<nil>
-2026/09/18 10:24:29 Unsolicited response received on idle HTTP channel starting with "HTTP/1.1 400 Bad Request\r\n\r\n"; err=<nil>
-2026-09-18T16:27:09Z ERR  error="stream 1933 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=https://localhost:5173
-2026-09-18T16:27:09Z ERR Request failed error="stream 1933 canceled by remote with error code 0" connIndex=0 dest=https://wisdom-clone-mats-polymer.trycloudflare.com/api/tickets/stream event=0 ip=198.41.200.233 type=http
-2026-09-18T16:28:01Z ERR  error="stream 2397 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=https://localhost:5173
-2026-09-18T16:28:01Z ERR  error="stream 897 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=https://localhost:5173
-2026-09-18T16:28:01Z ERR Request failed error="stream 897 canceled by remote with error code 0" connIndex=0 dest=https://wisdom-clone-mats-polymer.trycloudflare.com/api/alertas/stream event=0 ip=198.41.200.233 type=http
-2026-09-18T16:28:01Z ERR Request failed error="stream 2397 canceled by remote with error code 0" connIndex=0 dest=https://wisdom-clone-mats-polymer.trycloudflare.com/api/tickets/stream event=0 ip=198.41.200.233 type=http
-2026-09-18T16:28:40Z ERR  error="stream 2817 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=https://localhost:5173
-2026-09-18T16:28:40Z ERR Request failed error="stream 2817 canceled by remote with error code 0" connIndex=0 dest=https://wisdom-clone-mats-polymer.trycloudflare.com/api/tickets/stream event=0 ip=198.41.200.233 type=http
-2026-09-18T16:33:23Z ERR  error="stream 3117 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=https://localhost:5173
-2026-09-18T16:33:23Z ERR Request failed error="stream 3117 canceled by remote with error code 0" connIndex=0 dest=https://wisdom-clone-mats-polymer.trycloudflare.com/api/tickets/stream event=0 ip=198.41.200.233 type=http
-2026-09-18T16:33:53Z ERR  error="stream 3533 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=https://localhost:5173
-2026-09-18T16:33:53Z ERR Request failed error="stream 3533 canceled by remote with error code 0" connIndex=0 dest=https://wisdom-clone-mats-polymer.trycloudflare.com/api/tickets/stream event=0 ip=198.41.200.233 type=http
-2026-09-18T16:33:53Z ERR  error="stream 2813 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=https://localhost:5173
-2026-09-18T16:33:53Z ERR Request failed error="stream 2813 canceled by remote with error code 0" connIndex=0 dest=https://wisdom-clone-mats-polymer.trycloudflare.com/api/alertas/stream event=0 ip=198.41.200.233 type=http
-2026-09-18T16:34:18Z ERR  error="stream 3593 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=https://localhost:5173
-2026-09-18T16:34:18Z ERR Request failed error="stream 3593 canceled by remote with error code 0" connIndex=0 dest=https://wisdom-clone-mats-polymer.trycloudflare.com/api/tickets/stream event=0 ip=198.41.200.233 type=http
-2026-09-18T16:34:18Z ERR  error="stream 3605 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=https://localhost:5173
-2026-09-18T16:34:18Z ERR Request failed error="stream 3605 canceled by remote with error code 0" connIndex=0 dest=https://wisdom-clone-mats-polymer.trycloudflare.com/api/tickets/stream event=0 ip=198.41.200.233 type=http
-2026-09-18T16:34:26Z ERR  error="stream 3885 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=https://localhost:5173
-2026-09-18T16:34:26Z ERR Request failed error="stream 3885 canceled by remote with error code 0" connIndex=0 dest=https://wisdom-clone-mats-polymer.trycloudflare.com/api/tickets/stream event=0 ip=198.41.200.233 type=http
+2026-09-18T19:15:31Z INF Thank you for trying Cloudflare Tunnel. Doing so, without a Cloudflare account, is a quick way to experiment and try it out. However, be aware that these account-less Tunnels have no uptime guarantee, are subject to the Cloudflare Online Services Terms of Use (https://www.cloudflare.com/website-terms/), and Cloudflare reserves the right to investigate your use of Tunnels for violations of such terms. If you intend to use Tunnels in production you should use a pre-created named tunnel by following: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps
+2026-09-18T19:15:31Z INF Requesting new quick Tunnel on trycloudflare.com...
+2026-09-18T19:15:36Z INF +--------------------------------------------------------------------------------------------+
+2026-09-18T19:15:36Z INF |  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
+2026-09-18T19:15:36Z INF |  https://customise-caps-heavy-effectively.trycloudflare.com                                |
+2026-09-18T19:15:36Z INF +--------------------------------------------------------------------------------------------+
+2026-09-18T19:15:36Z INF Cannot determine default configuration path. No file [config.yml config.yaml] in [~/.cloudflared ~/.cloudflare-warp ~/cloudflare-warp]
+2026-09-18T19:15:36Z INF Version 2026.8.3 (Checksum 83e726ed18ea78c5ad5213c4c3a3a27051393950d2bc8ed4de69bec12d14eaae)
+2026-09-18T19:15:36Z INF GOOS: windows, GOVersion: go1.26.4, GoArch: amd64
+2026-09-18T19:15:36Z INF Settings: map[ha-connections:1 no-tls-verify:true protocol:quic url:https://localhost:5173]
+2026-09-18T19:15:36Z INF cloudflared will not automatically update on Windows systems.
+2026-09-18T19:15:37Z INF Generated Connector ID: 66609dab-cb55-4da8-b35a-6edd2191930b
+2026-09-18T19:15:37Z INF Initial protocol quic
+2026-09-18T19:15:37Z INF ICMP proxy will use 192.168.1.167 as source for IPv4
+2026-09-18T19:15:37Z INF ICMP proxy will use fe80::2785:47e2:3fb3:8a8c in zone Ethernet as source for IPv6
+2026-09-18T19:15:37Z INF cloudflared does not support loading the system root certificate pool on Windows. Please use --origin-ca-pool <PATH> to specify the path to the certificate pool
+2026-09-18T19:15:37Z INF ICMP proxy will use 192.168.1.167 as source for IPv4
+2026-09-18T19:15:37Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveID(65074) CurveP256] connIndex=0 event=0 ip=198.41.200.43
+2026-09-18T19:15:37Z INF ICMP proxy will use fe80::2785:47e2:3fb3:8a8c in zone Ethernet as source for IPv6
+2026-09-18T19:15:37Z INF Starting metrics server on 127.0.0.1:20241/metrics
+2026-09-18T19:15:37Z INF +-------------------------------------------------------------------------------------+
+2026-09-18T19:15:37Z INF |                               CONNECTIVITY PRE-CHECKS                               |
+2026-09-18T19:15:37Z INF +-------------------------------------------------------------------------------------+
+2026-09-18T19:15:37Z INF |  COMPONENT         TARGET                     STATUS  DETAILS                       |
+2026-09-18T19:15:37Z INF |  DNS Resolution    region1.v2.argotunnel.com  PASS    DNS Resolved successfully     |
+2026-09-18T19:15:37Z INF |  DNS Resolution    region2.v2.argotunnel.com  PASS    DNS Resolved successfully     |
+2026-09-18T19:15:37Z INF |  UDP Connectivity  region1.v2.argotunnel.com  PASS    QUIC connection successful    |
+2026-09-18T19:15:37Z INF |  UDP Connectivity  region2.v2.argotunnel.com  PASS    QUIC connection successful    |
+2026-09-18T19:15:37Z INF |  TCP Connectivity  region1.v2.argotunnel.com  PASS    HTTP/2 connection successful  |
+2026-09-18T19:15:37Z INF |  TCP Connectivity  region2.v2.argotunnel.com  PASS    HTTP/2 connection successful  |
+2026-09-18T19:15:37Z INF |  Cloudflare API    api.cloudflare.com:443     PASS    API is reachable              |
+2026-09-18T19:15:37Z INF |                                                                                     |
+2026-09-18T19:15:37Z INF |  SUMMARY: Environment is healthy. cloudflared will use 'quic' as primary protocol.  |
+2026-09-18T19:15:37Z INF +-------------------------------------------------------------------------------------+
+2026-09-18T19:15:37Z INF precheck component="DNS Resolution" details="DNS Resolved successfully" run_id=9f51124c-42d0-4534-a09a-144958ac6c41 status=pass target=region1.v2.argotunnel.com
+2026-09-18T19:15:37Z INF precheck component="DNS Resolution" details="DNS Resolved successfully" run_id=9f51124c-42d0-4534-a09a-144958ac6c41 status=pass target=region2.v2.argotunnel.com
+2026-09-18T19:15:37Z INF precheck component="UDP Connectivity" details="QUIC connection successful" run_id=9f51124c-42d0-4534-a09a-144958ac6c41 status=pass target=region1.v2.argotunnel.com
+2026-09-18T19:15:37Z INF precheck component="UDP Connectivity" details="QUIC connection successful" run_id=9f51124c-42d0-4534-a09a-144958ac6c41 status=pass target=region2.v2.argotunnel.com
+2026-09-18T19:15:37Z INF precheck component="TCP Connectivity" details="HTTP/2 connection successful" run_id=9f51124c-42d0-4534-a09a-144958ac6c41 status=pass target=region1.v2.argotunnel.com
+2026-09-18T19:15:37Z INF precheck component="TCP Connectivity" details="HTTP/2 connection successful" run_id=9f51124c-42d0-4534-a09a-144958ac6c41 status=pass target=region2.v2.argotunnel.com
+2026-09-18T19:15:37Z INF precheck component="Cloudflare API" details="API is reachable" run_id=9f51124c-42d0-4534-a09a-144958ac6c41 status=pass target=api.cloudflare.com:443
+2026-09-18T19:15:37Z INF precheck complete hard_fail=false run_id=9f51124c-42d0-4534-a09a-144958ac6c41 suggested_protocol=quic
+2026-09-18T19:15:37Z INF Registered tunnel connection connIndex=0 connection=4beaa9db-5752-4755-954a-d61acb26cbe1 event=0 ip=198.41.200.43 location=scl03 protocol=quic
