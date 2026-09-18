@@ -1,0 +1,13 @@
+[0] $ tsx watch src/server.ts
+[1] $ vite
+[1] 
+[1]   [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m604[22m[2m[0m ms[22m
+[1] 
+[1]   [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m5173[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttps://26.178.87.95:[1m5173[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.167:[1m5173[22m/[39m
+[1] [2m9:38:29 a. m.[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/alertas/stream[39m
+[1] Error: connect ECONNREFUSED 127.0.0.1:4000
+[1]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+[0] API lista en la red local, puerto 4000
+[0] {"level":"info","requestId":"62acb617-9b92-434d-8be4-bde90dbaa5cb","method":"GET","path":"/stream","status":401,"durationMs":7,"at":"2026-09-18T14:38:31.261Z"}
