@@ -213,7 +213,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
           limit,
         }),
         fetchTicketSummary(),
-        fetchTickets({ estado: "RECHAZADO", orden: "fecha_desc", page: 1, limit: 8 }),
+        fetchTickets({ estado: "RECHAZADO", orden: "fecha_desc", page: 1, limit: 100 }),
       ]);
       setRows(data.rows);
       setTotal(data.total);
@@ -367,14 +367,28 @@ export default function TicketWorkspace({ user }: { user: any }) {
   };
   const rejectCase = async (ticket: Ticket) => {
     if (saving || ticket.estado === "FINALIZADO" || ticket.estado === "RECHAZADO") return;
-    if (!(await uiConfirm(
-      "Rechazar caso",
-      `¿Deseas rechazar el caso ${ticket.numeroTicket}? Esta acción quedará registrada en su trazabilidad.`,
-    ))) return;
+    const inProgress = ticket.estado === "EN_CURSO" && ticket.asignadoAId;
+    const motivo = await uiPrompt(
+      `Rechazar ${ticket.numeroTicket}`,
+      "",
+      {
+        message: inProgress
+          ? `${fullName(ticket.asignadoA)} lo tiene en curso. El caso pasará a Rechazado y dejará de estar asignado. Indica el motivo del rechazo.`
+          : "El caso pasará a Rechazado. Indica el motivo del rechazo.",
+        placeholder: "Motivo del rechazo",
+        multiline: true,
+        confirmText: "Rechazar caso",
+      },
+    );
+    if (motivo === null) return;
+    if (motivo.trim().length < 3) {
+      setError("Indica un motivo de al menos 3 caracteres para rechazar el caso.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
-      const updated = await rejectTicket(ticket.id);
+      const updated = await rejectTicket(ticket.id, motivo.trim());
       const visibleState = quickTab === "all" ? statusFilter : quickTab;
       setRows((current) => visibleState && updated.estado !== visibleState
         ? current.filter((row) => row.id !== updated.id)
@@ -547,7 +561,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
                     );
                     setSelectedClient(found);
                     if(found)setClientDraft({ruc:found.ruc??"",razonSocial:found.razonSocial,telefono:found.telefono??""});
-                    else if(/^\d{1,11}$/.test(value.trim()))setClientDraft({ruc:value.trim(),razonSocial:"",telefono:""});
+                    else if(/^\d{1,11}$/.test(value.trim()))setClientDraft((current)=>({...current,ruc:value.trim()}));
                   }}
                 /></span>
                 <datalist id="ticket-client-options">{clientOptions.map((client) => <option key={client.id} value={clientValue(client)} />)}</datalist>
@@ -662,7 +676,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
       <section className="ticket-table-panel">
         <nav className="ticket-quick-tabs" aria-label="Vistas rápidas">{tabs.map((tab) => <button key={tab.id} className={quickTab === tab.id ? "active" : ""} onClick={() => { setQuickTab(tab.id); setStatusFilter(""); setPage(1); }}>{tab.id !== "all" && <i className={`tab-dot ${tab.id.toLowerCase()}`} />}{tab.text} <span>({tab.count})</span></button>)}</nav>
         <div className="ticket-toolbar">
-          <label className="ticket-search"><Search /><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por RUC, razón social, usuario o consulta..." /></label>
+          <label className="ticket-search"><Search /><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por N° de ticket, RUC, razón social, usuario o consulta..." /></label>
           <select aria-label="Cliente" value={clientFilter} onChange={(event) => { setClientFilter(event.target.value); setPage(1); }}><option value="">Cliente: Todos</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.razonSocial}</option>)}</select>
           <select aria-label="Módulo" value={moduleFilter} onChange={(event) => { setModuleFilter(event.target.value); setPage(1); }}><option value="">Módulo: Todos</option>{catalogs.modules.map((module) => <option key={module}>{module}</option>)}</select>
           <select aria-label="Estado" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setQuickTab("all"); setPage(1); }}><option value="">Estado: Todos</option><option value="PENDIENTE">Pendiente</option><option value="EN_CURSO">En curso</option><option value="FINALIZADO">Finalizado</option><option value="RECHAZADO">Rechazado</option></select>

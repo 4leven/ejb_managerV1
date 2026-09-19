@@ -87,7 +87,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
     const dateFrom = req.query.desde ? new Date(String(req.query.desde)) : undefined;
     const dateTo = req.query.hasta ? new Date(String(req.query.hasta)) : undefined;
     if (dateTo && !Number.isNaN(dateTo.getTime())) dateTo.setHours(23, 59, 59, 999);
-    const correlative = /^TCK-(\d+)$/i.exec(q)?.[1];
+    const correlative = /^(?:tck-?)?0*(\d+)$/i.exec(q.trim())?.[1];
     const where: Prisma.TicketWhereInput = {
       ...ticketScope,
       ...(estado && { estado }),
@@ -125,7 +125,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
       : sort === "prioridad" ? [{ prioridad: "desc" }, { registradoAt: "asc" }]
       : sort === "asesor" ? [{ asignadoA: { nombres: "asc" } }, { registradoAt: "desc" }]
       : sort === "tiempo" ? [{ registradoAt: "asc" }]
-      : [{ estado: "asc" }, { registradoAt: "asc" }];
+      : [{ estado: "asc" }, { reabiertoAt: { sort: "desc", nulls: "last" } }, { registradoAt: "asc" }];
     const [rows, total] = await Promise.all([
       prisma.ticket.findMany({
         where,
@@ -445,6 +445,9 @@ export async function reject(req: Request, res: Response, next: NextFunction) {
     if (!canTakeTickets(currentUser) && !isTicketBoss(currentUser))
       throw fail(403, "No tienes permiso para rechazar casos");
     const id = uuid.parse(req.params.id);
+    const { motivo } = z.object({
+      motivo: z.string().trim().min(3, "Debes indicar el motivo del rechazo.").max(500),
+    }).parse(req.body);
     const current = await prisma.ticket.findUniqueOrThrow({ where: { id } });
     if (current.estado === "FINALIZADO" || current.estado === "RECHAZADO")
       throw fail(409, "Este caso ya se encuentra cerrado");
@@ -460,6 +463,7 @@ export async function reject(req: Request, res: Response, next: NextFunction) {
           estadoAnterior: current.estado,
           estadoNuevo: "RECHAZADO",
           usuarioId: currentUser.id,
+          comentario: motivo,
         },
       });
       return tx.ticket.findUniqueOrThrow({ where: { id }, include: detailInclude });
@@ -482,17 +486,19 @@ export async function reopen(req: Request, res: Response, next: NextFunction) {
     if (current.estado !== "FINALIZADO" && current.estado !== "RECHAZADO")
       throw fail(409, "Solo se pueden reabrir casos finalizados o rechazados");
     const backToProgress = current.estado === "FINALIZADO" && Boolean(current.asignadoAId);
+    const now = new Date();
     const row = await prisma.$transaction(async (tx) => {
       await tx.ticket.update({
         where: { id },
         data: backToProgress
-          ? { estado: "EN_CURSO", finalizadoAt: null, finalizadoPorId: null }
+          ? { estado: "EN_CURSO", finalizadoAt: null, finalizadoPorId: null, reabiertoAt: now }
           : {
               estado: "PENDIENTE",
               asignadoAId: null,
               asignadoAt: null,
               contactadoAt: null,
               finalizadoAt: null,
+              reabiertoAt: now,
               finalizadoPorId: null,
             },
       });
