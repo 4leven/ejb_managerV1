@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 const certificado = resolve(__dirname, "../.certs/ejb-manager-local.pfx");
 
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH ?? "/",
   plugins: [react()],
   build:{rollupOptions:{output:{manualChunks(id){if(id.includes("emoji-picker-react"))return"emoji-picker";if(id.includes("react-dom")||id.includes("/react/"))return"react-vendor";if(id.includes("lucide-react"))return"icons"}}}},
   server: {

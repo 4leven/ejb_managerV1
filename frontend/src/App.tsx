@@ -554,7 +554,7 @@ function Access({
       <section className="access-brand">
         <img
           className="login-logo"
-          src="/ejb-manager-logo.svg"
+          src={`${import.meta.env.BASE_URL}ejb-manager-logo.svg`}
           alt="EJB Manager"
         />
         <div>
@@ -1261,8 +1261,8 @@ function App() {
     if (chatPreferences.desktop !== false && user?.estadoMensaje !== "No_molestar" && "Notification" in window && Notification.permission === "granted") {
       const notification = new Notification(`Mensaje de ${name}`, {
         body: message,
-        icon: photo || "/ejb-manager-isotipo.svg",
-        badge: "/ejb-manager-isotipo.svg",
+        icon: photo || `${import.meta.env.BASE_URL}ejb-manager-isotipo.svg`,
+        badge: `${import.meta.env.BASE_URL}ejb-manager-isotipo.svg`,
         tag: `ejb-message-${name}`,
       });
       notification.onclick = () => {
@@ -1304,8 +1304,8 @@ function App() {
         newAlerts.forEach((alert: any) => {
           const notification = new Notification(alert.title, {
             body: alert.message,
-            icon: "/ejb-manager-isotipo.svg",
-            badge: "/ejb-manager-isotipo.svg",
+            icon: `${import.meta.env.BASE_URL}ejb-manager-isotipo.svg`,
+            badge: `${import.meta.env.BASE_URL}ejb-manager-isotipo.svg`,
             tag: `ejb-alert-${alertKey(alert)}`,
           });
           notification.onclick = () => {
@@ -2207,12 +2207,12 @@ function App() {
             >
               <img
                 className="topbar-logo-full"
-                src="/ejb-manager-logo.svg"
+                src={`${import.meta.env.BASE_URL}ejb-manager-logo.svg`}
                 alt="EJB Manager"
               />
               <img
                 className="topbar-logo-compact"
-                src="/ejb-manager-isotipo.svg"
+                src={`${import.meta.env.BASE_URL}ejb-manager-isotipo.svg`}
                 alt="EJB"
               />
             </button>

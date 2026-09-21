@@ -7,3 +7,4 @@ backend/generated/
 backend/backend-mssql*.log
 outputs/backups/
 tmp/
+claude.md
