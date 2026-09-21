@@ -11,6 +11,7 @@ import { createPortal } from "react-dom";
 import {
   ArrowRight,
   ArrowLeft,
+  Award,
   Bell,
   BellRing,
   BarChart3,
@@ -42,6 +43,7 @@ import {
   Sparkles,
   PanelsTopLeft,
   Target,
+  Trophy,
   Trash2,
   TrendingUp,
   UserCog,
@@ -104,7 +106,7 @@ import {
 } from "./components/ProductSuite";
 import { MarketingCenter } from "./components/MarketingCenter";
 import { uiAlert, uiConfirm, uiPrompt } from "./utils/dialog";
-import { canOperateGlobally, cargoLabel, isTechnicalUser, isAreaLeaderUser, isAdministrationUser, canPublishAnnouncements, canDeleteOwned, canReadMarketing } from "./utils/access";
+import { canOperateGlobally, cargoLabel, hasFullPortalAccess, isTechnicalUser, isAreaLeaderUser, isAdministrationUser, canPublishAnnouncements, canDeleteOwned, canReadMarketing } from "./utils/access";
 import {
   clearRememberedCredentials,
   loadRememberedCredentials,
@@ -136,6 +138,37 @@ type Page =
   | "perfil"
   | "ayuda"
   | "personalizacion";
+
+const isWorkerPortalUser = (user?: { cargo?: string; rol?: string } | null) =>
+  /trabajador|empleado/i.test(`${user?.cargo ?? ""} ${user?.rol ?? ""}`);
+
+const workerPanelPages = new Set<Page>([
+  "resumen",
+  "notificaciones",
+  "iniciativas",
+  "mi-trabajo",
+  "equipo",
+  "clientes",
+  "ticketera",
+  "kanban-sistemas",
+  "mensajes",
+  "calendario",
+  "encuestas",
+  "aprobaciones",
+  "feedback",
+  "personalizacion",
+  "ayuda",
+  "perfil",
+]);
+
+const canAccessPortalPage = (user: User, target: Page) => {
+  if (hasFullPortalAccess(user)) return true;
+  const leadership = isAreaLeaderUser(user);
+  if (["cronograma", "informes", "reporteria", "flujos"].includes(target))
+    return leadership;
+  if (target === "administracion") return leadership;
+  return !isWorkerPortalUser(user) || workerPanelPages.has(target);
+};
 
 const notificationPage = (value: string): Page | null => {
   const key = value
@@ -416,27 +449,53 @@ function Access({
     setError("");
     const f = new FormData(e.currentTarget);
     try {
+      const nombres = String(f.get("nombres") ?? "").trim();
+      const apellidos = String(f.get("apellidos") ?? "").trim();
+      const email = String(f.get("email") ?? "").trim();
+      const password = String(f.get("password") ?? "");
+      const areaId = String(f.get("areaId") ?? "");
+      const cargo = String(f.get("cargo") ?? "");
+      if (mode === "register") {
+        if (nombres.length < 2 || apellidos.length < 2) {
+          setError("Escribe tus nombres y apellidos.");
+          return;
+        }
+        if (!areaId) {
+          setError("Selecciona tu área antes de continuar.");
+          return;
+        }
+        if (!cargo) {
+          setError("Selecciona tu cargo antes de continuar.");
+          return;
+        }
+      }
+      if (!email) {
+        setError("Escribe tu correo corporativo.");
+        return;
+      }
+      if (password.length < 8) {
+        setError("La contraseña debe tener al menos 8 caracteres.");
+        return;
+      }
       let approvalCode = "";
-      if (mode === "register" && ["Gerente", "Jefe"].includes(String(f.get("cargo")))) {
+      if (mode === "register" && ["Gerente", "Jefe"].includes(cargo)) {
         const value = await uiPrompt("Código de aprobación", "", { message: "Para crear una cuenta de Jefe o Gerente, introduce el código autorizado por administración.", placeholder: "Código de aprobación" });
         if (value === null) return;
         approvalCode = value.trim();
       }
       const data =
         mode === "login"
-          ? await login(String(f.get("email")), String(f.get("password")))
+          ? await login(email, password)
           : await register({
-              nombres: String(f.get("nombres")),
-              apellidos: String(f.get("apellidos")),
-              email: String(f.get("email")),
-              password: String(f.get("password")),
-              areaId: String(f.get("areaId")),
-              cargo: String(f.get("cargo")),
+              nombres,
+              apellidos,
+              email,
+              password,
+              areaId,
+              cargo,
               approvalCode,
             });
       if (mode === "login") {
-        const email = String(f.get("email")),
-          password = String(f.get("password"));
         if (rememberPassword) {
           localStorage.setItem("ejb_remembered_email", email);
           await saveRememberedCredentials(email, password).catch(() => false);
@@ -550,7 +609,7 @@ function Access({
               ? "Regístrate con tus datos corporativos."
               : "Ingresa con tu correo y contraseña."}
           </p>
-          <form ref={loginForm} onSubmit={submit}>
+          <form ref={loginForm} onSubmit={submit} noValidate>
             {mode === "register" && (
               <>
                 <div className="two-fields">
@@ -645,6 +704,12 @@ function Access({
                   : "Ingresar"}
               <ArrowRight />
             </button>
+            {mode === "register" && (
+              <small className="privacy">
+                Acceso protegido exclusivo para colaboradores de <b>EJB</b>. Al continuar,
+                aceptas las polÃ­ticas de seguridad interna.
+              </small>
+            )}
           </form>
           {mode === "login" && (
             <button className="forgot-link" onClick={forgot}>
@@ -964,7 +1029,7 @@ function App() {
     [filtersOpen, setFiltersOpen] = useState(false),
     [sidebarCollapsed, setSidebarCollapsed] = useState(false),
     [sidebarScale, setSidebarScale] = useState(() =>
-      Number(localStorage.getItem("ejb_sidebar_scale") || 1),
+      Number(localStorage.getItem("ejb_sidebar_scale") || 0.7),
     ),
     [mainScale, setMainScale] = useState(() =>
       Number(localStorage.getItem("ejb_main_scale") || 1),
@@ -1408,6 +1473,9 @@ function App() {
     if (page === "mensajes") zoomZone.current = "chat";
   }, [page]);
   useEffect(() => {
+    if (user && !canAccessPortalPage(user, page)) setPage("resumen");
+  }, [user, page]);
+  useEffect(() => {
     document.documentElement.dataset.currentPage = page;
     sessionStorage.setItem("ejb_active_page", page);
     if (page === "notificaciones") setNotificationReturnVisible(false);
@@ -1537,6 +1605,70 @@ function App() {
         return `${left.nombres} ${left.apellidos}`.localeCompare(`${right.nombres} ${right.apellidos}`, "es");
       });
   }, [team, teamArea, teamQuery, teamSort]);
+  const portfolioAverage = items.length
+    ? Math.round(items.reduce((sum, item) => sum + item.avance, 0) / items.length)
+    : 0;
+  const portfolioStatusOrder = useMemo(
+    () => ["Pendiente", "En evaluación", "Priorizado", "En proceso", "Finalizado"] as Estado[],
+    [],
+  );
+  const portfolioStatusPalette: Record<Estado, string> = {
+    Pendiente: "#9aa9bb",
+    "En evaluación": "#2f6fed",
+    Priorizado: "#9333ea",
+    "En proceso": "#f59e0b",
+    Finalizado: "#19bd87",
+  };
+  const portfolioStatusCounts = useMemo(
+    () =>
+      portfolioStatusOrder.map((status) => ({
+        status,
+        count: items.filter((item) => item.estado === status).length,
+      })),
+    [items, portfolioStatusOrder],
+  );
+  const portfolioGradient = useMemo(() => {
+    const total = portfolioStatusCounts.reduce((sum, row) => sum + row.count, 0);
+    if (!total) return "#e6edf7";
+    let cursor = 0;
+    const segments = portfolioStatusCounts
+      .filter((row) => row.count > 0)
+      .map((row) => {
+        const start = cursor;
+        const end = cursor + (row.count / total) * 100;
+        cursor = end;
+        return `${portfolioStatusPalette[row.status]} ${start}% ${end}%`;
+      })
+      .join(", ");
+    return `conic-gradient(${segments})`;
+  }, [portfolioStatusCounts]);
+  const workerPerformanceRanking = useMemo(() => {
+    const sameAreaWorkers = team.filter((member) =>
+      isWorkerPortalUser(member) && (!user?.area?.id || member.area?.id === user.area.id),
+    );
+    return sameAreaWorkers
+      .map((member) => {
+        const assignedTasks = items.flatMap((project) =>
+          (project.tareas ?? []).filter((task) => task.responsableId === member.id),
+        );
+        const completed = assignedTasks.filter((task) => task.completada).length;
+        const managedProjects = items.filter((project) => project.responsableId === member.id);
+        const projectProgress = managedProjects.length
+          ? managedProjects.reduce((sum, project) => sum + project.avance, 0) / managedProjects.length
+          : 0;
+        const taskProgress = assignedTasks.length ? (completed / assignedTasks.length) * 100 : 0;
+        const points = Math.round(
+          assignedTasks.length && managedProjects.length
+            ? taskProgress * 0.8 + projectProgress * 0.2
+            : assignedTasks.length ? taskProgress : projectProgress,
+        );
+        return { member, assigned: assignedTasks.length, completed, points };
+      })
+      .sort((left, right) =>
+        right.points - left.points || right.completed - left.completed ||
+        `${left.member.nombres} ${left.member.apellidos}`.localeCompare(`${right.member.nombres} ${right.member.apellidos}`, "es"),
+      );
+  }, [team, items, user?.area?.id]);
   const openProgress = async (i: Item) => {
     setProgressItem(i);
     setHistory(await fetchProgresos(i.id));
@@ -1843,25 +1975,27 @@ function App() {
         >
           {sidebarCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
         </button>
-        <div className="sidebar-zoom">
-          <button
-            onClick={() =>
-              setSidebarScale((v) => Math.max(0.82, +(v - 0.06).toFixed(2)))
-            }
-            title="Reducir menú"
-          >
-            <ZoomOut />
-          </button>
-          <span>{Math.round(sidebarScale * 100)}%</span>
-          <button
-            onClick={() =>
-              setSidebarScale((v) => Math.min(1.18, +(v + 0.06).toFixed(2)))
-            }
-            title="Ampliar menú"
-          >
-            <ZoomIn />
-          </button>
-        </div>
+        {!sidebarCollapsed && (
+          <div className="sidebar-zoom">
+            <button
+              onClick={() =>
+                setSidebarScale((v) => Math.max(0.7, +(v - 0.06).toFixed(2)))
+              }
+              title="Reducir menú"
+            >
+              <ZoomOut />
+            </button>
+            <span>{Math.round(sidebarScale * 100)}%</span>
+            <button
+              onClick={() =>
+                setSidebarScale((v) => Math.min(1.18, +(v + 0.06).toFixed(2)))
+              }
+              title="Ampliar menú"
+            >
+              <ZoomIn />
+            </button>
+          </div>
+        )}
         <nav onClickCapture={() => setMobileMenuOpen(false)}>
           <button
             className={page === "resumen" ? "active" : ""}
@@ -1890,13 +2024,15 @@ function App() {
           >
             <BriefcaseBusiness /> Mi trabajo
           </button>
-          <button
-            className={page === "objetivos" ? "active" : ""}
-            onClick={() => setPage("objetivos")}
-          >
-            <Target />
-            Objetivos
-          </button>
+          {!isWorkerPortalUser(user) && (
+            <button
+              className={page === "objetivos" ? "active" : ""}
+              onClick={() => setPage("objetivos")}
+            >
+              <Target />
+              Objetivos
+            </button>
+          )}
           <button
             className={page === "equipo" ? "active" : ""}
             onClick={() => setPage("equipo")}
@@ -1935,26 +2071,31 @@ function App() {
             <MessageCircle />
             Mensajes{unreadMessages > 0 && <span>{unreadMessages}</span>}
           </button>
-          <button
-            className={page === "cronograma" ? "active" : ""}
-            onClick={() => setPage("cronograma")}
-          >
-            <BellRing />
-            Alertas
-          </button>
+          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+            <button
+              className={page === "cronograma" ? "active" : ""}
+              onClick={() => setPage("cronograma")}
+            >
+              <BellRing />
+              Cronogramas y alertas
+            </button>
+          )}
           <button
             className={page === "calendario" ? "active" : ""}
             onClick={() => setPage("calendario")}
           >
             <CalendarDays /> Calendario
           </button>
-          <button
+          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+            <button
             className={page === "informes" ? "active" : ""}
             onClick={() => setPage("informes")}
           >
             <BarChart3 /> Informes BI
-          </button>
-          <button
+            </button>
+          )}
+          {!isWorkerPortalUser(user) && (
+            <button
             className={page === "requerimientos" ? "active" : ""}
             onClick={() => {
               setPage("requerimientos");
@@ -1963,14 +2104,17 @@ function App() {
           >
             <ClipboardList />
             Requerimientos
-          </button>
-          <button
+            </button>
+          )}
+          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+            <>
+              <button
             className={page === "reporteria" ? "active" : ""}
             onClick={() => setPage("reporteria")}
           >
             <Download /> Reportería
-          </button>
-          <button
+              </button>
+              <button
             className={page === "flujos" ? "active" : ""}
             onClick={() => {
               setPage("flujos");
@@ -1979,7 +2123,9 @@ function App() {
           >
             <FileText />
             Flujos de Áreas
-          </button>
+              </button>
+            </>
+          )}
           <button
             className={page === "encuestas" ? "active" : ""}
             onClick={() => {
@@ -1997,7 +2143,7 @@ function App() {
             <CheckSquare />
             Aprobaciones
           </button>
-          {canReadMarketing(user) && (
+          {!isWorkerPortalUser(user) && canReadMarketing(user) && (
             <button
               className={page === "marketing" ? "active" : ""}
               onClick={() => setPage("marketing")}
@@ -2005,7 +2151,7 @@ function App() {
               <TrendingUp /> Marketing
             </button>
           )}
-          {(user.isSuperAdmin || isAreaLeaderUser(user)) && (
+          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
             <button
               className={page === "administracion" ? "active" : ""}
               onClick={() => setPage("administracion")}
@@ -2028,10 +2174,6 @@ function App() {
           </button>
         </nav>
         <div className="nav-foot">
-          <button onClick={() => setPage("ayuda")}>
-            <CircleHelp />
-            Centro de ayuda
-          </button>
           <div className="app-version">
             <span>EJB MANAGER</span>
             <b>V. 0.3.28</b>
@@ -2394,7 +2536,7 @@ function App() {
                 }}
               />
             )}
-            {page === "administracion" && (user.isSuperAdmin || isAreaLeaderUser(user)) && (
+            {page === "administracion" && (hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
               <EnterpriseAdmin user={user} areas={areas} />
             )}
             {page === "feedback" && <UserFeedback user={user} />}
@@ -2464,6 +2606,40 @@ function App() {
                     <span>líneas estratégicas</span>
                   </article>
                 </div>
+                {isWorkerPortalUser(user) && (
+                  <article className="report-card monthly-ranking dashboard-worker-ranking">
+                    <div className="ranking-head">
+                      <div>
+                        <Trophy />
+                        <div>
+                          <h3>Ranking de cumplimiento del equipo</h3>
+                          <p>Resultados según tareas asignadas, tareas realizadas y avance de proyectos.</p>
+                        </div>
+                      </div>
+                      <span>{user.area?.nombre || "Mi área"}</span>
+                    </div>
+                    <div className="ranking-list">
+                      {workerPerformanceRanking.slice(0, 5).map((entry, index) => (
+                        <div
+                          className={`rank rank-${index + 1}${entry.member.id === user.id ? " current-worker" : ""}`}
+                          key={entry.member.id}
+                        >
+                          <strong>{index + 1}</strong>
+                          <i style={{ background: entry.member.area?.colorHex || "#2f6fed" }} />
+                          <div>
+                            <b>{entry.member.nombres} {entry.member.apellidos}{entry.member.id === user.id ? " · Tú" : ""}</b>
+                            <small>{entry.completed}/{entry.assigned} tareas realizadas</small>
+                          </div>
+                          <em>{entry.points} pts</em>
+                          <Award />
+                        </div>
+                      ))}
+                      {!workerPerformanceRanking.length && (
+                        <div className="suite-empty">Aún no hay datos suficientes para calcular el ranking.</div>
+                      )}
+                    </div>
+                  </article>
+                )}
                 <div className="bi-grid">
                   <article
                     className="bi-card portfolio-health dashboard-clickable"
@@ -2485,22 +2661,16 @@ function App() {
                     </div>
                     <div className="health-body">
                       <div
-                        className="donut"
+                        className="donut portfolio-donut"
                         style={
                           {
-                            "--value": `${items.length ? Math.round(items.reduce((s, i) => s + i.avance, 0) / items.length) : 0}%`,
+                            background: portfolioGradient,
                           } as CSSProperties
                         }
                       >
                         <div>
                           <strong>
-                            {items.length
-                              ? Math.round(
-                                  items.reduce((s, i) => s + i.avance, 0) /
-                                    items.length,
-                                )
-                              : 0}
-                            %
+                            {portfolioAverage}%
                           </strong>
                           <small>avance</small>
                         </div>
@@ -2755,7 +2925,7 @@ function App() {
                 </section>
               </div>
             )}
-            {page === "objetivos" && (
+            {page === "objetivos" && !isWorkerPortalUser(user) && (
               <ObjectivesModule
                 objetivos={objetivos}
                 items={items}
@@ -2976,7 +3146,7 @@ function App() {
                   </div>
                 </div>
             )}
-            {page === "cronograma" && (
+            {page === "cronograma" && (hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
               <Timeline
                 items={items}
                 onBack={() => setPage("resumen")}
@@ -2995,15 +3165,15 @@ function App() {
                 onProjectsChanged={reloadItems}
               />
             )}
-            {page === "informes" && (
+            {page === "informes" && (hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
               <BIReports items={items} areas={areas} user={user} />
             )}
-            {page === "reporteria" && <ReportingCenter items={items} />}
-            {page === "requerimientos" && <Requirements user={user} />}
-            {page === "flujos" && <AreaFlows user={user} />}
+            {page === "reporteria" && (hasFullPortalAccess(user) || isAreaLeaderUser(user)) && <ReportingCenter items={items} />}
+            {page === "requerimientos" && !isWorkerPortalUser(user) && <Requirements user={user} />}
+            {page === "flujos" && (hasFullPortalAccess(user) || isAreaLeaderUser(user)) && <AreaFlows user={user} />}
             {page === "encuestas" && <Surveys user={user} />}
             {page === "aprobaciones" && <Approvals user={user} />}
-            {page === "marketing" && <MarketingCenter user={user} />}
+            {page === "marketing" && !isWorkerPortalUser(user) && <MarketingCenter user={user} />}
             {page === "perfil" && (
               <Profile user={user} onUpdate={setUser} areas={areas} />
             )}
@@ -3133,7 +3303,7 @@ function App() {
                     ))}
                   </select>
                 </label>
-                {(user.isSuperAdmin || isAreaLeaderUser(user)) && (
+                {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
                   <label>
                     Derivar a
                     <select name="responsableId" defaultValue="" key={page === "kanban-sistemas" ? "Sistemas" : createAreaName}>
@@ -3295,7 +3465,13 @@ function App() {
                           <b>{status}</b>
                           <span>{rows.length} iniciativa(s)</span>
                           <em>
-                            <u style={{ width: `${portion}%` }} />
+                            <u
+                              className={statusClass[status]}
+                              style={{
+                                width: `${portion}%`,
+                                minWidth: portion > 0 ? "8px" : "0",
+                              }}
+                            />
                           </em>
                         </div>
                         <strong>{portion}%</strong>
@@ -4135,12 +4311,13 @@ function SectionTools({
           <option key={value}>{value}</option>
         ))}
       </select>
-      <button className={open ? "active" : ""} onClick={() => setOpen(!open)}>
-        <SlidersHorizontal />
-        Filtros
-      </button>
-      {open && (
-        <div className="filter-popover">
+      <span className="filter-menu">
+        <button className={open ? "active" : ""} onClick={() => setOpen(!open)}>
+          <SlidersHorizontal />
+          Filtros
+        </button>
+        {open && (
+          <div className="filter-popover">
           <label>
             Estado
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -4179,8 +4356,9 @@ function SectionTools({
           >
             Limpiar filtros
           </button>
-        </div>
-      )}
+          </div>
+        )}
+      </span>
     </div>
   );
 }

@@ -1,0 +1,1 @@
+$ concurrently "pnpm --dir backend dev" "pnpm --dir frontend dev"

@@ -55,11 +55,10 @@ test("dos intentos simultáneos solo pueden adjudicar una vez el mismo ticket", 
   let claimed = false;
   const ticket = {
     async updateMany({ where }: any) {
-      assert.deepEqual(where, {
-        id: "ticket-1",
-        estado: "PENDIENTE",
-        asignadoAId: null,
-      });
+      assert.equal(where.id, "ticket-1");
+      assert.equal(where.estado, "PENDIENTE");
+      assert.deepEqual(where.OR[0], { asignadoAId: null });
+      assert.ok(["consultor-a", "consultor-b"].includes(where.OR[1].asignadoAId));
       if (claimed) return { count: 0 };
       claimed = true;
       return { count: 1 };

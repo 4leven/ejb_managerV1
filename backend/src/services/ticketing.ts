@@ -30,7 +30,7 @@ export const canTakeTickets = (actor: TicketActor) =>
 
 type TicketUpdateMany = {
   updateMany(args: {
-    where: { id: string; estado: "PENDIENTE"; asignadoAId: null };
+    where: { id: string; estado: "PENDIENTE"; OR: Array<{ asignadoAId: null } | { asignadoAId: string }> };
     data: {
       estado: "EN_CURSO";
       asignadoAId: string;
@@ -47,7 +47,7 @@ export async function attemptAtomicTicketClaim(
   now = new Date(),
 ) {
   const result = await ticket.updateMany({
-    where: { id, estado: "PENDIENTE", asignadoAId: null },
+    where: { id, estado: "PENDIENTE", OR: [{ asignadoAId: null }, { asignadoAId: actorId }] },
     data: {
       estado: "EN_CURSO",
       asignadoAId: actorId,

@@ -146,7 +146,7 @@ model Ticket {
   consulta          String?           @db.VarChar(3000)
   prioridad         String            @default("NORMAL")
   canal             String            @default("TELEFONO")
-  estado            String            @default("Pendiente")
+  estado            String            @default("PENDIENTE")
   creadoPorId       String            @map("creado_por_id") @db.UniqueIdentifier
   registradoAt      DateTime          @default(now()) @map("registrado_at")
   asignadoAId       String?           @map("asignado_a_id") @db.UniqueIdentifier
@@ -156,6 +156,7 @@ model Ticket {
   solucion          String?           @db.VarChar(3000)
   finalizadoAt      DateTime?         @map("finalizado_at")
   finalizadoPorId   String?           @map("finalizado_por_id") @db.UniqueIdentifier
+  reabiertoAt       DateTime?         @map("reabierto_at")
   slaVenceAt        DateTime?         @map("sla_vence_at")
   resultadoContacto String?           @map("resultado_contacto") @db.VarChar(40)
   atendidoPorNombre String?           @map("atendido_por_nombre") @db.VarChar(120)

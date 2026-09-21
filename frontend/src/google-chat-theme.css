@@ -2918,3 +2918,93 @@ html[data-current-page="mensajes"] .chat-workspace .google-chat-layout.chat-home
   .chat-workspace .chat-notifications-popover article.chat-notification-item{grid-template-columns:40px minmax(0,1fr) 30px 8px 16px!important;gap:7px!important}
   .chat-workspace .chat-notifications-popover article.chat-notification-item>i{width:38px!important;height:38px!important}
 }
+
+/* Contraste de Accesos directos en el riel izquierdo del chat. */
+.chat-workspace .google-chat-layout .chat-shortcuts button:not(.active){
+  color:#0b1730!important;
+  -webkit-text-fill-color:#0b1730!important;
+  opacity:1!important;
+}
+.chat-workspace .google-chat-layout .chat-shortcuts button:not(.active) svg{
+  color:#31506f!important;
+  stroke:#31506f!important;
+  opacity:1!important;
+}
+.chat-workspace .google-chat-layout .chat-shortcuts button:not(.active) span{
+  color:#0b1730!important;
+  -webkit-text-fill-color:#0b1730!important;
+  opacity:1!important;
+  font-weight:750!important;
+}
+.chat-workspace .google-chat-layout .chat-shortcuts button.active,
+.chat-workspace .google-chat-layout .chat-shortcuts button.active span,
+.chat-workspace .google-chat-layout .chat-shortcuts button.active svg{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  stroke:#fff!important;
+}
+.dark .chat-workspace .google-chat-layout .chat-shortcuts button:not(.active){
+  color:#dce8fa!important;
+  -webkit-text-fill-color:#dce8fa!important;
+}
+.dark .chat-workspace .google-chat-layout .chat-shortcuts button:not(.active) svg{
+  color:#b8c7da!important;
+  stroke:#b8c7da!important;
+}
+.dark .chat-workspace .google-chat-layout .chat-shortcuts button:not(.active) span{
+  color:#dce8fa!important;
+  -webkit-text-fill-color:#dce8fa!important;
+}
+
+/* Contraste integral cuando el modo oscuro se activa dentro de EJB Chat. */
+:is(.chat-workspace .google-chat-layout.chat-mode-oscuro,
+    html.dark .chat-workspace .google-chat-layout.chat-mode-sistema){
+  color:var(--gc-text)!important;
+}
+:is(.chat-workspace .google-chat-layout.chat-mode-oscuro,
+    html.dark .chat-workspace .google-chat-layout.chat-mode-sistema)
+  :is(.chat-appbar,.message-space-column,.conversation-list,.chat-panel,.chat-panel>header,.space-chat-header){
+  color:var(--gc-text)!important;
+}
+:is(.chat-workspace .google-chat-layout.chat-mode-oscuro,
+    html.dark .chat-workspace .google-chat-layout.chat-mode-sistema)
+  :is(.chat-appbar>b,.chat-appbar>button,.chat-appbar input,
+      .chat-shortcuts>small,.chat-shortcuts button:not(.active),.chat-shortcuts button:not(.active) span,
+      .chat-direct-shortlist h4,.chat-direct-shortlist>button,.chat-direct-shortlist b,
+      .space-toolbar,.space-categories h4,.space-categories section>button,
+      .conversation-list-title span,.conversation-list>button,.conversation-list>button p>b,
+      .chat-home-tabs button:not(.active),.chat-panel>header p>b,.space-chat-header b){
+  color:var(--gc-text)!important;
+  -webkit-text-fill-color:var(--gc-text)!important;
+  opacity:1!important;
+}
+:is(.chat-workspace .google-chat-layout.chat-mode-oscuro,
+    html.dark .chat-workspace .google-chat-layout.chat-mode-sistema)
+  :is(.chat-shortcuts button:not(.active) svg,.chat-direct-shortlist h4 svg,
+      .chat-appbar>button svg,.space-toolbar svg){
+  color:var(--gc-text-muted)!important;
+  stroke:var(--gc-text-muted)!important;
+  opacity:1!important;
+}
+:is(.chat-workspace .google-chat-layout.chat-mode-oscuro,
+    html.dark .chat-workspace .google-chat-layout.chat-mode-sistema)
+  :is(.conversation-list-title small,.conversation-list>button p>small,.contact-status,
+      .chat-direct-shortlist small,.chat-last-message-time,.chat-panel>header p>small,
+      .space-chat-header small,.no-contacts){
+  color:var(--gc-text-muted)!important;
+  -webkit-text-fill-color:var(--gc-text-muted)!important;
+  opacity:1!important;
+}
+:is(.chat-workspace .google-chat-layout.chat-mode-oscuro,
+    html.dark .chat-workspace .google-chat-layout.chat-mode-sistema)
+  :is(input,textarea)::placeholder{
+  color:var(--gc-text-faint)!important;
+  -webkit-text-fill-color:var(--gc-text-faint)!important;
+  opacity:1!important;
+}
+:is(.chat-workspace .google-chat-layout.chat-mode-oscuro,
+    html.dark .chat-workspace .google-chat-layout.chat-mode-sistema)
+  :is(.chat-shortcuts button.active,.chat-shortcuts button.active span,.chat-home-tabs button.active){
+  color:var(--gc-on-primary)!important;
+  -webkit-text-fill-color:var(--gc-on-primary)!important;
+}

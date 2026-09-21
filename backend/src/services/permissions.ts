@@ -4,7 +4,7 @@ export const isTechnical=(actor:Actor)=>actor.cargo==="Tecnico";
 export const hasGlobalOperationalAccess=(actor:Actor)=>actor.isSuperAdmin||isTechnical(actor);
 export const isAreaLeader=(actor:Actor)=>["Jefe","Gerente"].includes(actor.cargo);
 export const isAdministration=(actor:Actor)=>actor.cargo==="Administracion";
-export const isManagement=(actor:Actor)=>actor.isSuperAdmin||isAreaLeader(actor);
+export const isManagement=(actor:Actor)=>actor.isSuperAdmin||isAreaLeader(actor)||hasPermission(actor,"accesoTotalPortal");
 export const canPublishAnnouncements=(actor:Actor)=>isManagement(actor)||isAdministration(actor);
 export const canManageArea=(actor:Actor,areaId:string)=>hasGlobalOperationalAccess(actor)||(isAreaLeader(actor)&&actor.areaId===areaId);
 export const canDeleteOwned=(actor:Actor,ownerId:string|null|undefined,areaId:string|null|undefined)=>actor.isSuperAdmin||actor.id===ownerId||(isAreaLeader(actor)&&Boolean(areaId)&&actor.areaId===areaId);

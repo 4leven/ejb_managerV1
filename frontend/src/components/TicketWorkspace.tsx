@@ -9,6 +9,7 @@ import {
 import { createPortal } from "react-dom";
 import {
   AlertTriangle,
+  Ban,
   BarChart3,
   Building2,
   CalendarRange,
@@ -39,15 +40,16 @@ import {
   finishTicket,
   linkTicketConsultant,
   reassignTicket,
+  rejectTicket,
   reopenTicket,
   saveTicketAdvance,
   subscribeTickets,
   takeTicket,
 } from "../api/iniciativas";
 import { isTechnicalUser } from "../utils/access";
-import { uiConfirm } from "../utils/dialog";
+import { uiConfirm, uiPrompt } from "../utils/dialog";
 
-type TicketStatus = "PENDIENTE" | "EN_CURSO" | "FINALIZADO";
+type TicketStatus = "PENDIENTE" | "EN_CURSO" | "FINALIZADO" | "RECHAZADO";
 type TicketPriority = "BAJA" | "NORMAL" | "ALTA" | "URGENTE";
 type TicketPerson = {
   id: string;
@@ -110,7 +112,7 @@ const fullName = (person?: TicketPerson | null) =>
 const initials = (person?: TicketPerson | null) =>
   person ? `${person.nombres[0] ?? ""}${person.apellidos[0] ?? ""}`.toUpperCase() : "—";
 const statusLabel = (status: TicketStatus) =>
-  ({ PENDIENTE: "Pendiente", EN_CURSO: "En curso", FINALIZADO: "Finalizado" })[status];
+  ({ PENDIENTE: "Pendiente", EN_CURSO: "En curso", FINALIZADO: "Finalizado", RECHAZADO: "Rechazado" })[status];
 const label = (value: string) =>
   value.charAt(0) + value.slice(1).toLowerCase().replaceAll("_", " ");
 const dateTime = (value?: string | null) => {
@@ -135,6 +137,7 @@ const elapsed = (start: string, end?: string | null) => {
 export default function TicketWorkspace({ user }: { user: any }) {
   const [rows, setRows] = useState<Ticket[]>([]);
   const [total, setTotal] = useState(0);
+  const [rejectedRows, setRejectedRows] = useState<Ticket[]>([]);
   const [summary, setSummary] = useState<Record<string, number | null>>({});
   const [clients, setClients] = useState<TicketClient[]>([]);
   const [clientOptions, setClientOptions] = useState<TicketClient[]>([]);
@@ -145,7 +148,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const [clientDraft,setClientDraft]=useState({ruc:"",razonSocial:"",telefono:""});
   const [success,setSuccess]=useState("");
   const [detailTab, setDetailTab] = useState<"information" | "history">("information");
-  const [quickTab, setQuickTab] = useState<QuickTab>("all");
+  const [quickTab, setQuickTab] = useState<QuickTab>("PENDIENTE");
   const [query, setQuery] = useState("");
   const [clientFilter, setClientFilter] = useState("");
   const [moduleFilter, setModuleFilter] = useState("");
@@ -193,7 +196,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
       const state = quickTab === "PENDIENTE" || quickTab === "EN_CURSO" || quickTab === "FINALIZADO"
         ? quickTab
         : statusFilter;
-      const [data, kpis] = await Promise.all([
+      const [data, kpis, rejected] = await Promise.all([
         fetchTickets({
           q: query,
           estado: state,
@@ -210,10 +213,12 @@ export default function TicketWorkspace({ user }: { user: any }) {
           limit,
         }),
         fetchTicketSummary(),
+        fetchTickets({ estado: "RECHAZADO", orden: "fecha_desc", page: 1, limit: 100 }),
       ]);
       setRows(data.rows);
       setTotal(data.total);
       setSummary(kpis);
+      setRejectedRows(rejected.rows);
     } catch (cause: any) {
       setError(cause.message ?? "No se pudo actualizar la Ticketera.");
     } finally {
@@ -335,7 +340,8 @@ export default function TicketWorkspace({ user }: { user: any }) {
   };
   const claimTicket = async (ticket: Ticket) => {
     if (claimInFlight.current || saving) return;
-    if (ticket.estado !== "PENDIENTE" || ticket.asignadoAId || !canTakeCases) {
+    const claimable = ticket.estado === "PENDIENTE" && (!ticket.asignadoAId || ticket.asignadoAId === user.id) && canTakeCases;
+    if (!claimable) {
       await openTicket(ticket);
       return;
     }
@@ -356,6 +362,85 @@ export default function TicketWorkspace({ user }: { user: any }) {
       setError(cause.message ?? "No se pudo tomar el caso.");
     } finally {
       claimInFlight.current = false;
+      setSaving(false);
+    }
+  };
+  const rejectCase = async (ticket: Ticket) => {
+    if (saving || ticket.estado === "FINALIZADO" || ticket.estado === "RECHAZADO") return;
+    const inProgress = ticket.estado === "EN_CURSO" && ticket.asignadoAId;
+    const motivo = await uiPrompt(
+      `Rechazar ${ticket.numeroTicket}`,
+      "",
+      {
+        message: inProgress
+          ? `${fullName(ticket.asignadoA)} lo tiene en curso. El caso pasará a Rechazado y dejará de estar asignado. Indica el motivo del rechazo.`
+          : "El caso pasará a Rechazado. Indica el motivo del rechazo.",
+        placeholder: "Motivo del rechazo",
+        multiline: true,
+        confirmText: "Rechazar caso",
+      },
+    );
+    if (motivo === null) return;
+    if (motivo.trim().length < 3) {
+      setError("Indica un motivo de al menos 3 caracteres para rechazar el caso.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await rejectTicket(ticket.id, motivo.trim());
+      const visibleState = quickTab === "all" ? statusFilter : quickTab;
+      setRows((current) => visibleState && updated.estado !== visibleState
+        ? current.filter((row) => row.id !== updated.id)
+        : current.map((row) => row.id === updated.id ? updated : row));
+      if (selected?.id === updated.id) setSelected(undefined);
+      setSuccess(`El caso ${ticket.numeroTicket} fue rechazado.`);
+      await load();
+    } catch (cause: any) {
+      setError(cause.message ?? "No se pudo rechazar el caso.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  const requestReopen = async (ticket: Ticket, options?: { fromPanel?: boolean }) => {
+    if (saving) return;
+    const backToProgress = ticket.estado === "FINALIZADO" && Boolean(ticket.asignadoAId);
+    const motivo = await uiPrompt(
+      `Reabrir ${ticket.numeroTicket}`,
+      "",
+      {
+        message: backToProgress
+          ? `El caso volverá a "En curso" con ${fullName(ticket.asignadoA)} como responsable. Indica el motivo de la reapertura.`
+          : "El caso volverá a la cola de pendientes, sin consultor asignado. Indica el motivo de la reapertura.",
+        placeholder: "Motivo de la reapertura",
+        multiline: true,
+        confirmText: "Reabrir caso",
+      },
+    );
+    if (motivo === null) return;
+    if (motivo.trim().length < 3) {
+      setError("Indica un motivo de al menos 3 caracteres para reabrir el caso.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await reopenTicket(ticket.id, motivo.trim());
+      setSuccess(`El caso ${ticket.numeroTicket} fue reabierto${backToProgress ? "" : " y vuelve a la cola de pendientes"}.`);
+      if (options?.fromPanel) {
+        setRejectedRows((current) => current.filter((row) => row.id !== ticket.id));
+        await load();
+      } else {
+        const visibleState = quickTab === "all" ? statusFilter : quickTab;
+        setRows((current) => visibleState && updated.estado !== visibleState
+          ? current.filter((row) => row.id !== ticket.id)
+          : current.map((row) => row.id === updated.id ? updated : row));
+        await load();
+        setSelected(undefined);
+      }
+    } catch (cause: any) {
+      setError(cause.message ?? "No se pudo reabrir el caso.");
+    } finally {
       setSaving(false);
     }
   };
@@ -400,6 +485,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const submitTicket = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if(!/^\d{11}$/.test(clientDraft.ruc)||clientDraft.razonSocial.trim().length<2){setError("Completa el RUC de 11 dígitos y la razón social.");return;}
+    if(clientDraft.telefono&&!/^\d{6,9}$/.test(clientDraft.telefono)){setError("El teléfono debe tener entre 6 y 9 dígitos.");return;}
     if(saving)return;
     setError("");
     setSaving(true);
@@ -475,7 +561,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
                     );
                     setSelectedClient(found);
                     if(found)setClientDraft({ruc:found.ruc??"",razonSocial:found.razonSocial,telefono:found.telefono??""});
-                    else if(/^\d{1,11}$/.test(value.trim()))setClientDraft({ruc:value.trim(),razonSocial:"",telefono:""});
+                    else if(/^\d{1,11}$/.test(value.trim()))setClientDraft((current)=>({...current,ruc:value.trim()}));
                   }}
                 /></span>
                 <datalist id="ticket-client-options">{clientOptions.map((client) => <option key={client.id} value={clientValue(client)} />)}</datalist>
@@ -484,7 +570,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
               </label>
               <label>RUC<input name="ruc" required inputMode="numeric" pattern="[0-9]{11}" minLength={11} maxLength={11} value={clientDraft.ruc} onChange={event=>{setClientDraft({...clientDraft,ruc:event.target.value.replace(/\D/g,"")});setSelectedClient(undefined);}} placeholder="11 dígitos" /></label>
               <label>Razón social<input name="razonSocial" required minLength={2} maxLength={180} value={clientDraft.razonSocial} onChange={event=>setClientDraft({...clientDraft,razonSocial:event.target.value})} placeholder="Nombre o razón social del cliente" /></label>
-              <label>Teléfono<input name="telefono" type="tel" maxLength={30} value={clientDraft.telefono} onChange={event=>setClientDraft({...clientDraft,telefono:event.target.value})} placeholder="Teléfono de contacto" /></label>
+              <label>Teléfono<input name="telefono" type="tel" inputMode="numeric" pattern="\d{6,9}" maxLength={9} value={clientDraft.telefono} onChange={event=>setClientDraft({...clientDraft,telefono:event.target.value.replace(/\D/g,"")})} placeholder="Entre 6 y 9 dígitos" title="El teléfono debe tener entre 6 y 9 dígitos." /></label>
               <label>Usuario / contacto<input name="contacto" required minLength={2} maxLength={150} placeholder="Persona que realiza la consulta" /></label>
               <label>Módulo consultado<select name="modulo" required defaultValue=""><option value="" disabled>Seleccionar módulo</option>{catalogs.modules.map((module) => <option key={module}>{module}</option>)}</select></label>
               <label>Prioridad<select name="prioridad" defaultValue="NORMAL">{catalogs.priorities.map((priority) => <option key={priority} value={priority}>{label(priority)}</option>)}</select></label>
@@ -502,7 +588,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const canEditSelected = Boolean(selected) && (
     isBoss || (selected?.estado === "EN_CURSO" && selected.asignadoAId === user.id)
   );
-  const canManageSelected = canEditSelected && selected?.estado !== "PENDIENTE";
+  const canManageSelected = canEditSelected && selected?.estado !== "PENDIENTE" && selected?.estado !== "RECHAZADO";
   const selectedRegistered = dateTime(selected?.registradoAt);
   const selectedContacted = dateTime(selected?.contactadoAt);
   const detailPanel = selected
@@ -555,7 +641,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
                     </div>
                   )}
                   <label className="ticket-panel-observations">Observaciones
-                    <textarea value={observations} readOnly={!canManageSelected} onChange={(event) => setObservations(event.target.value)} placeholder={canManageSelected ? "Describe la atención realizada para finalizar el caso (mínimo 5 caracteres)." : "—"} />
+                    <textarea value={observations} readOnly={!canManageSelected} onChange={(event) => setObservations(event.target.value)} placeholder={canManageSelected ? "Describe la atención realizada (opcional)." : "—"} />
                   </label>
                   {selected.estado !== "PENDIENTE" && <label className="ticket-panel-observations">Solución brindada <span>{solution.length}/3000</span>
                     <textarea value={solution} readOnly={!canManageSelected} onChange={(event) => setSolution(event.target.value)} placeholder="—" />
@@ -565,9 +651,10 @@ export default function TicketWorkspace({ user }: { user: any }) {
             </main>
             <footer>
               <button type="button" onClick={() => setSelected(undefined)}>Cerrar</button>
-              {selected.estado === "PENDIENTE" && !selected.asignadoAId && canTakeCases && <button type="button" className="primary" disabled={saving} onClick={() => void claimTicket(selected)}><Headphones />{saving ? "Asignando…" : "Tomar caso"}</button>}
-              {selected.estado === "EN_CURSO" && canEditSelected && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar avance</button><button type="button" className="primary" disabled={saving || (observations.trim().length < 5 && solution.trim().length < 5)} onClick={() => void runAndCloseDetail(finishTicket(selected.id, { observaciones: observations, solucion: solution }))}><CheckCircle2 />Finalizar caso</button></>}
-              {selected.estado === "FINALIZADO" && isBoss && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar corrección</button><button type="button" disabled={saving} onClick={() => void runAndCloseDetail(reopenTicket(selected.id))}><RefreshCcw />Reabrir</button></>}
+              {selected.estado === "PENDIENTE" && (!selected.asignadoAId || selected.asignadoAId === user.id) && canTakeCases && <button type="button" className="primary" disabled={saving} onClick={() => void claimTicket(selected)}><Headphones />{saving ? "Asignando…" : "Tomar caso"}</button>}
+              {selected.estado === "EN_CURSO" && canEditSelected && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar avance</button><button type="button" className="primary" disabled={saving} onClick={() => void runAndCloseDetail(finishTicket(selected.id, { observaciones: observations, solucion: solution }))}><CheckCircle2 />Finalizar caso</button></>}
+              {selected.estado === "FINALIZADO" && isBoss && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar corrección</button><button type="button" disabled={saving} onClick={() => void requestReopen(selected)}><RefreshCcw />Reabrir</button></>}
+              {selected.estado === "RECHAZADO" && isBoss && <button type="button" disabled={saving} onClick={() => void requestReopen(selected)}><RefreshCcw />Reabrir</button>}
             </footer>
           </aside>
         </div>,
@@ -589,10 +676,10 @@ export default function TicketWorkspace({ user }: { user: any }) {
       <section className="ticket-table-panel">
         <nav className="ticket-quick-tabs" aria-label="Vistas rápidas">{tabs.map((tab) => <button key={tab.id} className={quickTab === tab.id ? "active" : ""} onClick={() => { setQuickTab(tab.id); setStatusFilter(""); setPage(1); }}>{tab.id !== "all" && <i className={`tab-dot ${tab.id.toLowerCase()}`} />}{tab.text} <span>({tab.count})</span></button>)}</nav>
         <div className="ticket-toolbar">
-          <label className="ticket-search"><Search /><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por RUC, razón social, usuario o consulta..." /></label>
+          <label className="ticket-search"><Search /><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por N° de ticket, RUC, razón social, usuario o consulta..." /></label>
           <select aria-label="Cliente" value={clientFilter} onChange={(event) => { setClientFilter(event.target.value); setPage(1); }}><option value="">Cliente: Todos</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.razonSocial}</option>)}</select>
           <select aria-label="Módulo" value={moduleFilter} onChange={(event) => { setModuleFilter(event.target.value); setPage(1); }}><option value="">Módulo: Todos</option>{catalogs.modules.map((module) => <option key={module}>{module}</option>)}</select>
-          <select aria-label="Estado" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setQuickTab("all"); setPage(1); }}><option value="">Estado: Todos</option><option value="PENDIENTE">Pendiente</option><option value="EN_CURSO">En curso</option><option value="FINALIZADO">Finalizado</option></select>
+          <select aria-label="Estado" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setQuickTab("all"); setPage(1); }}><option value="">Estado: Todos</option><option value="PENDIENTE">Pendiente</option><option value="EN_CURSO">En curso</option><option value="FINALIZADO">Finalizado</option><option value="RECHAZADO">Rechazado</option></select>
           <select aria-label="Asignado a" value={assigneeFilter} onChange={(event) => { setAssigneeFilter(event.target.value); setPage(1); }}><option value="">Asignado a: Todos</option><option value="__mine__">Asignado a: Mis casos</option>{consultants.map((person) => <option key={person.id} value={person.id}>{fullName(person)}</option>)}</select>
           <button className="ticket-clear" onClick={clearFilters}>Limpiar</button>
           <div className="ticket-date-range" role="group" aria-label="Filtrar por fecha de registro">
@@ -618,7 +705,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
             <tbody>
             {rows.map((ticket) => {
               const registered = dateTime(ticket.registradoAt);
-              return <tr key={ticket.id} onClick={() => void openTicket(ticket)}>
+              return <tr key={ticket.id} onClick={() => void claimTicket(ticket)}>
                 <td><b className="ticket-number">{ticket.numeroTicket}</b></td>
                 <td><b>{registered.date}</b><small>{registered.time}</small></td>
                 <td><b>{ticket.ruc}</b><small title={ticket.razonSocial}>{ticket.razonSocial}</small></td>
@@ -646,8 +733,9 @@ export default function TicketWorkspace({ user }: { user: any }) {
                 </td>
                 <td>
                   <div className="ticket-row-actions">
-                    <button className="ticket-take-action" disabled={saving} onClick={(event) => { event.stopPropagation(); void claimTicket(ticket); }}><Headphones />{ticket.estado === "PENDIENTE" && !ticket.asignadoAId && canTakeCases ? "Tomar" : "Abrir"}</button>
-                    {isBoss && ticket.estado !== "FINALIZADO" && <div className="ticket-row-menu" data-ticket-menu={ticket.id}>
+                    <button className="ticket-take-action" disabled={saving} onClick={(event) => { event.stopPropagation(); void claimTicket(ticket); }}><Headphones />{ticket.estado === "PENDIENTE" && (!ticket.asignadoAId || ticket.asignadoAId === user.id) && canTakeCases ? "Tomar" : "Abrir"}</button>
+                    {ticket.estado !== "FINALIZADO" && ticket.estado !== "RECHAZADO" && canTakeCases && <button className="ticket-reject-action" disabled={saving} onClick={(event) => { event.stopPropagation(); void rejectCase(ticket); }}><Ban />Rechazar</button>}
+                    {isBoss && ticket.estado !== "FINALIZADO" && ticket.estado !== "RECHAZADO" && <div className="ticket-row-menu" data-ticket-menu={ticket.id}>
                       <button
                         type="button"
                         className="ticket-more-action"
@@ -695,6 +783,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
       <section className="ticket-side-panels">
         <article className="ticket-summary-panel"><header><h3>Resumen de atención</h3><span>Hoy</span></header><div><i className="ticket-summary-chart" style={chartStyle}><b>{summary.total ?? 0}<small>Tickets</small></b></i><ul><li><i className="pending" />Pendientes <b>{summary.pending ?? 0}</b></li><li><i className="progress" />En curso <b>{summary.progress ?? 0}</b></li><li><i className="finished" />Finalizados <b>{finalized}</b></li></ul></div></article>
         <article className="ticket-consultants-panel"><header><h3>Consultores</h3><span>{consultants.length}</span></header><div>{consultants.map((person) => { const active = Number(person._count?.ticketsAsignados ?? 0); return <article key={person.id}><i className="ticket-consultant-avatar">{initials(person)}</i><p><b>{fullName(person)}</b><small><i className={active ? "busy" : "available"} />{active ? `En ${active} caso${active > 1 ? "s" : ""}` : person.estadoMensaje || "Sin estado"}</small></p></article>; })}{!consultants.length && <p className="ticket-empty-copy">No hay consultores registrados.</p>}</div></article>
+        <article className="ticket-rejected-panel"><header><h3>Rechazados</h3><span>{rejectedRows.length}</span></header><div>{rejectedRows.map((ticket) => <article key={ticket.id}><div><b className="ticket-number">{ticket.numeroTicket}</b><p title={ticket.razonSocial}>{ticket.razonSocial}</p></div>{isBoss ? <button type="button" disabled={saving} onClick={() => void requestReopen(ticket, { fromPanel: true })}><RefreshCcw />Reabrir</button> : <span className="ticket-state rechazado"><span className="ticket-state-icon" aria-hidden="true"><i /></span>Rechazado</span>}</article>)}{!rejectedRows.length && <p className="ticket-empty-copy">No hay casos rechazados.</p>}</div></article>
       </section>
     </div>
 
