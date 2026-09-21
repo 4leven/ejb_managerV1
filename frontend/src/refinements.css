@@ -1850,3 +1850,115 @@ html.dark[data-current-page="resumen"] .portfolio-health .bi-heading>span,
   position:static!important;
   margin-top:16px!important;
 }
+
+/* Objetivos: encabezado corporativo azul, consistente con Flujos y Encuestas. */
+.objectives-center>.objectives-hero{
+  position:relative!important;
+  min-height:126px!important;
+  justify-content:flex-start!important;
+  gap:18px!important;
+  padding:24px 27px!important;
+  overflow:hidden!important;
+  border:0!important;
+  border-radius:20px!important;
+  background:linear-gradient(120deg,#0b2347,#164b88)!important;
+  color:#fff!important;
+  box-shadow:0 15px 38px #0b234720!important;
+}
+.objectives-center>.objectives-hero:after{
+  content:"";
+  position:absolute;
+  right:-70px;
+  top:-120px;
+  width:300px;
+  height:300px;
+  border:1px solid #ffffff18;
+  border-radius:50%;
+  background:transparent!important;
+  box-shadow:0 0 0 48px #ffffff08;
+  pointer-events:none;
+}
+.objective-hero-icon{
+  position:relative;
+  z-index:1;
+  width:54px;
+  height:54px;
+  display:grid;
+  place-items:center;
+  flex:none;
+  border:1px solid #ffffff25;
+  border-radius:16px;
+  background:#ffffff12;
+}
+.objective-hero-icon svg{width:27px;height:27px;color:#fff}
+.objective-hero-copy{position:relative;z-index:1;flex:1}
+.objectives-center>.objectives-hero .objective-hero-copy>span{color:#9fc4ff!important;font-size:9px!important;font-weight:900!important;letter-spacing:.14em!important}
+.objectives-center>.objectives-hero h2{margin:4px 0!important;color:#fff!important;font:800 23px Manrope!important}
+.objectives-center>.objectives-hero p{max-width:760px!important;margin:0!important;color:#c7d9ef!important;font-size:11px!important;line-height:1.55!important}
+.objective-hero-action{
+  position:relative;
+  z-index:2;
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:0 17px;
+  border:1px solid #ffffff2b;
+  border-radius:11px;
+  background:#ffffff12;
+  color:#fff;
+  font-size:10px;
+  font-weight:850;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.objective-hero-action:hover{background:#ffffff20;border-color:#ffffff45;transform:translateY(-1px)}
+.objective-hero-action svg{width:16px}
+@media(max-width:600px){
+  .objectives-center>.objectives-hero{display:grid!important;padding:21px!important}
+  .objective-hero-action{width:100%}
+}
+
+/* Centro de administración: pestañas legibles en ambos temas. */
+.administration-hub>header nav button{
+  border-color:#9bbcf2!important;
+  background:#e8f1ff!important;
+  color:#174ea6!important;
+  -webkit-text-fill-color:#174ea6!important;
+  opacity:1!important;
+  box-shadow:0 2px 7px #174ea612!important;
+}
+.administration-hub>header nav button:hover{
+  border-color:#4f83df!important;
+  background:#d8e8ff!important;
+  color:#0d3f91!important;
+  -webkit-text-fill-color:#0d3f91!important;
+}
+.administration-hub>header nav button.active{
+  border-color:#2563eb!important;
+  background:linear-gradient(100deg,#2563eb,#3978ed)!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  box-shadow:0 5px 14px #2563eb35!important;
+}
+.dark .administration-hub>header nav button{
+  border-color:#315f9e!important;
+  background:#122f56!important;
+  color:#c7dcff!important;
+  -webkit-text-fill-color:#c7dcff!important;
+  box-shadow:0 2px 8px #00000025!important;
+}
+.dark .administration-hub>header nav button:hover{
+  border-color:#72a5f5!important;
+  background:#1a4276!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+.dark .administration-hub>header nav button.active{
+  border-color:#4f8cff!important;
+  background:linear-gradient(100deg,#2f6fed,#4387ff)!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  box-shadow:0 5px 16px #1d4ed84d!important;
+}

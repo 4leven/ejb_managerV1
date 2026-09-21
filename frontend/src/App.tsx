@@ -449,27 +449,53 @@ function Access({
     setError("");
     const f = new FormData(e.currentTarget);
     try {
+      const nombres = String(f.get("nombres") ?? "").trim();
+      const apellidos = String(f.get("apellidos") ?? "").trim();
+      const email = String(f.get("email") ?? "").trim();
+      const password = String(f.get("password") ?? "");
+      const areaId = String(f.get("areaId") ?? "");
+      const cargo = String(f.get("cargo") ?? "");
+      if (mode === "register") {
+        if (nombres.length < 2 || apellidos.length < 2) {
+          setError("Escribe tus nombres y apellidos.");
+          return;
+        }
+        if (!areaId) {
+          setError("Selecciona tu área antes de continuar.");
+          return;
+        }
+        if (!cargo) {
+          setError("Selecciona tu cargo antes de continuar.");
+          return;
+        }
+      }
+      if (!email) {
+        setError("Escribe tu correo corporativo.");
+        return;
+      }
+      if (password.length < 8) {
+        setError("La contraseña debe tener al menos 8 caracteres.");
+        return;
+      }
       let approvalCode = "";
-      if (mode === "register" && ["Gerente", "Jefe"].includes(String(f.get("cargo")))) {
+      if (mode === "register" && ["Gerente", "Jefe"].includes(cargo)) {
         const value = await uiPrompt("Código de aprobación", "", { message: "Para crear una cuenta de Jefe o Gerente, introduce el código autorizado por administración.", placeholder: "Código de aprobación" });
         if (value === null) return;
         approvalCode = value.trim();
       }
       const data =
         mode === "login"
-          ? await login(String(f.get("email")), String(f.get("password")))
+          ? await login(email, password)
           : await register({
-              nombres: String(f.get("nombres")),
-              apellidos: String(f.get("apellidos")),
-              email: String(f.get("email")),
-              password: String(f.get("password")),
-              areaId: String(f.get("areaId")),
-              cargo: String(f.get("cargo")),
+              nombres,
+              apellidos,
+              email,
+              password,
+              areaId,
+              cargo,
               approvalCode,
             });
       if (mode === "login") {
-        const email = String(f.get("email")),
-          password = String(f.get("password"));
         if (rememberPassword) {
           localStorage.setItem("ejb_remembered_email", email);
           await saveRememberedCredentials(email, password).catch(() => false);
@@ -583,7 +609,7 @@ function Access({
               ? "Regístrate con tus datos corporativos."
               : "Ingresa con tu correo y contraseña."}
           </p>
-          <form ref={loginForm} onSubmit={submit}>
+          <form ref={loginForm} onSubmit={submit} noValidate>
             {mode === "register" && (
               <>
                 <div className="two-fields">
