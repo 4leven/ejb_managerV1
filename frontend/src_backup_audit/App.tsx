@@ -2016,7 +2016,7 @@ function App() {
             onClick={() => setPage("iniciativas")}
           >
             <Lightbulb />
-            Iniciativas<span>{items.length}</span>
+            Proyectos<span>{items.length}</span>
           </button>
           <button
             className={page === "mi-trabajo" ? "active" : ""}
@@ -2176,7 +2176,7 @@ function App() {
         <div className="nav-foot">
           <div className="app-version">
             <span>EJB MANAGER</span>
-            <b>V. 0.3.29</b>
+            <b>V. 0.3.28</b>
           </div>
         </div>
       </aside>
@@ -2476,15 +2476,10 @@ function App() {
                 <Plus />
                 Registrar caso
               </button>
-            ) : page === "calendario" ? (
-              <button className="primary" onClick={() => window.dispatchEvent(new CustomEvent("calendar:new"))}>
-                <Plus />
-                Evento nuevo
-              </button>
             ) : page !== "mensajes" && (
               <button className="primary" onClick={() => { setCreateAreaName(page === "kanban-sistemas" ? "Sistemas" : user.area.nombre); setModal(true); }}>
                 <Plus />
-                {page === "kanban-sistemas" ? "Nuevo registro Kanban" : "Nueva iniciativa"}
+                {page === "kanban-sistemas" ? "Nuevo registro Kanban" : "Nuevo Proyecto"}
               </button>
             )}
           </header>
@@ -3275,7 +3270,6 @@ function App() {
               </div>
               <h2>{page === "kanban-sistemas" ? "Nuevo registro de Sistemas" : "Nueva iniciativa"}</h2>
               <p>{page === "kanban-sistemas" ? "Se agregará al Kanban de Sistemas como Pendiente." : "Se registrará inicialmente como Pendiente."}</p>
-              <div className="initiative-create-body">
               <label>
                 Título
                 <input name="titulo" required minLength={3} />
@@ -3371,7 +3365,6 @@ function App() {
                   Registrar
                   <ArrowRight />
                 </button>
-              </div>
               </div>
             </form>
           </div>,
@@ -4302,7 +4295,7 @@ function SectionTools({
   return (
     <div className="filters">
       <select value={area} onChange={(e) => setArea(e.target.value)}>
-        <option value="Todas">Área: Todas</option>
+        <option>Todas</option>
         {areas.map((a) => (
           <option key={a.id}>{a.nombre}</option>
         ))}

@@ -343,7 +343,3 @@
   color:#fff!important;
   box-shadow:0 7px 17px #dc354545;
 }
-
-/* Auditoría UX: en tablet se prioriza legibilidad y desplazamiento horizontal explícito. */
-.ticket-access-denied{min-height:360px;display:grid;place-items:center;align-content:center;gap:14px;padding:32px;border:1px solid var(--e-line,var(--line));border-radius:16px;background:var(--e-surface,var(--surface));text-align:center}.ticket-access-denied>svg{width:42px;height:42px;color:var(--tk-blue)}.ticket-access-denied h2{margin:0;color:var(--e-ink,var(--text));font:800 20px Manrope,sans-serif}.ticket-access-denied p{max-width:420px;margin:0;color:var(--e-muted,var(--muted));line-height:1.55}.ticket-access-denied .primary{padding-inline:18px}
-@media(max-width:900px){.ticket-table-wrap.table-responsive{overflow-x:auto!important;-webkit-overflow-scrolling:touch}.ticket-table{min-width:920px}.ticket-table th,.ticket-table td{min-width:140px}.ticket-table th:first-child,.ticket-table td:first-child{min-width:100px}.ticket-table th:last-child,.ticket-table td:last-child{min-width:180px}.ticket-mobile-new{position:fixed;right:15px;bottom:17px;z-index:90;display:flex;align-items:center;gap:7px;min-height:47px;padding:0 15px;border:0;border-radius:13px;background:var(--tk-blue);color:#fff;font-size:11px;font-weight:850;box-shadow:0 14px 34px #12386b55}.ticket-mobile-new svg{width:15px}}

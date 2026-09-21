@@ -26,7 +26,6 @@ import {
   RefreshCcw,
   Search,
   Save,
-  ShieldAlert,
   UserRound,
   X,
 } from "lucide-react";
@@ -166,7 +165,6 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [accessDenied, setAccessDenied] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<TicketClient>();
   const [moduleValue, setModuleValue] = useState("");
@@ -196,7 +194,6 @@ export default function TicketWorkspace({ user }: { user: any }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setAccessDenied(false);
     try {
       const state = quickTab === "PENDIENTE" || quickTab === "EN_CURSO" || quickTab === "FINALIZADO"
         ? quickTab
@@ -225,9 +222,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
       setSummary(kpis);
       setRejectedRows(rejected.rows);
     } catch (cause: any) {
-      const message = cause.message ?? "No se pudo actualizar la Ticketera.";
-      setError(message);
-      setAccessDenied(cause?.status === 403 || /\b403\b|no tienes permiso|acceso restringido/i.test(message));
+      setError(cause.message ?? "No se pudo actualizar la Ticketera.");
     } finally {
       setLoading(false);
     }
@@ -673,12 +668,6 @@ export default function TicketWorkspace({ user }: { user: any }) {
       )
     : null;
 
-  if (accessDenied) return <section className="ticket-access-denied" role="status">
-    <ShieldAlert aria-hidden="true" />
-    <div><h2>No tienes acceso a Ticketera</h2><p>Solicita acceso a un administrador o vuelve al inicio para continuar.</p></div>
-    <button type="button" className="primary" onClick={() => window.location.assign("/")}>Volver al inicio</button>
-  </section>;
-
   return <div className="ticket-workspace">
     {success&&<div className="ticket-feedback" role="status"><CheckCircle2/>{success}<button type="button" onClick={()=>setSuccess("")} aria-label="Cerrar confirmación"><X/></button></div>}
     {error && <div className="ticket-feedback" role="status"><AlertTriangle />{error}<button onClick={() => setError("")} aria-label="Cerrar aviso"><X /></button></div>}
@@ -706,7 +695,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
           </div>
         </div>
 
-        <div className="ticket-table-wrap table-responsive" aria-busy={loading}>
+        <div className="ticket-table-wrap" aria-busy={loading}>
           <table className="ticket-table">
             <colgroup>
               <col className="ticket-col-number" />
@@ -790,7 +779,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
                 </td>
               </tr>;
             })}
-            {!loading && !rows.length && <tr><td colSpan={8}><div className="ticket-empty"><Inbox /><b>Sin resultados</b><span>No hay tickets que coincidan con los filtros.</span></div></td></tr>}
+            {!loading && !rows.length && <tr><td colSpan={8}><div className="ticket-empty"><CheckCircle2 /><b>Sin resultados</b><span>No hay tickets que coincidan con los filtros.</span></div></td></tr>}
             {loading && !rows.length && <tr><td colSpan={8}><div className="ticket-table-loading">Actualizando tickets…</div></td></tr>}
           </tbody></table>
         </div>
