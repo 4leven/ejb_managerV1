@@ -325,7 +325,7 @@ export const fetchTicketCatalogs=()=>jsonRequest("/tickets/catalogos");
 export const fetchTicketClients=(q="")=>jsonRequest(`/tickets/clientes?q=${encodeURIComponent(q)}`);
 export const fetchTicketConsultants=()=>jsonRequest("/tickets/consultores");
 export const createTicket=(data:Record<string,unknown>)=>jsonRequest("/tickets",{method:"POST",body:JSON.stringify(data)});
-export const takeTicket=(id:string)=>jsonRequest(`/tickets/${id}/tomar`,{method:"POST"});
+export const takeTicket=(id:string,areaDestino?:string)=>jsonRequest(`/tickets/${id}/tomar`,{method:"POST",body:JSON.stringify({areaDestino})});
 export const saveTicketAdvance=(id:string,data:Record<string,unknown>)=>jsonRequest(`/tickets/${id}/avance`,{method:"PATCH",body:JSON.stringify(data)});
 export const finishTicket=(id:string,data:Record<string,unknown>)=>jsonRequest(`/tickets/${id}/finalizar`,{method:"POST",body:JSON.stringify(data)});
 export const rejectTicket=(id:string,motivo:string)=>jsonRequest(`/tickets/${id}/rechazar`,{method:"POST",body:JSON.stringify({motivo})});

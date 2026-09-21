@@ -76,6 +76,7 @@ type Ticket = {
   ruc: string;
   razonSocial: string;
   modulo: string;
+  areaDestino: string;
   telefono?: string | null;
   contacto: string;
   consulta: string;
@@ -99,12 +100,12 @@ type Ticket = {
     comentario?: string | null;
     estadoAnterior?: TicketStatus | null;
     estadoNuevo?: TicketStatus | null;
-    metadata?: { moduloAnterior?: string; moduloNuevo?: string } | null;
+    metadata?: { moduloAnterior?: string; moduloNuevo?: string; areaAnterior?: string; areaNueva?: string } | null;
     createdAt: string;
     usuario?: TicketPerson | null;
   }>;
 };
-type Catalogs = { modules: string[]; channels: string[]; priorities: string[] };
+type Catalogs = { modules: string[]; areas: string[]; channels: string[]; priorities: string[] };
 type QuickTab = "all" | "PENDIENTE" | "EN_CURSO" | "FINALIZADO";
 
 const fullName = (person?: TicketPerson | null) =>
@@ -142,7 +143,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const [clients, setClients] = useState<TicketClient[]>([]);
   const [clientOptions, setClientOptions] = useState<TicketClient[]>([]);
   const [consultants, setConsultants] = useState<TicketPerson[]>([]);
-  const [catalogs, setCatalogs] = useState<Catalogs>({ modules: [], channels: [], priorities: [] });
+  const [catalogs, setCatalogs] = useState<Catalogs>({ modules: [], areas: [], channels: [], priorities: [] });
   const [selected, setSelected] = useState<Ticket>();
   const [registerOpen, setRegisterOpen] = useState(false);
   const [clientDraft,setClientDraft]=useState({ruc:"",razonSocial:"",telefono:""});
@@ -167,6 +168,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const [clientSearch, setClientSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<TicketClient>();
   const [moduleValue, setModuleValue] = useState("");
+  const [areaDestinoValue, setAreaDestinoValue] = useState("");
   const [observations, setObservations] = useState("");
   const [solution, setSolution] = useState("");
   const [linkConsultantId, setLinkConsultantId] = useState("");
@@ -291,6 +293,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const selectTicket = (ticket: Ticket) => {
     setSelected(ticket);
     setModuleValue(ticket.modulo);
+    setAreaDestinoValue(ticket.areaDestino || "Consultoría");
     setObservations(ticket.observaciones ?? "");
     setSolution(ticket.solucion ?? "");
     setLinkConsultantId("");
@@ -349,7 +352,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
     setError("");
     setSaving(true);
     try {
-      const updated = await takeTicket(ticket.id);
+      const updated = await takeTicket(ticket.id, areaDestinoValue || ticket.areaDestino);
       setRows((current) => current.map((row) => (row.id === updated.id ? updated : row)));
       // La API devuelve el detalle completo y el usuario autenticado que tomó el caso.
       selectTicket(updated);
@@ -496,6 +499,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
         ...clientDraft,
         observaciones:data.observaciones,
         modulo: data.modulo,
+        areaDestino: data.areaDestino,
         contacto: data.contacto,
         consulta: data.consulta,
         prioridad: data.prioridad,
@@ -575,6 +579,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
               <label>Módulo consultado<select name="modulo" required defaultValue=""><option value="" disabled>Seleccionar módulo</option>{catalogs.modules.map((module) => <option key={module}>{module}</option>)}</select></label>
               <label>Prioridad<select name="prioridad" defaultValue="NORMAL">{catalogs.priorities.map((priority) => <option key={priority} value={priority}>{label(priority)}</option>)}</select></label>
               <label>Canal<select name="canal" defaultValue="TELEFONO">{catalogs.channels.map((channel) => <option key={channel} value={channel}>{label(channel)}</option>)}</select></label>
+              <label>Área<select name="areaDestino" required defaultValue=""><option value="" disabled>Seleccionar área</option>{catalogs.areas.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
               <label className="wide">Observaciones iniciales<textarea name="observaciones" maxLength={3000} placeholder="Información adicional (opcional)" /></label>
               <label className="wide">Consulta<textarea name="consulta" required minLength={5} maxLength={3000} placeholder="Describe con claridad la consulta del cliente..." /></label>
             </div>
@@ -619,6 +624,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
                     <div><dt>RUC</dt><dd>{selected.ruc || "—"}</dd></div>
                     <div><dt>Razón social</dt><dd>{selected.razonSocial || "—"}</dd></div>
                     <div><dt>Módulo</dt><dd>{canManageSelected ? <select value={moduleValue} onChange={(event) => setModuleValue(event.target.value)}>{catalogs.modules.map((module) => <option key={module}>{module}</option>)}</select> : selected.modulo || "—"}</dd></div>
+                    <div><dt>Área de destino</dt><dd>{(canManageSelected || (selected.estado === "PENDIENTE" && canTakeCases)) ? <select value={areaDestinoValue} onChange={(event) => setAreaDestinoValue(event.target.value)}>{catalogs.areas.map((area) => <option key={area} value={area}>{area}</option>)}</select> : selected.areaDestino || "—"}</dd></div>
                     <div><dt>Teléfono</dt><dd>{selected.telefono || "—"}</dd></div>
                     <div><dt>Usuario</dt><dd>{selected.contacto || "—"}</dd></div>
                     <div className="ticket-info-query"><dt>Consulta del usuario</dt><dd>{selected.consulta || "—"}</dd></div>
@@ -647,13 +653,13 @@ export default function TicketWorkspace({ user }: { user: any }) {
                     <textarea value={solution} readOnly={!canManageSelected} onChange={(event) => setSolution(event.target.value)} placeholder="—" />
                   </label>}
                 </section>
-              </> : <section className="ticket-history-list"><h3>Trazabilidad del caso</h3>{selected.historial?.map((entry) => <article key={entry.id}><i><Check /></i><div><b>{entry.accion}</b><span>{fullName(entry.usuario)} · {fullDate(entry.createdAt)}</span>{(entry.estadoAnterior || entry.estadoNuevo || entry.metadata?.moduloAnterior) && <small className="ticket-history-meta">{entry.estadoAnterior && entry.estadoNuevo && `${statusLabel(entry.estadoAnterior)} → ${statusLabel(entry.estadoNuevo)}`}{entry.metadata?.moduloAnterior && ` · ${entry.metadata.moduloAnterior} → ${entry.metadata.moduloNuevo}`}</small>}{entry.comentario && <p>{entry.comentario}</p>}</div></article>)}{!selected.historial?.length && <p className="ticket-empty">Aún no hay movimientos registrados.</p>}</section>}
+              </> : <section className="ticket-history-list"><h3>Trazabilidad del caso</h3>{selected.historial?.map((entry) => <article key={entry.id}><i><Check /></i><div><b>{entry.accion}</b><span>{fullName(entry.usuario)} · {fullDate(entry.createdAt)}</span>{(entry.estadoAnterior || entry.estadoNuevo || entry.metadata?.moduloAnterior || entry.metadata?.areaAnterior) && <small className="ticket-history-meta">{entry.estadoAnterior && entry.estadoNuevo && `${statusLabel(entry.estadoAnterior)} → ${statusLabel(entry.estadoNuevo)}`}{entry.metadata?.moduloAnterior && ` · ${entry.metadata.moduloAnterior} → ${entry.metadata.moduloNuevo}`}{entry.metadata?.areaAnterior && ` · Área: ${entry.metadata.areaAnterior} → ${entry.metadata.areaNueva}`}</small>}{entry.comentario && <p>{entry.comentario}</p>}</div></article>)}{!selected.historial?.length && <p className="ticket-empty">Aún no hay movimientos registrados.</p>}</section>}
             </main>
             <footer>
               <button type="button" onClick={() => setSelected(undefined)}>Cerrar</button>
               {selected.estado === "PENDIENTE" && (!selected.asignadoAId || selected.asignadoAId === user.id) && canTakeCases && <button type="button" className="primary" disabled={saving} onClick={() => void claimTicket(selected)}><Headphones />{saving ? "Asignando…" : "Tomar caso"}</button>}
-              {selected.estado === "EN_CURSO" && canEditSelected && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar avance</button><button type="button" className="primary" disabled={saving} onClick={() => void runAndCloseDetail(finishTicket(selected.id, { observaciones: observations, solucion: solution }))}><CheckCircle2 />Finalizar caso</button></>}
-              {selected.estado === "FINALIZADO" && isBoss && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, observaciones: observations, solucion: solution }))}><Save />Guardar corrección</button><button type="button" disabled={saving} onClick={() => void requestReopen(selected)}><RefreshCcw />Reabrir</button></>}
+              {selected.estado === "EN_CURSO" && canEditSelected && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, areaDestino: areaDestinoValue, observaciones: observations, solucion: solution }))}><Save />Guardar avance</button><button type="button" className="primary" disabled={saving} onClick={() => void runAndCloseDetail(finishTicket(selected.id, { observaciones: observations, solucion: solution }))}><CheckCircle2 />Finalizar caso</button></>}
+              {selected.estado === "FINALIZADO" && isBoss && <><button type="button" className="ticket-save-action" disabled={saving} onClick={() => void run(saveTicketAdvance(selected.id, { modulo: moduleValue, areaDestino: areaDestinoValue, observaciones: observations, solucion: solution }))}><Save />Guardar corrección</button><button type="button" disabled={saving} onClick={() => void requestReopen(selected)}><RefreshCcw />Reabrir</button></>}
               {selected.estado === "RECHAZADO" && isBoss && <button type="button" disabled={saving} onClick={() => void requestReopen(selected)}><RefreshCcw />Reabrir</button>}
             </footer>
           </aside>
@@ -705,11 +711,11 @@ export default function TicketWorkspace({ user }: { user: any }) {
             <tbody>
             {rows.map((ticket) => {
               const registered = dateTime(ticket.registradoAt);
-              return <tr key={ticket.id} onClick={() => void claimTicket(ticket)}>
+              return <tr key={ticket.id} onClick={() => void openTicket(ticket)}>
                 <td><b className="ticket-number">{ticket.numeroTicket}</b></td>
                 <td><b>{registered.date}</b><small>{registered.time}</small></td>
                 <td><b>{ticket.ruc}</b><small title={ticket.razonSocial}>{ticket.razonSocial}</small></td>
-                <td><span className="ticket-module">{ticket.modulo}</span></td>
+                <td><span className="ticket-module">{ticket.modulo}</span><small className="ticket-area-destination">{ticket.areaDestino || "Consultoría"}</small></td>
                 <td><span className="ticket-query-preview" title={ticket.consulta}>{ticket.consulta}</span></td>
                 <td><span className={`ticket-state ${ticket.estado.toLowerCase()}`}><span className="ticket-state-icon" aria-hidden="true">{ticket.estado === "FINALIZADO" ? <Check /> : <i />}</span>{statusLabel(ticket.estado)}</span></td>
                 <td>
@@ -733,7 +739,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
                 </td>
                 <td>
                   <div className="ticket-row-actions">
-                    <button className="ticket-take-action" disabled={saving} onClick={(event) => { event.stopPropagation(); void claimTicket(ticket); }}><Headphones />{ticket.estado === "PENDIENTE" && (!ticket.asignadoAId || ticket.asignadoAId === user.id) && canTakeCases ? "Tomar" : "Abrir"}</button>
+                    <button className="ticket-take-action" disabled={saving} onClick={(event) => { event.stopPropagation(); void openTicket(ticket); }}><Headphones />{ticket.estado === "PENDIENTE" && (!ticket.asignadoAId || ticket.asignadoAId === user.id) && canTakeCases ? "Tomar" : "Abrir"}</button>
                     {ticket.estado !== "FINALIZADO" && ticket.estado !== "RECHAZADO" && canTakeCases && <button className="ticket-reject-action" disabled={saving} onClick={(event) => { event.stopPropagation(); void rejectCase(ticket); }}><Ban />Rechazar</button>}
                     {isBoss && ticket.estado !== "FINALIZADO" && ticket.estado !== "RECHAZADO" && <div className="ticket-row-menu" data-ticket-menu={ticket.id}>
                       <button

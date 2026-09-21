@@ -140,6 +140,7 @@ model Ticket {
   ruc               String?           @db.VarChar(11)
   razonSocial       String            @map("razon_social") @db.VarChar(180)
   modulo            String            @db.VarChar(100)
+  areaDestino       String            @default("Consultoría") @map("area_destino") @db.NVarChar(40)
   telefono          String?           @db.VarChar(30)
   contacto          String?           @db.VarChar(150)
   contactoId        String?           @map("contacto_id") @db.UniqueIdentifier

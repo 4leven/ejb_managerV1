@@ -12,6 +12,8 @@ export const TICKET_MODULES = [
 
 export const TICKET_AREA_KEYS = ["consultoria contable", "consultoria planilla"] as const;
 
+export const TICKET_DESTINATION_AREAS = ["Ventas", "Instalación", "Consultoría"] as const;
+
 export const TICKET_CHANNELS = ["TELEFONO", "WHATSAPP", "CORREO", "OTRO"] as const;
 
 export const TICKET_PRIORITIES = ["BAJA", "NORMAL", "ALTA", "URGENTE"] as const;

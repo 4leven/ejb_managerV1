@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { CanalTicket, EstadoTicket, Prisma, PrioridadTicket } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../config/db.js";
-import { TICKET_CHANNELS, TICKET_MODULES, TICKET_PRIORITIES } from "../constants/ticket.js";
+import { TICKET_CHANNELS, TICKET_DESTINATION_AREAS, TICKET_MODULES, TICKET_PRIORITIES } from "../constants/ticket.js";
 import {
   attemptAtomicTicketClaim,
   canRegisterTickets,
@@ -48,6 +48,7 @@ const createSchema = z.object({
   ),
   observaciones:z.string().trim().max(3000).optional(),
   modulo: z.enum(TICKET_MODULES),
+  areaDestino: z.enum(TICKET_DESTINATION_AREAS),
   contacto: z.string().trim().min(2).max(150),
   consulta: z.string().trim().min(5).max(3000),
   prioridad: z.nativeEnum(PrioridadTicket),
@@ -164,6 +165,7 @@ export async function catalogs(req: Request, res: Response, next: NextFunction) 
     if (!canViewTickets(currentUser)) throw fail(403, "No tienes permiso");
     res.json({
       modules: TICKET_MODULES,
+      areas: TICKET_DESTINATION_AREAS,
       channels: TICKET_CHANNELS,
       priorities: TICKET_PRIORITIES,
     });
@@ -286,6 +288,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
           ruc,
           razonSocial,
           modulo: data.modulo,
+          areaDestino: data.areaDestino,
           telefono: phone||null,
           observaciones:data.observaciones||null,
           contacto: data.contacto,
@@ -301,6 +304,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
           accion: "Ticket registrado",
           estadoNuevo: "PENDIENTE",
           usuarioId: currentUser.id,
+          comentario: `Área de destino: ${data.areaDestino}`,
         },
       });
       return tx.ticket.findUniqueOrThrow({ where: { id: ticket.id }, include: detailInclude });
@@ -317,7 +321,11 @@ export async function take(req: Request, res: Response, next: NextFunction) {
     const currentUser = await actor(req.userId!);
     if (!canTakeTickets(currentUser)) throw fail(403, "No tienes permiso para tomar casos");
     const id = uuid.parse(req.params.id);
+    const input = z.object({
+      areaDestino: z.enum(TICKET_DESTINATION_AREAS).optional(),
+    }).parse(req.body ?? {});
     const row = await prisma.$transaction(async (tx) => {
+      const beforeClaim = await tx.ticket.findUnique({ where: { id } });
       const claimed = await attemptAtomicTicketClaim(tx.ticket, id, currentUser.id);
       if (!claimed) {
         const current = await tx.ticket.findUnique({
@@ -340,6 +348,22 @@ export async function take(req: Request, res: Response, next: NextFunction) {
           usuarioId: currentUser.id,
         },
       });
+      if (input.areaDestino && input.areaDestino !== beforeClaim?.areaDestino) {
+        await tx.ticket.update({ where: { id }, data: { areaDestino: input.areaDestino } });
+        await tx.ticketHistorial.create({
+          data: {
+            ticketId: id,
+            accion: "Área corregida al tomar el caso",
+            estadoAnterior: "EN_CURSO",
+            estadoNuevo: "EN_CURSO",
+            usuarioId: currentUser.id,
+            metadata: {
+              areaAnterior: beforeClaim?.areaDestino,
+              areaNueva: input.areaDestino,
+            },
+          },
+        });
+      }
       return tx.ticket.findUniqueOrThrow({ where: { id }, include: detailInclude });
     });
     res.json(present(row));
@@ -354,6 +378,7 @@ export async function advance(req: Request, res: Response, next: NextFunction) {
     const id = uuid.parse(req.params.id);
     const data = z.object({
       modulo: z.enum(TICKET_MODULES).optional(),
+      areaDestino: z.enum(TICKET_DESTINATION_AREAS).optional(),
       observaciones: z.string().trim().max(3000).optional(),
       solucion: z.string().trim().max(3000).optional(),
     }).parse(req.body);
@@ -376,6 +401,18 @@ export async function advance(req: Request, res: Response, next: NextFunction) {
             estadoNuevo: current.estado,
             usuarioId: currentUser.id,
             metadata: { moduloAnterior: current.modulo, moduloNuevo: data.modulo },
+          },
+        });
+      }
+      if (data.areaDestino && data.areaDestino !== current.areaDestino) {
+        await tx.ticketHistorial.create({
+          data: {
+            ticketId: id,
+            accion: `Área modificada de ${current.areaDestino} a ${data.areaDestino}`,
+            estadoAnterior: current.estado,
+            estadoNuevo: current.estado,
+            usuarioId: currentUser.id,
+            metadata: { areaAnterior: current.areaDestino, areaNueva: data.areaDestino },
           },
         });
       }
