@@ -142,6 +142,11 @@ type Page =
 const isWorkerPortalUser = (user?: { cargo?: string; rol?: string } | null) =>
   /trabajador|empleado/i.test(`${user?.cargo ?? ""} ${user?.rol ?? ""}`);
 
+// Páginas donde el atajo "+ Nueva iniciativa" de la cabecera tiene sentido.
+// "iniciativas" ya tiene su propio botón "Registrar iniciativa" en el toolbar;
+// este es solo un acceso rápido desde las vistas de trabajo relacionadas.
+const QUICK_CREATE_INITIATIVE_PAGES: Page[] = ["resumen", "iniciativas", "mi-trabajo", "cronograma"];
+
 const workerPanelPages = new Set<Page>([
   "resumen",
   "notificaciones",
@@ -225,6 +230,8 @@ type User = {
   isSuperAdmin: boolean;
   permisos?: Record<string, boolean>;
   area: Area;
+  puedeVerTicketera?: boolean;
+  puedeRegistrarTickets?: boolean;
 };
 type Item = {
   creadorId?:string|null;
@@ -2469,24 +2476,31 @@ function App() {
               )}
             </div>
             {page === "ticketera" ? (
-              <button
-                className="primary"
-                onClick={() => window.dispatchEvent(new CustomEvent("ticket:new"))}
-              >
-                <Plus />
-                Registrar caso
-              </button>
+              user.puedeRegistrarTickets && (
+                <button
+                  className="primary"
+                  onClick={() => window.dispatchEvent(new CustomEvent("ticket:new"))}
+                >
+                  <Plus />
+                  Registrar caso
+                </button>
+              )
             ) : page === "calendario" ? (
               <button className="primary" onClick={() => window.dispatchEvent(new CustomEvent("calendar:new"))}>
                 <Plus />
                 Evento nuevo
               </button>
-            ) : page !== "mensajes" && (
-              <button className="primary" onClick={() => { setCreateAreaName(page === "kanban-sistemas" ? "Sistemas" : user.area.nombre); setModal(true); }}>
+            ) : page === "kanban-sistemas" ? (
+              <button className="primary" onClick={() => { setCreateAreaName("Sistemas"); setModal(true); }}>
                 <Plus />
-                {page === "kanban-sistemas" ? "Nuevo registro Kanban" : "Nueva iniciativa"}
+                Nuevo registro Kanban
               </button>
-            )}
+            ) : QUICK_CREATE_INITIATIVE_PAGES.includes(page) ? (
+              <button className="primary" onClick={() => { setCreateAreaName(user.area.nombre); setModal(true); }}>
+                <Plus />
+                Nueva iniciativa
+              </button>
+            ) : null}
           </header>
           <section
             className={

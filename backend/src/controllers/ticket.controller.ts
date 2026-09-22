@@ -9,6 +9,7 @@ import {
   canTakeTickets,
   canViewTickets,
   isTicketBoss,
+  ticketAreaScope,
 } from "../services/ticketing.js";
 
 const uuid = z.string().uuid();
@@ -73,6 +74,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const currentUser = await actor(req.userId!);
     if (!canViewTickets(currentUser)) throw fail(403, "No tienes permiso para ver la Ticketera");
+    const areaScope = ticketAreaScope(currentUser);
     const q = String(req.query.q ?? "").trim();
     const estado = req.query.estado
       ? z.nativeEnum(EstadoTicket).parse(req.query.estado)
@@ -91,6 +93,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
     const correlative = /^(?:tck-?)?0*(\d+)$/i.exec(q.trim())?.[1];
     const where: Prisma.TicketWhereInput = {
       ...ticketScope,
+      ...(areaScope && { areaDestino: areaScope }),
       ...(estado && { estado }),
       ...(req.query.clienteId && { clienteId: uuid.parse(req.query.clienteId) }),
       ...(req.query.mine === "true"
@@ -147,12 +150,14 @@ export async function detail(req: Request, res: Response, next: NextFunction) {
   try {
     const currentUser = await actor(req.userId!);
     if (!canViewTickets(currentUser)) throw fail(403, "No tienes permiso para ver este caso");
+    const areaScope = ticketAreaScope(currentUser);
     const row = await prisma.ticket.findUniqueOrThrow({
       where: { id: uuid.parse(req.params.id) },
       include: detailInclude,
     });
     if (!TICKET_MODULES.includes(row.modulo as (typeof TICKET_MODULES)[number]))
       throw fail(404, "El caso no pertenece a Consultoría Contable ni Consultoría Planilla");
+    if (areaScope && row.areaDestino !== areaScope) throw fail(403, "No tienes permiso para ver este caso");
     res.json(present(row));
   } catch (error) {
     next(error);
@@ -231,20 +236,22 @@ export async function summary(req: Request, res: Response, next: NextFunction) {
   try {
     const currentUser = await actor(req.userId!);
     if (!canViewTickets(currentUser)) throw fail(403, "No tienes permiso");
+    const areaScope = ticketAreaScope(currentUser);
+    const scope: Prisma.TicketWhereInput = { ...ticketScope, ...(areaScope && { areaDestino: areaScope }) };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const [total, pending, progress, finalized, finishedToday, mine, expired, closed] = await Promise.all([
-      prisma.ticket.count({ where: ticketScope }),
-      prisma.ticket.count({ where: { ...ticketScope, estado: "PENDIENTE" } }),
-      prisma.ticket.count({ where: { ...ticketScope, estado: "EN_CURSO" } }),
-      prisma.ticket.count({ where: { ...ticketScope, estado: "FINALIZADO" } }),
-      prisma.ticket.count({ where: { ...ticketScope, estado: "FINALIZADO", finalizadoAt: { gte: today } } }),
-      prisma.ticket.count({ where: { ...ticketScope, estado: "EN_CURSO", asignadoAId: currentUser.id } }),
+      prisma.ticket.count({ where: scope }),
+      prisma.ticket.count({ where: { ...scope, estado: "PENDIENTE" } }),
+      prisma.ticket.count({ where: { ...scope, estado: "EN_CURSO" } }),
+      prisma.ticket.count({ where: { ...scope, estado: "FINALIZADO" } }),
+      prisma.ticket.count({ where: { ...scope, estado: "FINALIZADO", finalizadoAt: { gte: today } } }),
+      prisma.ticket.count({ where: { ...scope, estado: "EN_CURSO", asignadoAId: currentUser.id } }),
       prisma.ticket.count({
-        where: { ...ticketScope, estado: { notIn: ["FINALIZADO", "RECHAZADO"] }, slaVenceAt: { lt: new Date() } },
+        where: { ...scope, estado: { notIn: ["FINALIZADO", "RECHAZADO"] }, slaVenceAt: { lt: new Date() } },
       }),
       prisma.ticket.findMany({
-        where: { ...ticketScope, estado: "FINALIZADO", finalizadoAt: { not: null } },
+        where: { ...scope, estado: "FINALIZADO", finalizadoAt: { not: null } },
         select: { registradoAt: true, finalizadoAt: true },
         orderBy: { finalizadoAt: "desc" },
         take: 500,
@@ -632,6 +639,8 @@ export async function stream(req: Request, res: Response, next: NextFunction) {
   try {
     const currentUser = await actor(req.userId!);
     if (!canViewTickets(currentUser)) throw fail(403, "No tienes permiso");
+    const areaScope = ticketAreaScope(currentUser);
+    const scope: Prisma.TicketWhereInput = { ...ticketScope, ...(areaScope && { areaDestino: areaScope }) };
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
@@ -642,7 +651,7 @@ export async function stream(req: Request, res: Response, next: NextFunction) {
     const send = async () => {
       if (closed) return;
       const rows = await prisma.ticket.findMany({
-        where: ticketScope,
+        where: scope,
         select: { id: true, estado: true, modulo: true, asignadoAId: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
         take: 100,
