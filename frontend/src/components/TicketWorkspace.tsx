@@ -493,7 +493,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const submitTicket = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if(!/^\d{11}$/.test(clientDraft.ruc)||clientDraft.razonSocial.trim().length<2){setError("Completa el RUC de 11 dígitos y la razón social.");return;}
-    if(clientDraft.telefono&&!/^\d{6,9}$/.test(clientDraft.telefono)){setError("El teléfono debe tener entre 6 y 9 dígitos.");return;}
+    if(!/^\d{6,9}$/.test(clientDraft.telefono)){setError("El teléfono es obligatorio y debe tener entre 6 y 9 dígitos.");return;}
     if(saving)return;
     setError("");
     setSaving(true);
@@ -579,7 +579,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
               </label>
               <label>RUC<input name="ruc" required inputMode="numeric" pattern="[0-9]{11}" minLength={11} maxLength={11} value={clientDraft.ruc} onChange={event=>{setClientDraft({...clientDraft,ruc:event.target.value.replace(/\D/g,"")});setSelectedClient(undefined);}} placeholder="11 dígitos" /></label>
               <label>Razón social<input name="razonSocial" required minLength={2} maxLength={180} value={clientDraft.razonSocial} onChange={event=>setClientDraft({...clientDraft,razonSocial:event.target.value})} placeholder="Nombre o razón social del cliente" /></label>
-              <label>Teléfono<input name="telefono" type="tel" inputMode="numeric" pattern="\d{6,9}" maxLength={9} value={clientDraft.telefono} onChange={event=>setClientDraft({...clientDraft,telefono:event.target.value.replace(/\D/g,"")})} placeholder="Entre 6 y 9 dígitos" title="El teléfono debe tener entre 6 y 9 dígitos." /></label>
+              <label>Teléfono<input name="telefono" type="tel" required inputMode="numeric" pattern="\d{6,9}" maxLength={9} value={clientDraft.telefono} onChange={event=>setClientDraft({...clientDraft,telefono:event.target.value.replace(/\D/g,"")})} placeholder="Entre 6 y 9 dígitos" title="El teléfono debe tener entre 6 y 9 dígitos." /></label>
               <label>Usuario / contacto<input name="contacto" required minLength={2} maxLength={150} placeholder="Persona que realiza la consulta" /></label>
               <label>Módulo consultado<select name="modulo" required defaultValue=""><option value="" disabled>Seleccionar módulo</option>{catalogs.modules.map((module) => <option key={module}>{module}</option>)}</select></label>
               <label>Prioridad<select name="prioridad" defaultValue="NORMAL">{catalogs.priorities.map((priority) => <option key={priority} value={priority}>{label(priority)}</option>)}</select></label>

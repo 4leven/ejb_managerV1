@@ -43,9 +43,9 @@ const createSchema = z.object({
   clienteId: uuid.optional(),
   ruc:z.string().trim().regex(/^\d{11}$/, "El RUC debe tener 11 dígitos.").optional(),
   razonSocial:z.string().trim().min(2).max(180).optional(),
-  telefono:z.string().trim().max(30).optional().refine(
-    (value) => !value || /^\d{6,9}$/.test(value),
-    "El teléfono debe tener entre 6 y 9 dígitos.",
+  telefono:z.string().trim().max(30).refine(
+    (value) => /^\d{6,9}$/.test(value),
+    "El teléfono es obligatorio y debe tener entre 6 y 9 dígitos.",
   ),
   observaciones:z.string().trim().max(3000).optional(),
   modulo: z.enum(TICKET_MODULES),
