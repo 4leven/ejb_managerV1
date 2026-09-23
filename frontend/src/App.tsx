@@ -408,7 +408,9 @@ function Access({
   areas: Area[];
   onAccess: (u: User, t: string, remember: boolean) => void;
 }) {
-  const [mode, setMode] = useState<"register" | "login">("register"),
+  const [mode, setMode] = useState<"register" | "login">(() =>
+      localStorage.getItem("ejb_remembered_email") ? "login" : "register",
+    ),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [rememberPassword, setRememberPassword] = useState(() =>
