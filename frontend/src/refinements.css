@@ -803,6 +803,7 @@ body>.initiative-create-overlay{position:fixed!important;z-index:2000!important;
 
 /* Recordatorio seguro de credenciales en el acceso. */
 .access-card .remember-password{display:flex!important;align-items:center;gap:10px;margin:2px 0 16px!important;padding:10px 11px;border:1px solid #d8e1ed;border-radius:10px;background:#f7f9fc;cursor:pointer}.access-card .remember-password input{appearance:none;width:19px!important;height:19px!important;min-width:19px;margin:0!important;padding:0!important;border:1.5px solid #aab7c8;border-radius:5px;background:#fff;display:grid;place-items:center;cursor:pointer}.access-card .remember-password input:checked{border-color:#2f6fed;background:#2f6fed}.access-card .remember-password input:checked:after{content:"✓";color:#fff;font-size:13px;font-weight:900;line-height:1}.access-card .remember-password span{min-width:0}.access-card .remember-password b,.access-card .remember-password small{display:block}.access-card .remember-password b{color:#253550;font-size:10px}.access-card .remember-password small{margin-top:2px;color:#7b899c;font-size:8px;font-weight:500}.dark .access-card .remember-password{border-color:#34445f;background:#18253a}.dark .access-card .remember-password b{color:#eef4ff}
+.access-card .remember-password:has(input:checked){border-color:#2f6fed;background:#eaf1ff}.dark .access-card .remember-password:has(input:checked){border-color:#2f6fed;background:#1c2f52}
 .access-card .privacy{display:block!important;max-width:360px;margin:17px auto 0!important;color:#91a0bb!important;text-align:center;font-size:10px!important;font-weight:600;line-height:1.55}.access-card .privacy b{color:#53637d;font-weight:900}.dark .access-card .privacy{color:#9fb0c8!important}.dark .access-card .privacy b{color:#d8e4f7}
 
 /* Búsqueda global y panel personalizable. */
@@ -1962,3 +1963,20 @@ html.dark[data-current-page="resumen"] .portfolio-health .bi-heading>span,
   -webkit-text-fill-color:#fff!important;
   box-shadow:0 5px 16px #1d4ed84d!important;
 }
+
+/* UX audit: modals keep their actions visible while their form content scrolls. */
+.event-modal{display:flex!important;flex-direction:column!important;width:min(690px,calc(100vw - 32px))!important;max-height:85dvh!important;padding:0!important;overflow:hidden!important}
+.event-modal-body{min-height:0;overflow-y:auto;padding:28px 28px 18px;overscroll-behavior:contain}
+.event-modal-footer{display:flex;justify-content:flex-end;gap:10px;flex:0 0 auto;padding:14px 28px;border-top:1px solid var(--line);background:var(--surface);box-shadow:0 -8px 20px color-mix(in srgb,var(--surface) 88%,transparent)}
+.event-modal-footer button:not(.primary){border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--text);padding:0 16px}
+.event-close{position:absolute!important;z-index:2;top:14px!important;right:14px!important;background:var(--surface-2)!important;color:var(--muted)!important;border-color:var(--line)!important}
+.event-close:hover{background:var(--surface)!important;color:var(--text)!important;transform:none!important}
+.event-detail-modal>.close{background:var(--surface-2)!important;color:var(--muted)!important;border-color:var(--line)!important}.event-detail-modal>.close:hover{background:var(--surface)!important;color:var(--text)!important;transform:none!important}
+body>.initiative-create-overlay{display:grid!important;place-items:center!important;overflow:hidden!important}
+body>.initiative-create-overlay>.initiative-create-modal{display:flex!important;flex-direction:column!important;max-height:85dvh!important;overflow:hidden!important;margin:auto!important;padding:28px 30px 0!important}
+.initiative-create-modal>.initiative-create-body{min-height:0;overflow-y:auto;padding:0 2px 20px;overscroll-behavior:contain}
+.initiative-create-modal .modal-actions{position:sticky;bottom:0;z-index:1;margin:0 -2px -20px;padding:14px 2px;background:var(--surface);border-top:1px solid var(--line)}
+@media(max-width:650px){.event-modal{width:calc(100vw - 24px)!important;max-height:calc(100dvh - 24px)!important}.event-modal-body{padding:22px 16px 16px}.event-modal-footer{padding:12px 16px}.event-modal-footer button{min-height:42px}.initiative-create-modal>.initiative-create-body{padding-bottom:16px}.initiative-create-modal .modal-actions{margin-bottom:-16px}}
+
+@media(max-width:900px){.week-calendar{position:relative;overflow-x:auto!important}.week-calendar::after{content:"Desliza para ver más";position:sticky;right:8px;bottom:8px;float:right;width:max-content;margin:-28px 8px 8px auto;padding:5px 8px;border-radius:999px;background:color-mix(in srgb,var(--surface) 88%,transparent);color:var(--muted);font-size:10px;font-weight:700;box-shadow:0 2px 8px #0b234722;pointer-events:none}}
+.calendar-toolbar>.primary{display:none!important}

@@ -542,9 +542,13 @@ export default function Messages({
       controller.abort();
     };
   }, [gifsOpen, gifQuery]);
+  const uniqueContacts = useMemo(
+    () => Array.from(new Map(contacts.map((contact) => [contact.id, contact])).values()),
+    [contacts],
+  );
   const filtered = useMemo(
     () =>
-      contacts.filter((c) => {
+      uniqueContacts.filter((c) => {
         if(c.hidden && !c.lastMessage) return false;
         const matchesQuery = `${c.nombres} ${c.apellidos}`
           .toLowerCase()
@@ -554,7 +558,7 @@ export default function Messages({
         if (homeFilter === "pinned" || inboxView === "starred") return matchesQuery && pinnedContacts.includes(c.id);
         return matchesQuery;
       }),
-    [contacts, query, inboxView, homeFilter, pinnedContacts],
+    [uniqueContacts, query, inboxView, homeFilter, pinnedContacts],
   );
   useEffect(() => {
     if (query.trim().length < 2 || filtered.length) { setContentResults([]); return; }
@@ -1139,10 +1143,10 @@ export default function Messages({
         <button type="button" className="chat-section-toggle" aria-expanded={accessOpen} onClick={()=>setAccessOpen((open)=>!open)}><ChevronDown/><span>Accesos directos</span></button>
         {accessOpen&&<nav className="chat-shortcuts" aria-label="Accesos de mensajería">
           <button type="button" className={inboxView === "home" ? "active" : ""} onClick={() => { setInboxView("home"); setHomeFilter("all"); setActive(null); setActiveSpace(null); setAnnouncementsOpen(false); }}>
-            <Home /><span>Inicio</span>{contacts.reduce((sum, contact) => sum + contact.unread, 0) > 0 && <b>{contacts.reduce((sum, contact) => sum + contact.unread, 0)}</b>}
+            <Home /><span>Inicio</span>{uniqueContacts.reduce((sum, contact) => sum + contact.unread, 0) > 0 && <b>{uniqueContacts.reduce((sum, contact) => sum + contact.unread, 0)}</b>}
           </button>
           <button type="button" className={inboxView === "unread" ? "active" : ""} onClick={() => { setInboxView("unread"); setHomeFilter("unread"); setActive(null); setActiveSpace(null); setAnnouncementsOpen(false); }}>
-            <MessageCircle /><span>No leídos</span>{contacts.filter((contact) => contact.unread > 0).length > 0 && <b>{contacts.filter((contact) => contact.unread > 0).length}</b>}
+            <MessageCircle /><span>No leídos</span>{uniqueContacts.filter((contact) => contact.unread > 0).length > 0 && <b>{uniqueContacts.filter((contact) => contact.unread > 0).length}</b>}
           </button>
           <button type="button" className={inboxView === "starred" ? "active" : ""} onClick={() => { setInboxView("starred"); setHomeFilter("pinned"); setActive(null); setActiveSpace(null); setAnnouncementsOpen(false); }}>
             <Star /><span>Destacados</span>
@@ -1154,7 +1158,7 @@ export default function Messages({
         <section className="chat-direct-shortlist">
           <button type="button" className="chat-section-toggle" aria-expanded={directOpen} onClick={()=>setDirectOpen((open)=>!open)}><ChevronDown/><span>Mensajes directos</span></button>
           {directOpen&&<div className="chat-direct-items">
-          {contacts.slice(0, 5).map((contact) => {
+          {uniqueContacts.slice(0, 5).map((contact) => {
             return <button type="button" key={contact.id} title="Abrir chat. Clic derecho para destacar" onContextMenu={(event)=>{event.preventDefault();togglePinnedContact(contact.id)}} onClick={() => { setActive(contact); setActiveSpace(null); setAnnouncementsOpen(false); }}>
               {contact.fotoPerfil ? <img src={contact.fotoPerfil} alt="" /> : <i style={{background:contact.area.colorHex}}>{initials(`${contact.nombres} ${contact.apellidos}`)}</i>}
               <span><b>{contact.nombres} {contact.apellidos}</b><small>{statusLabel(contact.estadoMensaje)}</small></span>
@@ -1162,7 +1166,7 @@ export default function Messages({
               {pinnedContacts.includes(contact.id)&&<Star className="pinned-contact"/>}
             </button>;
           })}
-          {!contacts.length&&<p>Busca un compañero para empezar.</p>}
+          {!uniqueContacts.length&&<p>Busca un compañero para empezar.</p>}
           </div>}
         </section>
         <button type="button" className="chat-section-toggle" aria-expanded={spacesOpen} onClick={()=>setSpacesOpen((open)=>!open)}><ChevronDown/><span>Espacios</span></button>
@@ -1385,6 +1389,7 @@ export default function Messages({
           ) : activeSpace ? (
             <>
               <header className="space-chat-header">
+                <button type="button" className="chat-mobile-back" onClick={() => { setActiveSpace(null); setAnnouncementsOpen(false); }}><ArrowLeft />Volver</button>
                 <div className="space-chat-photo">
                   {activeSpace.datos.foto ? (
                     <img src={activeSpace.datos.foto} alt="" />
@@ -1522,6 +1527,7 @@ export default function Messages({
           ) : active ? (
             <>
               <header>
+                <button type="button" className="chat-mobile-back" onClick={() => { setActive(null); setAnnouncementsOpen(false); }}><ArrowLeft />Volver</button>
                 {active.fotoPerfil ? (
                   <img
                     className="chat-header-photo"
@@ -1773,7 +1779,7 @@ export default function Messages({
           )}
         </section>
         <aside className="chat-app-rail" aria-label="Accesos a EJB Manager"><button type="button" title="Calendario" onClick={()=>onNavigate?.("calendario")}><CalendarDays/></button><button type="button" title="Proyectos" onClick={()=>onNavigate?.("iniciativas")}><Lightbulb/></button><button type="button" title="Mi trabajo" onClick={()=>onNavigate?.("mi-trabajo")}><BriefcaseBusiness/></button><button type="button" title="Equipo" onClick={()=>onNavigate?.("equipo")}><Users/></button></aside>
-        {newChatOpen&&<div className={`overlay new-chat-overlay ${usesDarkChatTheme ? "chat-mode-oscuro" : "chat-mode-claro"}`} onMouseDown={(event)=>{if(event.target===event.currentTarget)setNewChatOpen(false)}}><section className="new-chat-modal"><header><div><MessageCircle/><span><b>Nuevo chat</b><small>Selecciona una persona de EJB</small></span></div><button type="button" onClick={()=>setNewChatOpen(false)}><X/></button></header><label><Search/><input autoFocus value={newChatQuery} onChange={(event)=>setNewChatQuery(event.target.value)} placeholder="Buscar por nombre, cargo o área"/></label><div>{contacts.filter((contact)=>`${contact.nombres} ${contact.apellidos} ${contact.cargo} ${contact.area.nombre}`.toLowerCase().includes(newChatQuery.toLowerCase())).map((contact)=><button type="button" key={contact.id} onClick={()=>{setActive(contact);setActiveSpace(null);setAnnouncementsOpen(false);setNewChatOpen(false);setQuery("")}}>{contact.fotoPerfil?<img src={contact.fotoPerfil} alt=""/>:<i style={{background:contact.area.colorHex}}>{initials(`${contact.nombres} ${contact.apellidos}`)}</i>}<span><b>{contact.nombres} {contact.apellidos}</b><small>{cargoLabel(contact.cargo)} · {contact.area.nombre}</small></span><StatusGlyph value={contact.estadoMensaje} compact /></button>)}</div></section></div>}
+        {newChatOpen&&<div className={`overlay new-chat-overlay ${usesDarkChatTheme ? "chat-mode-oscuro" : "chat-mode-claro"}`} onMouseDown={(event)=>{if(event.target===event.currentTarget)setNewChatOpen(false)}}><section className="new-chat-modal"><header><div><MessageCircle/><span><b>Nuevo chat</b><small>Selecciona una persona de EJB</small></span></div><button type="button" onClick={()=>setNewChatOpen(false)}><X/></button></header><label><Search/><input autoFocus value={newChatQuery} onChange={(event)=>setNewChatQuery(event.target.value)} placeholder="Buscar por nombre, cargo o área"/></label><div>{uniqueContacts.filter((contact)=>`${contact.nombres} ${contact.apellidos} ${contact.cargo} ${contact.area.nombre}`.toLowerCase().includes(newChatQuery.toLowerCase())).map((contact)=><button type="button" key={contact.id} onClick={()=>{setActive(contact);setActiveSpace(null);setAnnouncementsOpen(false);setNewChatOpen(false);setQuery("")}}>{contact.fotoPerfil?<img src={contact.fotoPerfil} alt=""/>:<i style={{background:contact.area.colorHex}}>{initials(`${contact.nombres} ${contact.apellidos}`)}</i>}<span><b>{contact.nombres} {contact.apellidos}</b><small>{cargoLabel(contact.cargo)} · {contact.area.nombre}</small></span><StatusGlyph value={contact.estadoMensaje} compact /></button>)}</div></section></div>}
         {settingsOpen&&createPortal(<div className={`overlay chat-settings-overlay chat-mode-${String(chatPreferences.mode).toLowerCase()} chat-color-${String(chatPreferences.color).toLowerCase()}`} onMouseDown={(event)=>{if(event.target===event.currentTarget)setSettingsOpen(false)}}><section className={`chat-settings-modal density-${String(chatPreferences.density).toLowerCase()}`}><header><h2>Configuración de chat</h2><span className="settings-save-status" role="status">{settingsFeedback}</span><button type="button" aria-label="Cerrar configuración" onClick={()=>setSettingsOpen(false)}><X/></button></header><div className="chat-settings-body"><nav><button type="button" className={settingsTab==="notifications"?"active":""} onClick={()=>setSettingsTab("notifications")}><Bell/>Notificaciones</button><button type="button" className={settingsTab==="messages"?"active":""} onClick={()=>setSettingsTab("messages")}><Inbox/>Mensajes y contenido multimedia</button><button type="button" className={settingsTab==="appearance"?"active":""} onClick={()=>setSettingsTab("appearance")}><Palette/>Aspecto</button><button type="button" className={settingsTab==="accessibility"?"active":""} onClick={()=>setSettingsTab("accessibility")}><Accessibility/>Accesibilidad</button></nav><main className={`chat-settings-content settings-tab-${settingsTab}`}>
           {settingsTab==="notifications"&&<><section><h3>Notificaciones de escritorio</h3><SettingSwitch label="Permitir notificaciones de chat" detail="Muestra alertas en este dispositivo" checked={chatPreferences.desktop} onChange={async(value)=>{if(!value){updatePreference("desktop",false);return}if(!("Notification" in window)){setSettingsFeedback("Este navegador no admite notificaciones");return}const permission=Notification.permission==="granted"?"granted":await Notification.requestPermission();updatePreference("desktop",permission==="granted");setSettingsFeedback(permission==="granted"?"Notificaciones activadas":"El navegador bloqueó las notificaciones")}}/><SettingSwitch label="Notificaciones de reacciones" detail="Avisa cuando reaccionen a tus mensajes" checked={chatPreferences.reactions} onChange={(value)=>updatePreference("reactions",value)}/><label className="settings-select">Sonidos de notificaciones<div><select value={chatPreferences.sound} onChange={(event)=>{updatePreference("sound",event.target.value);testNotificationSound(event.target.value)}}>{Object.keys(chatTones).map(tone=><option key={tone}>{tone}</option>)}</select><button type="button" onClick={()=>testNotificationSound(chatPreferences.sound)}>Probar</button></div></label></section><section><h3>Notificaciones por correo electrónico</h3><SettingSwitch label="Mensajes directos o menciones no leídos" checked={chatPreferences.email} onChange={async(value)=>{try{await saveNotificationPreferences({email:value,tareas:true,reuniones:true,aprobaciones:true,resumenSemanal:true});updatePreference("email",value);setSettingsFeedback("Preferencia de correo sincronizada")}catch{setSettingsFeedback("No se pudo sincronizar la preferencia")}}}/></section><section><h3>Horarios de No interrumpir</h3><p>Configura tus horarios usando el estado “No molestar”.</p><button type="button" onClick={async()=>{try{onStatusChange("No_molestar");await saveMessageStatus("No_molestar");setSettingsFeedback("No molestar activado")}catch{setSettingsFeedback("No se pudo cambiar el estado")}}}>Activar No molestar ahora</button><SettingSwitch label="Ajustar a la zona horaria del dispositivo" detail={chatPreferences.timezone?Intl.DateTimeFormat().resolvedOptions().timeZone:"Hora estándar de Perú"} checked={chatPreferences.timezone} onChange={(value)=>updatePreference("timezone",value)}/></section></>}
           {settingsTab==="messages"&&<section><h3>Funciones de mensajes</h3><SettingSwitch label="Corrección automática" detail="Corregir errores frecuentes al terminar una palabra y activar el corrector del navegador" checked={chatPreferences.autocorrect} onChange={(value)=>updatePreference("autocorrect",value)}/><SettingSwitch label="Markdown dinámico" detail="Aplicar formato mientras escribes" checked={chatPreferences.markdown} onChange={(value)=>updatePreference("markdown",value)}/></section>}

@@ -381,10 +381,11 @@
   padding: 7px 9px !important;
   border: 1px solid color-mix(in srgb, var(--pc-amber) 24%, var(--pc-border));
   border-radius: 10px;
-  background: color-mix(in srgb, var(--pc-amber) 8%, var(--pc-surface));
+  background: #fef9c3;
 }
-.projects-center .score b { color: var(--pc-text); font: 800 15px Manrope, sans-serif; }
-.projects-center .score span { margin: 0; color: color-mix(in srgb, var(--pc-amber) 78%, var(--pc-text)); font-size: 10px; font-weight: 750; }
+.projects-center .score b { color: #78350f; font: 800 15px Manrope, sans-serif; }
+.projects-center .score span { margin: 0; color: #854d0e; font-size: 10px; font-weight: 750; }
+.dark .projects-center .score{background:#4a3510;border-color:#88621d}.dark .projects-center .score b{color:#fef3c7}.dark .projects-center .score span{color:#fde68a}
 
 .projects-center .status {
   min-height: 36px;

@@ -2951,6 +2951,14 @@ html[data-current-page="mensajes"] .chat-workspace .google-chat-layout.chat-home
   color:#b8c7da!important;
   stroke:#b8c7da!important;
 }
+
+/* Auditoría UX del chat: jerarquía legible, fondo sereno y foco en la conversación móvil. */
+.chat-workspace .chat-shortcuts button{min-height:40px!important;font-size:.875rem!important;font-weight:500!important;line-height:1.25!important}
+.chat-workspace .chat-shortcuts button span{font-weight:500!important}.chat-workspace .chat-shortcuts button.active span{font-weight:650!important}
+.chat-workspace :is(.telegram-wallpaper[class*="wallpaper-ejb-doodle-"],.messages-hub[class*="wallpaper-ejb-doodle-"] .space-messages-inline){background:#f8fafc!important;background-image:none!important}
+.dark .chat-workspace :is(.telegram-wallpaper[class*="wallpaper-ejb-doodle-"],.messages-hub[class*="wallpaper-ejb-doodle-"] .space-messages-inline){background:#0d1b2f!important;background-image:none!important}
+.chat-mobile-back{display:none!important}
+@media(max-width:800px){.chat-workspace .messages-hub.chat-conversation-open>.message-space-column{display:none!important}.chat-workspace .messages-hub.chat-conversation-open>.messenger{grid-column:1/-1!important;grid-template-columns:1fr!important;width:100%!important}.chat-workspace .messages-hub.chat-conversation-open .conversation-list{display:none!important}.chat-workspace .messages-hub.chat-conversation-open .chat-panel{width:100%!important}.chat-workspace .chat-mobile-back{display:inline-flex!important;align-items:center;gap:4px;flex:0 0 auto;min-height:34px!important;padding:0 8px!important;border:0!important;border-radius:8px!important;background:transparent!important;color:var(--gc-primary)!important;font-size:12px!important;font-weight:700!important}.chat-workspace .chat-mobile-back svg{width:16px!important;height:16px!important}.chat-workspace .chat-panel>header{gap:8px!important}.chat-workspace .chat-panel>header>p{min-width:0!important}}
 .dark .chat-workspace .google-chat-layout .chat-shortcuts button:not(.active) span{
   color:#dce8fa!important;
   -webkit-text-fill-color:#dce8fa!important;

@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {},
+  "permissions": {
+    "deny": [
+      "PowerShell(git push *)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(Set-Content *)",
+      "Edit(**/.env)",
+      "Edit(**/*.key)",
+      "Read(**/.env)"
+    ]
+  }
+}

@@ -1,0 +1,2 @@
+ALTER TABLE "tickets"
+ADD COLUMN IF NOT EXISTS "area_destino" VARCHAR(40) NOT NULL DEFAULT 'Consultoría';

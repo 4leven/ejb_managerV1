@@ -142,6 +142,11 @@ type Page =
 const isWorkerPortalUser = (user?: { cargo?: string; rol?: string } | null) =>
   /trabajador|empleado/i.test(`${user?.cargo ?? ""} ${user?.rol ?? ""}`);
 
+// Páginas donde el atajo "+ Nueva iniciativa" de la cabecera tiene sentido.
+// "iniciativas" ya tiene su propio botón "Registrar iniciativa" en el toolbar;
+// este es solo un acceso rápido desde las vistas de trabajo relacionadas.
+const QUICK_CREATE_INITIATIVE_PAGES: Page[] = ["resumen", "iniciativas", "mi-trabajo", "cronograma"];
+
 const workerPanelPages = new Set<Page>([
   "resumen",
   "notificaciones",
@@ -225,6 +230,8 @@ type User = {
   isSuperAdmin: boolean;
   permisos?: Record<string, boolean>;
   area: Area;
+  puedeVerTicketera?: boolean;
+  puedeRegistrarTickets?: boolean;
 };
 type Item = {
   creadorId?:string|null;
@@ -401,7 +408,9 @@ function Access({
   areas: Area[];
   onAccess: (u: User, t: string, remember: boolean) => void;
 }) {
-  const [mode, setMode] = useState<"register" | "login">("register"),
+  const [mode, setMode] = useState<"register" | "login">(() =>
+      localStorage.getItem("ejb_remembered_email") ? "login" : "register",
+    ),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [rememberPassword, setRememberPassword] = useState(() =>
@@ -2016,7 +2025,7 @@ function App() {
             onClick={() => setPage("iniciativas")}
           >
             <Lightbulb />
-            Proyectos<span>{items.length}</span>
+            Iniciativas<span>{items.length}</span>
           </button>
           <button
             className={page === "mi-trabajo" ? "active" : ""}
@@ -2176,7 +2185,7 @@ function App() {
         <div className="nav-foot">
           <div className="app-version">
             <span>EJB MANAGER</span>
-            <b>V. 0.3.28</b>
+            <b>V. 0.3.29</b>
           </div>
         </div>
       </aside>
@@ -2469,19 +2478,31 @@ function App() {
               )}
             </div>
             {page === "ticketera" ? (
-              <button
-                className="primary"
-                onClick={() => window.dispatchEvent(new CustomEvent("ticket:new"))}
-              >
+              user.puedeRegistrarTickets && (
+                <button
+                  className="primary"
+                  onClick={() => window.dispatchEvent(new CustomEvent("ticket:new"))}
+                >
+                  <Plus />
+                  Registrar caso
+                </button>
+              )
+            ) : page === "calendario" ? (
+              <button className="primary" onClick={() => window.dispatchEvent(new CustomEvent("calendar:new"))}>
                 <Plus />
-                Registrar caso
+                Evento nuevo
               </button>
-            ) : page !== "mensajes" && (
-              <button className="primary" onClick={() => { setCreateAreaName(page === "kanban-sistemas" ? "Sistemas" : user.area.nombre); setModal(true); }}>
+            ) : page === "kanban-sistemas" ? (
+              <button className="primary" onClick={() => { setCreateAreaName("Sistemas"); setModal(true); }}>
                 <Plus />
-                {page === "kanban-sistemas" ? "Nuevo registro Kanban" : "Nuevo Proyecto"}
+                Nuevo registro Kanban
               </button>
-            )}
+            ) : QUICK_CREATE_INITIATIVE_PAGES.includes(page) ? (
+              <button className="primary" onClick={() => { setCreateAreaName(user.area.nombre); setModal(true); }}>
+                <Plus />
+                Nueva iniciativa
+              </button>
+            ) : null}
           </header>
           <section
             className={
@@ -3270,6 +3291,7 @@ function App() {
               </div>
               <h2>{page === "kanban-sistemas" ? "Nuevo registro de Sistemas" : "Nueva iniciativa"}</h2>
               <p>{page === "kanban-sistemas" ? "Se agregará al Kanban de Sistemas como Pendiente." : "Se registrará inicialmente como Pendiente."}</p>
+              <div className="initiative-create-body">
               <label>
                 Título
                 <input name="titulo" required minLength={3} />
@@ -3365,6 +3387,7 @@ function App() {
                   Registrar
                   <ArrowRight />
                 </button>
+              </div>
               </div>
             </form>
           </div>,
@@ -4295,7 +4318,7 @@ function SectionTools({
   return (
     <div className="filters">
       <select value={area} onChange={(e) => setArea(e.target.value)}>
-        <option>Todas</option>
+        <option value="Todas">Área: Todas</option>
         {areas.map((a) => (
           <option key={a.id}>{a.nombre}</option>
         ))}
