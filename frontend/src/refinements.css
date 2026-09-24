@@ -2043,9 +2043,9 @@ body>.initiative-create-overlay>.initiative-create-modal{display:flex!important;
 /* "Tareas por agregar": lista interactiva acotada en vez de textarea estático */
 .initiative-tasks-field{flex:1 0 100%;text-align:left;display:grid;gap:6px}
 .initiative-tasks-field>span{font-size:10px;font-weight:800}
-.initiative-tasks-add{display:flex;gap:7px}
-.initiative-tasks-add input{flex:1;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--text)}
-.initiative-tasks-add button{border:0;border-radius:8px;padding:8px 12px;background:#2f6fed;color:#fff;font-weight:800}
+.initiative-tasks-add{display:flex;align-items:flex-end;gap:7px}
+.initiative-tasks-add textarea{flex:1;min-height:64px;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--text);font:inherit;resize:vertical}
+.initiative-tasks-add button{align-self:stretch;border:0;border-radius:8px;padding:8px 14px;background:#2f6fed;color:#fff;font-weight:800}
 .initiative-tasks-list{display:grid;gap:5px;max-height:150px;overflow-y:auto;margin:0;padding:2px;list-style:none}
 .initiative-tasks-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:11px}
 .initiative-tasks-list li button{border:0;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center}
@@ -2081,7 +2081,14 @@ body>.initiative-create-overlay>.initiative-create-modal{display:flex!important;
 @media(max-width:650px){.schedule-filters{flex-direction:column;align-items:stretch}}
 
 .task-meta-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
-.task-meta-badges span{padding:3px 9px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:9px;font-weight:700}
+.task-meta-badges button{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border:1px solid transparent;border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:9px;font-weight:700;cursor:pointer}
+.task-meta-badges button svg{width:11px;height:11px;transition:transform .15s}
+.task-meta-badges button.active{border-color:color-mix(in srgb,var(--primary) 30%,var(--line));background:color-mix(in srgb,var(--primary) 10%,var(--surface-2));color:var(--primary)}
+.task-meta-badges button.active svg{transform:rotate(180deg)}
+.task-inline-dropdown{margin-top:8px;max-height:220px;overflow-y:auto}
+.task-inline-attachments{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.task-inline-attachments li a{display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:11px;text-decoration:none;word-break:break-all}
+.task-inline-attachments li a svg{width:14px;height:14px;flex:none;color:#2f6fed}
 
 /* "Asignado" como su propia fila con encabezado, en vez de una etiqueta
    suelta mezclada entre prioridad/recordatorio. */

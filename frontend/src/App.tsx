@@ -1,5 +1,6 @@
 import { playChatTone } from "./utils/chat-tools";
 import {
+  ClipboardEvent,
   FormEvent,
   useEffect,
   useMemo,
@@ -1939,9 +1940,13 @@ function App() {
     // fijas vía getBoundingClientRect). Si se recalculara en cada scroll para
     // mantenerlo anclado, la tarjeta lo recortaría igual (tiene overflow:hidden
     // por el diseño de la tarjeta) y sería una animación costosa sin necesidad.
-    // Más simple y predecible: cerrarlo al hacer scroll, mismo patrón que usan
-    // la mayoría de menús desplegables.
-    const closeOnScroll = () => setPermisosMenuOpen(null);
+    // Más simple y predecible: cerrarlo al hacer scroll de la página — pero
+    // el propio popover también hace scroll interno (la lista de permisos +
+    // páginas ya no cabe entera), y ese scroll interno NO debe cerrarlo.
+    const closeOnScroll = (event: Event) => {
+      if ((event.target as HTMLElement | null)?.closest?.(".team-permisos-menu")) return;
+      setPermisosMenuOpen(null);
+    };
     document.addEventListener("mousedown", close);
     document.addEventListener("keydown", escape);
     document.addEventListener("scroll", closeOnScroll, true);
@@ -1984,11 +1989,24 @@ function App() {
     setCreateTasks([]);
     setCreateTaskDraft("");
   };
-  const addCreateTask = () => {
-    const value = createTaskDraft.trim();
-    if (!value) return;
-    setCreateTasks((tasks) => [...tasks, value]);
+  // Acepta una tarea por línea (igual que el textarea original) o pegar
+  // varias de un tirón — cualquiera de las dos formas parte por saltos de
+  // línea y agrega todas como chips de una vez.
+  const addCreateTasksFromText = (text: string) => {
+    const lines = text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (!lines.length) return;
+    setCreateTasks((tasks) => [...tasks, ...lines]);
     setCreateTaskDraft("");
+  };
+  const addCreateTask = () => addCreateTasksFromText(createTaskDraft);
+  const handleCreateTaskPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = event.clipboardData.getData("text");
+    if (!pasted.includes("\n")) return; // una sola línea: se comporta como escribir normal
+    event.preventDefault();
+    addCreateTasksFromText(`${createTaskDraft}${pasted}`);
   };
   const addProgress = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -3795,16 +3813,17 @@ function App() {
               <div className="initiative-tasks-field">
                 <span>Tareas por agregar</span>
                 <div className="initiative-tasks-add">
-                  <input
+                  <textarea
                     value={createTaskDraft}
                     onChange={(event) => setCreateTaskDraft(event.target.value)}
+                    onPaste={handleCreateTaskPaste}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter") {
+                      if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
                         addCreateTask();
                       }
                     }}
-                    placeholder="Ej. Preparar propuesta"
+                    placeholder={"Una tarea por línea, o pega varias de un tirón\nEj. Preparar propuesta\nEj. Validar con Gerencia"}
                   />
                   <button type="button" onClick={addCreateTask}>
                     Agregar
@@ -4386,7 +4405,10 @@ function ProjectTasks({
     [editTaskItem, setEditTaskItem] = useState<Item["tareas"][number] | null>(null),
     [editTaskError, setEditTaskError] = useState(""),
     [editComment, setEditComment] = useState(""),
-    [editSaving, setEditSaving] = useState(false);
+    [editSaving, setEditSaving] = useState(false),
+    // Ver comentarios/adjuntos de una tarea sin tener que abrir "Editar
+    // tarea" — se despliegan inline, aquí mismo en el detalle del proyecto.
+    [expandedTaskInfo, setExpandedTaskInfo] = useState<{ id: string; section: "comentarios" | "adjuntos" } | null>(null);
   const saveTask = async (
     task: Item["tareas"][number],
     estado = task.estado,
@@ -4609,12 +4631,77 @@ function ProjectTasks({
               {(Boolean(task.comentarios?.length) || Boolean(task.adjuntos?.length)) && (
                 <div className="task-meta-badges">
                   {Boolean(task.comentarios?.length) && (
-                    <span>{task.comentarios!.length} comentario{task.comentarios!.length === 1 ? "" : "s"}</span>
+                    <button
+                      type="button"
+                      className={expandedTaskInfo?.id === task.id && expandedTaskInfo.section === "comentarios" ? "active" : ""}
+                      onClick={() =>
+                        setExpandedTaskInfo((current) =>
+                          current?.id === task.id && current.section === "comentarios"
+                            ? null
+                            : { id: task.id, section: "comentarios" },
+                        )
+                      }
+                    >
+                      {task.comentarios!.length} comentario{task.comentarios!.length === 1 ? "" : "s"}
+                      <ChevronDown />
+                    </button>
                   )}
                   {Boolean(task.adjuntos?.length) && (
-                    <span>{task.adjuntos!.length} adjunto{task.adjuntos!.length === 1 ? "" : "s"}</span>
+                    <button
+                      type="button"
+                      className={expandedTaskInfo?.id === task.id && expandedTaskInfo.section === "adjuntos" ? "active" : ""}
+                      onClick={() =>
+                        setExpandedTaskInfo((current) =>
+                          current?.id === task.id && current.section === "adjuntos"
+                            ? null
+                            : { id: task.id, section: "adjuntos" },
+                        )
+                      }
+                    >
+                      {task.adjuntos!.length} adjunto{task.adjuntos!.length === 1 ? "" : "s"}
+                      <ChevronDown />
+                    </button>
                   )}
                 </div>
+              )}
+              {expandedTaskInfo?.id === task.id && expandedTaskInfo.section === "comentarios" && (
+                <div className="task-comment-history task-inline-dropdown">
+                  {task.comentarios!.map((comment) => (
+                    <article key={comment.id}>
+                      <div>
+                        {comment.usuario.fotoPerfil ? (
+                          <img src={comment.usuario.fotoPerfil} alt="" />
+                        ) : (
+                          <span>
+                            {initials(`${comment.usuario.nombres} ${comment.usuario.apellidos}`)}
+                          </span>
+                        )}
+                        <p>
+                          <b>{comment.usuario.nombres} {comment.usuario.apellidos}</b>
+                          <time>
+                            {new Date(comment.createdAt).toLocaleString("es-PE", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                          </time>
+                        </p>
+                      </div>
+                      <blockquote>{comment.contenido}</blockquote>
+                    </article>
+                  ))}
+                </div>
+              )}
+              {expandedTaskInfo?.id === task.id && expandedTaskInfo.section === "adjuntos" && (
+                <ul className="task-inline-dropdown task-inline-attachments">
+                  {task.adjuntos!.map((file, index) => (
+                    <li key={`${file.nombre}-${index}`}>
+                      <a href={file.data} download={file.nombre}>
+                        <Download />
+                        {file.nombre}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               )}
               <div className="task-actions">
                 <button type="button" onClick={() => openEditTask(task)}>
