@@ -8,3 +8,4 @@ backend/backend-mssql*.log
 outputs/backups/
 tmp/
 claude.md
+backend/scripts/output/
