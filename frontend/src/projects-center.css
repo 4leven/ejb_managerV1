@@ -221,7 +221,7 @@
   position: relative;
   z-index: 4;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: flex-start;
   flex-wrap: wrap;
   gap: 10px;
@@ -235,23 +235,104 @@
 }
 
 .projects-center .worker-project-filter {
-  min-height: 42px;
+  height: 42px;
   flex: 1 1 250px;
-  padding: 0 12px;
-  border-color: var(--pc-border);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 0 0 12px;
+  border: 1px solid var(--pc-border);
   border-radius: 10px;
   background: var(--pc-surface);
 }
 .projects-center .worker-project-filter svg { flex: none; color: var(--pc-blue); }
-.projects-center .worker-project-filter select { width: 100%; min-width: 0; font-size: 12px; }
+.projects-center .worker-project-filter .filter-combobox { flex: 1; min-width: 0; }
+.projects-center .worker-project-filter .filter-combobox-trigger {
+  height: 40px !important;
+  min-height: 40px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
 
 .projects-center .filters {
   position: relative;
   display: flex;
   flex: 2 1 390px;
   gap: 8px;
+  align-items: flex-end;
   overflow: visible;
   padding: 0 !important;
+}
+
+.projects-center .filters > .filter-combobox {
+  flex: 1 1 175px;
+  min-width: 150px;
+}
+.projects-center .filter-combobox-trigger,
+.projects-center .filter-menu > button {
+  width: 100%;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 12px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  border: 1px solid var(--pc-border) !important;
+  border-radius: 10px !important;
+  background: var(--pc-surface) !important;
+  color: var(--pc-text) !important;
+  font-size: 12px !important;
+  line-height: 1;
+}
+.projects-center .filter-combobox-chevron {
+  width: 15px;
+  height: 15px;
+  color: var(--pc-muted);
+}
+.projects-center .filter-menu {
+  position: relative;
+  flex: 0 0 84px;
+  height: 42px;
+}
+.projects-center .filter-menu > button {
+  justify-content: center;
+  cursor: pointer;
+}
+.projects-center .filter-menu > button svg { width: 15px; height: 15px; }
+
+.projects-center .initiative-date-filter {
+  align-items: flex-end;
+  gap: 8px;
+}
+.projects-center .initiative-date-filter > label:not(.date-filter-toggle) {
+  gap: 5px;
+  margin: 0;
+}
+.projects-center .initiative-date-filter input[type="date"] {
+  width: 132px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid var(--pc-border);
+  border-radius: 10px;
+  background: var(--pc-surface);
+  color: var(--pc-text);
+}
+.projects-center .date-filter-toggle {
+  height: 42px;
+  min-height: 42px;
+  align-self: flex-end;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 0 10px !important;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--pc-muted);
+  white-space: nowrap;
 }
 
 .projects-center .filters > select,
@@ -455,7 +536,20 @@
 .projects-center .row-actions svg { width: 15px; height: 15px; }
 /* Botón "Editar" (lápiz): tenía el mismo tono apagado que el fondo y se veía
    como si no estuviera ahí junto al de personalizar (azul) y eliminar (rojo). */
-.projects-center .row-actions .row-edit-btn { color: var(--pc-amber) !important; border-color: color-mix(in srgb, var(--pc-amber) 30%, var(--pc-border)) !important; background: color-mix(in srgb, var(--pc-amber) 8%, var(--pc-surface)) !important; }
+.projects-center .row-actions .row-edit-btn {
+  width: 76px !important;
+  height: 34px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px !important;
+  color: var(--pc-amber) !important;
+  border-color: color-mix(in srgb, var(--pc-amber) 30%, var(--pc-border)) !important;
+  background: color-mix(in srgb, var(--pc-amber) 8%, var(--pc-surface)) !important;
+  line-height: 1;
+  white-space: nowrap;
+}
 .projects-center .row-actions .row-edit-btn:hover { border-color: var(--pc-amber) !important; background: color-mix(in srgb, var(--pc-amber) 14%, var(--pc-surface)) !important; color: var(--pc-amber) !important; }
 
 .dark .projects-center {

@@ -17,7 +17,7 @@ export async function search(req: Request, res: Response, next: NextFunction) {
           }
         : undefined,
       orderBy: { razonSocial: "asc" },
-      take: 30,
+      take: 2000,
     });
     res.json(rows);
   } catch (e) {

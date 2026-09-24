@@ -65,6 +65,7 @@ import {
   createIniciativa,
   createObjetivo,
   fetchCatalogo,
+  fetchClientes,
   fetchConversations,
   fetchAlerts,
   fetchNotifications,
@@ -945,8 +946,10 @@ function InitiativeList({
                     } else void askProjectChange(i, "Editar", onError);
                   }}
                   title="Editar proyecto"
+                  aria-label={`Editar proyecto ${i.codigo}`}
                 >
                   <Edit3 />
+                  <span>Editar</span>
                 </button>
               )}
               {canDeleteOwned(user,i.creadorId,i.areaId) && (
@@ -979,10 +982,19 @@ function InitiativeList({
           </article>
         ))}
       </div>
-      {editItem && (
-        <div className="overlay">
+      {editItem && createPortal(
+        <div
+          className="overlay initiative-edit-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setEditItem(null);
+          }}
+        >
           <form
             className="event-modal initiative-edit-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="initiative-edit-title"
             onSubmit={async (e) => {
               e.preventDefault();
               const f = new FormData(e.currentTarget);
@@ -1027,15 +1039,24 @@ function InitiativeList({
               type="button"
               className="close"
               onClick={() => setEditItem(null)}
+              aria-label="Cerrar edición"
             >
               <X />
             </button>
-            <Edit3 />
-            <h2>Editar proyecto</h2>
-            <p>
-              {editItem.codigo} · Solo jefatura del área o administración
-              global.
-            </p>
+            <header className="initiative-edit-header">
+              <span className="initiative-edit-heading-icon" aria-hidden="true">
+                <Edit3 />
+              </span>
+              <div>
+                <small>GESTIÓN DEL PROYECTO</small>
+                <h2 id="initiative-edit-title">Editar proyecto</h2>
+                <p>
+                  {editItem.codigo} · Solo jefatura del área o administración
+                  global.
+                </p>
+              </div>
+            </header>
+            <div className="initiative-edit-body">
             <label>
               Área
               <select
@@ -1178,14 +1199,18 @@ function InitiativeList({
                 />
               </label>
             </div>
-            <div className="modal-actions">
+            </div>
+            <div className="modal-actions initiative-edit-footer">
               <button type="button" onClick={() => setEditItem(null)}>
                 Cancelar
               </button>
-              <button className="primary">Guardar cambios</button>
+              <button className="primary" type="submit">
+                <Edit3 /> Guardar cambios
+              </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
@@ -1202,6 +1227,7 @@ function App() {
       notificationPage(sessionStorage.getItem("ejb_active_page") ?? "") ?? "resumen",
     ),
     [items, setItems] = useState<Item[]>([]),
+    [projectClients, setProjectClients] = useState<Array<{ id: string; razonSocial: string; ruc?: string | null }>>([]),
     [objetivos, setObjetivos] = useState<Objetivo[]>([]),
     [team, setTeam] = useState<TeamMember[]>([]),
     [teamQuery, setTeamQuery] = useState(""),
@@ -1547,6 +1573,7 @@ function App() {
   useEffect(() => {
     if (!user) return;
     fetchIniciativas().then((r: any[]) => setItems(r.map(mapItem)));
+    fetchClientes().then(setProjectClients).catch(() => setProjectClients([]));
     fetchObjetivos().then(setObjetivos);
     fetchEquipo().then(setTeam);
     fetchAlerts().then((rows) => {
@@ -1778,6 +1805,17 @@ function App() {
     const timer = setInterval(loadMessages, 3500);
     return () => clearInterval(timer);
   }, [user?.id, page]);
+  const clearProjectFilters = () => {
+    setArea("Todas");
+    setClientFilter("Todos");
+    setWorkerFilter("Todos");
+    setStatusFilter("Todos");
+    setEffortFilter("Todos");
+    setSortFilter("score");
+    setDateFrom("");
+    setDateTo("");
+    setDateFilterEnabled(false);
+  };
   const filtered = useMemo(
     () =>
       items
@@ -2505,7 +2543,7 @@ function App() {
         <div className="nav-foot">
           <div className="app-version">
             <span>EJB MANAGER</span>
-            <b>V. 0.3.36</b>
+            <b>V. 0.3.42</b>
           </div>
         </div>
       </aside>
@@ -3104,13 +3142,7 @@ function App() {
                         areas={areas}
                         area={area}
                         setArea={setArea}
-                        clients={[
-                          ...new Set(
-                            items
-                              .map((item) => item.cliente)
-                              .filter(Boolean) as string[],
-                          ),
-                        ]}
+                        clients={projectClients.map((client) => client.razonSocial)}
                         client={clientFilter}
                         setClient={setClientFilter}
                         open={filtersOpen}
@@ -3121,6 +3153,7 @@ function App() {
                         setEffort={setEffortFilter}
                         sort={sortFilter}
                         setSort={setSortFilter}
+                        onClearFilters={clearProjectFilters}
                       />
                     </div>
                     <InitiativeList
@@ -3272,13 +3305,7 @@ function App() {
                     areas={areas}
                     area={area}
                     setArea={setArea}
-                    clients={[
-                      ...new Set(
-                        items
-                          .map((item) => item.cliente)
-                          .filter(Boolean) as string[],
-                      ),
-                    ]}
+                    clients={projectClients.map((client) => client.razonSocial)}
                     client={clientFilter}
                     setClient={setClientFilter}
                     open={filtersOpen}
@@ -3289,6 +3316,7 @@ function App() {
                     setEffort={setEffortFilter}
                     sort={sortFilter}
                     setSort={setSortFilter}
+                    onClearFilters={clearProjectFilters}
                   />
                   <button className="primary" onClick={() => setModal(true)}>
                     <Plus />
@@ -4262,57 +4290,73 @@ function App() {
           })}
         </div>
       )}
-      {toast && <div className="toast">✓ {toast}</div>}
-      {errorToast && <div className="toast toast-error">✕ {errorToast}</div>}
+      {toast && createPortal(<div className="toast">✓ {toast}</div>, document.body)}
+      {errorToast && createPortal(<div className="toast toast-error">✕ {errorToast}</div>, document.body)}
     </div>
   );
 }
 function InitiativeTasks({
   item,
   onUpdate,
+  onError,
 }: {
   item: Item;
   onUpdate: (item: Item) => void;
+  onError: (error: unknown, fallback: string) => void;
 }) {
   const saveTask = async (task: Item["tareas"][number], estado: string) => {
     const completing = estado === "Completada";
-    const comentario = await uiPrompt(
-      completing ? "Completar tarea" : "Actualizar tarea",
-      task.comentario ?? "",
-      {
-        message: completing
-          ? "Describe brevemente qué se completó."
-          : "Añade un comentario sobre el cambio.",
-        multiline: true,
-      },
-    );
-    if (completing && !comentario) return;
-    const response = await updateInitiativeTask(item.id, task.id, {
-      estado,
-      comentario: comentario || undefined,
-    }),
-      { porcentajeAvance, estadoProyecto, ...saved } = response;
-    onUpdate({
-      ...item,
-      avance: Number(porcentajeAvance ?? item.avance),
-      estado: mapProjectStatus(estadoProyecto ?? item.estado),
-      tareas: item.tareas.map((row) => (row.id === task.id ? saved : row)),
-    });
+    const reopening = task.completada && estado !== "Completada";
+    try {
+      const comentario = await uiPrompt(
+        completing ? "Completar tarea" : "Actualizar tarea",
+        task.comentario ?? "",
+        {
+          message: completing
+            ? "Describe brevemente qué se completó."
+            : "Añade un comentario sobre el cambio.",
+          multiline: true,
+        },
+      );
+      if (completing && !comentario) return;
+      const response = await updateInitiativeTask(item.id, task.id, {
+        estado,
+        comentario: comentario || undefined,
+      }),
+        { porcentajeAvance, estadoProyecto, ...saved } = response;
+      onUpdate({
+        ...item,
+        avance: Number(porcentajeAvance ?? item.avance),
+        estado: mapProjectStatus(estadoProyecto ?? item.estado),
+        tareas: item.tareas.map((row) => (row.id === task.id ? saved : row)),
+      });
+    } catch (error) {
+      onError(
+        error,
+        reopening
+          ? "No tienes permisos para reabrir esta tarea"
+          : "No se pudo actualizar la tarea.",
+      );
+    }
   };
   const add = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget,
       title = String(new FormData(form).get("titulo") || "").trim();
     if (!title) return;
-    const response = await addInitiativeTask(item.id, { titulo: title }),
-      { porcentajeAvance, estadoProyecto, ...saved } = response;
-    onUpdate({
-      ...item,
-      avance: Number(porcentajeAvance ?? item.avance),
-      estado: mapProjectStatus(estadoProyecto ?? item.estado),
-      tareas: [...item.tareas, saved],
-    });
-    form.reset();
+    try {
+      const response = await addInitiativeTask(item.id, { titulo: title }),
+        { porcentajeAvance, estadoProyecto, ...saved } = response;
+      onUpdate({
+        ...item,
+        avance: Number(porcentajeAvance ?? item.avance),
+        estado: mapProjectStatus(estadoProyecto ?? item.estado),
+        tareas: [...item.tareas, saved],
+      });
+      form.reset();
+    } catch (error) {
+      onError(error, "No se pudo agregar la tarea.");
+    }
   };
   return (
     <section className="initiative-tasks">
@@ -5017,6 +5061,7 @@ function SectionTools({
   setEffort,
   sort,
   setSort,
+  onClearFilters,
 }: {
   areas: Area[];
   area: string;
@@ -5032,22 +5077,27 @@ function SectionTools({
   setEffort: (v: string) => void;
   sort: string;
   setSort: (v: string) => void;
+  onClearFilters: () => void;
 }) {
   return (
     <div className="filters">
-      <select value={area} onChange={(e) => setArea(e.target.value)}>
-        <option value="Todas">Área: Todas</option>
-        {areas.map((a) => (
-          <option key={a.id}>{a.nombre}</option>
-        ))}
-      </select>
+      <FilterCombobox
+        value={area}
+        onChange={setArea}
+        ariaLabel="Filtrar por área"
+        placeholder="Área"
+        options={[
+          { value: "Todas", label: "Área: Todas" },
+          ...areas.map((item) => ({ value: item.nombre, label: item.nombre })),
+        ]}
+      />
       <FilterCombobox
         value={client}
         onChange={setClient}
         ariaLabel="Filtrar por cliente"
         placeholder="Cliente"
         options={[
-          { value: "Todos", label: "Cliente" },
+          { value: "Todos", label: "Todos los clientes" },
           { value: "Sin cliente", label: "Sin cliente" },
           ...clients.map((value) => ({ value, label: value })),
         ]}
@@ -5087,14 +5137,7 @@ function SectionTools({
               <option value="recientes">Más recientes</option>
             </select>
           </label>
-          <button
-            onClick={() => {
-              setStatus("Todos");
-              setEffort("Todos");
-              setSort("score");
-              setArea("Todas");
-            }}
-          >
+          <button onClick={onClearFilters}>
             Limpiar filtros
           </button>
           </div>

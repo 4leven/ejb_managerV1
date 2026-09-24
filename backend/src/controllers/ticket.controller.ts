@@ -196,7 +196,7 @@ export async function clients(req: Request, res: Response, next: NextFunction) {
             }
           : {},
         orderBy: { razonSocial: "asc" },
-        take: 40,
+        take: 2000,
       }),
     );
   } catch (error) {
