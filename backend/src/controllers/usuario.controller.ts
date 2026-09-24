@@ -2,17 +2,24 @@ import { NextFunction, Request, Response } from "express";
 import { Cargo, Rol } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { prisma } from "../config/db.js";
+import { PERMISOS_CATALOGO } from "../constants/permisos.js";
+import { PAGINAS_CATALOGO } from "../constants/paginas.js";
 
 const technicalPermissions = {
   verTicketera: true,
   registrarTickets: true,
+  editarTickets: true,
   tomarTickets: true,
   crearProyectos: true,
   editarProyectos: true,
   eliminarProyectos: false,
+  verClientes: true,
+  crearClientes: true,
+  crearProspectos: false,
+  editarProspectos: false,
+  eliminarProspectos: false,
   aprobar: false,
   exportar: true,
-  gestionarDocumentos: true,
   verAuditoria: true,
 };
 
@@ -26,28 +33,36 @@ export async function catalog(
       prisma.area.findMany({ orderBy: { nombre: "asc" } }),
       prisma.objetivoNegocio.findMany({ orderBy: { nombre: "asc" } }),
     ]);
-    res.json({ areas, objetivos, cargos: Object.values(Cargo) });
+    res.json({ areas, objetivos, cargos: Object.values(Cargo), permisos: PERMISOS_CATALOGO, paginas: PAGINAS_CATALOGO });
   } catch (error) {
     next(error);
   }
 }
-export async function team(_req: Request, res: Response, next: NextFunction) {
+export async function team(req: Request, res: Response, next: NextFunction) {
   try {
+    const actor = await prisma.usuario.findUniqueOrThrow({ where: { id: req.userId! } });
+    const rows = await prisma.usuario.findMany({
+      select: {
+        id: true,
+        nombres: true,
+        apellidos: true,
+        email: true,
+        fotoPerfil: true,
+        cargo: true,
+        isSuperAdmin: true,
+        permisos: true,
+        area: true,
+      },
+      orderBy: { apellidos: "asc" },
+    });
+    // "permisos" es sensible (qué puede hacer/ver cada quien) — antes se
+    // mandaba a cualquiera que pidiera el equipo. Ahora solo el
+    // administrador global lo recibe; para el resto queda fuera del payload,
+    // no solo oculto en la pantalla.
     res.json(
-      await prisma.usuario.findMany({
-        select: {
-          id: true,
-          nombres: true,
-          apellidos: true,
-          email: true,
-          fotoPerfil: true,
-          cargo: true,
-          isSuperAdmin: true,
-          permisos: true,
-          area: true,
-        },
-        orderBy: { apellidos: "asc" },
-      }),
+      actor.isSuperAdmin
+        ? rows
+        : rows.map(({ permisos, ...rest }) => rest),
     );
   } catch (e) {
     next(e);

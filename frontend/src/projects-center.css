@@ -453,6 +453,10 @@
 .projects-center .row-actions button:hover { border-color: var(--pc-blue) !important; background: color-mix(in srgb, var(--pc-blue) 10%, var(--pc-surface)) !important; color: var(--pc-blue) !important; transform: translateY(-1px); }
 .projects-center .row-actions button:last-child:hover { border-color: var(--pc-red) !important; background: color-mix(in srgb, var(--pc-red) 9%, var(--pc-surface)) !important; color: var(--pc-red) !important; }
 .projects-center .row-actions svg { width: 15px; height: 15px; }
+/* Botón "Editar" (lápiz): tenía el mismo tono apagado que el fondo y se veía
+   como si no estuviera ahí junto al de personalizar (azul) y eliminar (rojo). */
+.projects-center .row-actions .row-edit-btn { color: var(--pc-amber) !important; border-color: color-mix(in srgb, var(--pc-amber) 30%, var(--pc-border)) !important; background: color-mix(in srgb, var(--pc-amber) 8%, var(--pc-surface)) !important; }
+.projects-center .row-actions .row-edit-btn:hover { border-color: var(--pc-amber) !important; background: color-mix(in srgb, var(--pc-amber) 14%, var(--pc-surface)) !important; color: var(--pc-amber) !important; }
 
 .dark .projects-center {
   --pc-surface: #0d1b2e;

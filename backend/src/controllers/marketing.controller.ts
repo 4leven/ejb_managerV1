@@ -4,7 +4,7 @@ import { prisma } from "../config/db.js";
 import { audit } from "../services/audit.js";
 import { marketingService } from "../services/marketing.service.js";
 import { createMarketingReportPdf } from "../services/marketingReport.js";
-import { canManageMarketing, canReadMarketing } from "../services/permissions.js";
+import { canManageMarketing, canReadMarketing, hasPermission, canSeePage } from "../services/permissions.js";
 
 const periodoSchema = z.object({
   anio: z.coerce.number().int().min(2020).max(2100),
@@ -47,7 +47,7 @@ async function loadActor(req: Request) {
 export const listProspectos = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const actor = await loadActor(req);
-    if (!canReadMarketing(actor)) throw new Error("No tienes acceso al módulo de Marketing");
+    if (!canReadMarketing(actor) || !canSeePage(actor, "verMarketing")) throw new Error("No tienes acceso al módulo de Marketing");
     const { anio, mes } = periodoSchema.parse(req.query);
     res.json(await marketingService.listProspectos(anio, mes));
   } catch (e) { next(e); }
@@ -56,7 +56,7 @@ export const listProspectos = async (req: Request, res: Response, next: NextFunc
 export const createProspecto = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const actor = await loadActor(req);
-    if (!canManageMarketing(actor)) throw new Error("No tienes permisos para registrar prospectos");
+    if (!canManageMarketing(actor) && !hasPermission(actor, "crearProspectos")) throw new Error("No tienes permisos para registrar prospectos");
     const input = prospectoSchema.parse(req.body);
     const row = await marketingService.createProspecto({ ...input, creadoPorId: actor.id });
     await audit(actor.id, "Crear", "Prospecto", row.id, { nombreCliente: row.nombreCliente });
@@ -67,7 +67,7 @@ export const createProspecto = async (req: Request, res: Response, next: NextFun
 export const updateProspecto = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const actor = await loadActor(req);
-    if (!canManageMarketing(actor)) throw new Error("No tienes permisos para editar prospectos");
+    if (!canManageMarketing(actor) && !hasPermission(actor, "editarProspectos")) throw new Error("No tienes permisos para editar prospectos");
     const row = await marketingService.updateProspecto(String(req.params.id), prospectoSchema.partial().parse(req.body));
     await audit(actor.id, "Editar", "Prospecto", row.id, {});
     res.json(row);
@@ -77,7 +77,7 @@ export const updateProspecto = async (req: Request, res: Response, next: NextFun
 export const removeProspecto = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const actor = await loadActor(req);
-    if (!canManageMarketing(actor)) throw new Error("No tienes permisos para eliminar prospectos");
+    if (!canManageMarketing(actor) && !hasPermission(actor, "eliminarProspectos")) throw new Error("No tienes permisos para eliminar prospectos");
     const row = await marketingService.removeProspecto(String(req.params.id));
     await audit(actor.id, "Eliminar", "Prospecto", row.id, {});
     res.json({ ok: true });
@@ -124,7 +124,7 @@ export const importProspectos = async (req: Request, res: Response, next: NextFu
 export const resumen = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const actor = await loadActor(req);
-    if (!canReadMarketing(actor)) throw new Error("No tienes acceso al módulo de Marketing");
+    if (!canReadMarketing(actor) || !canSeePage(actor, "verMarketing")) throw new Error("No tienes acceso al módulo de Marketing");
     const { anio, mes } = periodoSchema.parse(req.query);
     res.json(await marketingService.resumen(anio, mes));
   } catch (e) { next(e); }
@@ -133,7 +133,7 @@ export const resumen = async (req: Request, res: Response, next: NextFunction) =
 export const meses = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const actor = await loadActor(req);
-    if (!canReadMarketing(actor)) throw new Error("No tienes acceso al módulo de Marketing");
+    if (!canReadMarketing(actor) || !canSeePage(actor, "verMarketing")) throw new Error("No tienes acceso al módulo de Marketing");
     res.json(await marketingService.mesesDisponibles());
   } catch (e) { next(e); }
 };
@@ -141,7 +141,7 @@ export const meses = async (req: Request, res: Response, next: NextFunction) => 
 export const getMeta = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const actor = await loadActor(req);
-    if (!canReadMarketing(actor)) throw new Error("No tienes acceso al módulo de Marketing");
+    if (!canReadMarketing(actor) || !canSeePage(actor, "verMarketing")) throw new Error("No tienes acceso al módulo de Marketing");
     const { anio, mes } = periodoSchema.parse(req.query);
     res.json(await marketingService.getMeta(anio, mes));
   } catch (e) { next(e); }
@@ -161,7 +161,7 @@ export const setMeta = async (req: Request, res: Response, next: NextFunction) =
 export const reporte = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const actor = await loadActor(req);
-    if (!canReadMarketing(actor)) throw new Error("No tienes acceso al módulo de Marketing");
+    if (!canReadMarketing(actor) || !canSeePage(actor, "verMarketing")) throw new Error("No tienes acceso al módulo de Marketing");
     const { anio, mes } = periodoSchema.parse(req.query);
     const [prospectos, resumenMes] = await Promise.all([
       marketingService.listProspectos(anio, mes),

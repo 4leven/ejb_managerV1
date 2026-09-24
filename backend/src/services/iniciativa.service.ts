@@ -9,13 +9,25 @@ const allowed: Record<Estado, Estado[]> = {
   Finalizado: []
 };
 export const iniciativaService = {
-  async list() {const rows=await prisma.iniciativa.findMany({where:{deletedAt:null},include:{area:true, objetivo:true, responsable:true,tareas:{where:{deletedAt:null},include:{responsable:{select:{id:true,nombres:true,apellidos:true,fotoPerfil:true}},comentarios:{include:{usuario:{select:{id:true,nombres:true,apellidos:true,fotoPerfil:true}}},orderBy:{createdAt:'desc'}}},orderBy:{createdAt:'asc'}},progresos:{orderBy:{createdAt:'desc'}},_count:{select:{eventos:true}}}, orderBy:{score:'desc'}});return rows.map(row=>{const porcentajeAvance=progressFromTasks(row.tareas.length,row.tareas.filter(task=>task.completada).length,row.porcentajeAvance),hasActiveTasks=row.tareas.some(task=>task.estado==='Iniciado'||task.estado==='En_progreso');return{...row,porcentajeAvance,estado:automaticProjectStatus(porcentajeAvance,row.estado as ProjectStatus,hasActiveTasks)}})},
-  async create(data:{creadorId?:string;titulo:string;descripcion:string;cliente?:string;areaId:string;responsableId?:string;objetivoId?:string;impacto:number;esfuerzo:Esfuerzo;fechaInicio?:Date;fechaFin?:Date;tareas?:string[]}) {
+  async list() {const rows=await prisma.iniciativa.findMany({where:{deletedAt:null},include:{area:true, objetivo:true, responsable:true, clienteRef:true,tareas:{where:{deletedAt:null},include:{responsable:{select:{id:true,nombres:true,apellidos:true,fotoPerfil:true}},comentarios:{include:{usuario:{select:{id:true,nombres:true,apellidos:true,fotoPerfil:true}}},orderBy:{createdAt:'desc'}}},orderBy:{createdAt:'asc'}},progresos:{orderBy:{createdAt:'desc'}},_count:{select:{eventos:true}}}, orderBy:{score:'desc'}});return rows.map(row=>{const porcentajeAvance=progressFromTasks(row.tareas.length,row.tareas.filter(task=>task.completada).length,row.porcentajeAvance),hasActiveTasks=row.tareas.some(task=>task.estado==='Iniciado'||task.estado==='En_progreso');return{...row,cliente:row.clienteRef?.razonSocial??row.cliente,porcentajeAvance,estado:automaticProjectStatus(porcentajeAvance,row.estado as ProjectStatus,hasActiveTasks)}})},
+  async create(data:{creadorId?:string;titulo:string;descripcion:string;clienteId?:string;software?:string;areaId:string;responsableId?:string;objetivoId?:string;impacto:number;esfuerzo:Esfuerzo;fechaInicio?:Date;fechaFin?:Date;tareas?:string[]}) {
     const attempt = () => prisma.$transaction(async tx => {
-      const last = await tx.iniciativa.findFirst({ orderBy:{codigo:'desc'}, select:{codigo:true} });
-      const sequence = last ? Number(last.codigo.slice(4)) : 0;
+      // El codigo (INV-0001, INV-0002, ...) se calcula como el maximo numerico real,
+      // no por orden alfabetico de string: codigos con distinto ancho de relleno
+      // (ej. los antiguos de 3 digitos vs. los nuevos de 4) no ordenan igual como
+      // texto que como numero, y basarse en ORDER BY codigo DESC podria repetir
+      // o saltar numeros ya usados en produccion.
+      const rows = await tx.iniciativa.findMany({ select:{codigo:true} });
+      const sequence = rows.reduce((max,row)=>Math.max(max, Number(row.codigo.slice(4)) || 0), 0);
       const {tareas,...initiative}=data;
-      return tx.iniciativa.create({data:{...initiative,codigo:codigo(sequence),score:score(data.impacto,data.esfuerzo),tareas:tareas?.length?{create:tareas.map(titulo=>({titulo}))}:undefined},include:{area:true,tareas:true}});
+      // El texto legacy "cliente" se mantiene en sincronia con el cliente elegido
+      // en el selector, para que reportes/exportaciones/busqueda que aun leen ese
+      // campo directo de la base (sin pasar por este servicio) sigan mostrando el
+      // nombre correcto sin necesidad de tocarlos.
+      const clienteNombre = initiative.clienteId
+        ? (await tx.cliente.findUnique({ where:{ id: initiative.clienteId }, select:{ razonSocial:true } }))?.razonSocial
+        : undefined;
+      return tx.iniciativa.create({data:{...initiative,cliente:clienteNombre,codigo:codigo(sequence),score:score(data.impacto,data.esfuerzo),tareas:tareas?.length?{create:tareas.map(titulo=>({titulo}))}:undefined},include:{area:true,tareas:true,clienteRef:true}});
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     try { return await attempt(); }
     catch (error) {

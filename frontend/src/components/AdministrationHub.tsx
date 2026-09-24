@@ -19,20 +19,7 @@ import {
   restoreTrash,
   readAllNotifications,
   saveNotificationPreferences,
-  updateUserPermissions,
 } from "../api/iniciativas";
-const permissionOptions = [
-  ["verTicketera", "Ver Ticketera"],
-  ["registrarTickets", "Registrar tickets"],
-  ["tomarTickets", "Tomar tickets"],
-  ["crearProyectos", "Crear proyectos"],
-  ["editarProyectos", "Editar proyectos"],
-  ["eliminarProyectos", "Eliminar proyectos"],
-  ["aprobar", "Aprobar solicitudes"],
-  ["exportar", "Exportar reportes"],
-  ["gestionarDocumentos", "Gestionar documentos"],
-  ["verAuditoria", "Ver auditoría"],
-];
 export function AdministrationHub({
   user,
   areas,
@@ -105,7 +92,6 @@ export function AdministrationHub({
             ["notifications", "Avisos"],
             ...(management
               ? [
-                  ["permissions", "Permisos"],
                   ["import", "Importar"],
                   ["trash", "Papelera"],
                 ]
@@ -179,45 +165,6 @@ export function AdministrationHub({
           <section className="persistent-notifications"><header><b>Bandeja persistente</b><button type="button" onClick={async()=>{await readAllNotifications();load()}}>Marcar todo como leído</button></header>{notifications.slice(0,20).map(note=><article className={note.leidaAt?"read":"unread"} key={note.id}><span><b>{note.titulo}</b><small>{note.mensaje}</small><time>{new Date(note.createdAt).toLocaleString("es-PE")}</time></span><button type="button" onClick={async()=>{await archiveNotification(note.id);load()}}>Archivar</button></article>)}{!notifications.length&&<p>No tienes notificaciones guardadas.</p>}</section>
           <button className="primary">Guardar preferencias</button>
         </form>
-      )}
-      {tab === "permissions" && (
-        <div className="permission-table">
-          {team.map((member) => (
-            <article key={member.id}>
-              <div>
-                <b>
-                  {member.nombres} {member.apellidos}
-                </b>
-                <small>{member.email}</small>
-              </div>
-              <div>
-                {permissionOptions.map(([id, label]) => (
-                  <label key={id}>
-                    <input
-                      type="checkbox"
-                      defaultChecked={Boolean(member.permisos?.[id])}
-                      onChange={async (e) => {
-                        const next = {
-                          ...(member.permisos || {}),
-                          [id]: e.target.checked,
-                        };
-                        await updateUserPermissions(member.id, next);
-                        setTeam((rows) =>
-                          rows.map((row) =>
-                            row.id === member.id
-                              ? { ...row, permisos: next }
-                              : row,
-                          ),
-                        );
-                      }}
-                    />
-                    {label}
-                  </label>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
       )}
       {tab === "import" && (
         <div className="bulk-import">

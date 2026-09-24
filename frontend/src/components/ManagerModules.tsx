@@ -1,5 +1,5 @@
 import GmailConnection from "./GmailConnection";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   AlertTriangle,
@@ -42,6 +42,25 @@ export function Timeline({
 }) {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [actionsOpen, setActionsOpen] = useState<{ id: string; top: number; right: number } | null>(null);
+  const [scheduleDateFrom, setScheduleDateFrom] = useState("");
+  const [scheduleDateTo, setScheduleDateTo] = useState("");
+  const [scheduleClient, setScheduleClient] = useState("Todos");
+  const scheduleClients = useMemo(
+    () => ["Todos", ...Array.from(new Set(items.map((item) => item.cliente).filter(Boolean)))],
+    [items],
+  );
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        if (scheduleClient !== "Todos" && item.cliente !== scheduleClient) return false;
+        const start = item.fechaInicio?.slice(0, 10);
+        const end = item.fechaFin?.slice(0, 10);
+        if (scheduleDateFrom && (end || start) && (end ?? start) < scheduleDateFrom) return false;
+        if (scheduleDateTo && start && start > scheduleDateTo) return false;
+        return true;
+      }),
+    [items, scheduleClient, scheduleDateFrom, scheduleDateTo],
+  );
   useEffect(() => {
     fetchAlerts().then(setAlerts);
   }, []);
@@ -59,7 +78,7 @@ export function Timeline({
     };
   }, [actionsOpen]);
   const now = Date.now();
-  const inactivityWarnings = items
+  const inactivityWarnings = filteredItems
     .filter((item) => item.avance < 100)
     .map((item) => {
       const last = item.progresos?.[0]?.createdAt || item.fechaActualizacion;
@@ -108,14 +127,14 @@ export function Timeline({
         <article>
           <CalendarDays />
           <span>Con fecha definida</span>
-          <b>{items.filter((i) => i.fechaInicio && i.fechaFin).length}</b>
+          <b>{filteredItems.filter((i) => i.fechaInicio && i.fechaFin).length}</b>
         </article>
         <article>
           <Clock3 />
           <span>Próximos a vencer</span>
           <b>
             {
-              items.filter(
+              filteredItems.filter(
                 (i) =>
                   i.fechaFin &&
                   new Date(i.fechaFin).getTime() > now &&
@@ -127,13 +146,40 @@ export function Timeline({
         <article>
           <Check />
           <span>Avance superior al 75%</span>
-          <b>{items.filter((i) => i.avance >= 75).length}</b>
+          <b>{filteredItems.filter((i) => i.avance >= 75).length}</b>
         </article>
         <article>
           <AlertTriangle />
           <span>Alertas activas</span>
           <b>{alerts.length}</b>
         </article>
+      </div>
+      <div className="schedule-filters">
+        <label>
+          Desde
+          <input type="date" value={scheduleDateFrom} onChange={(event) => setScheduleDateFrom(event.target.value)} />
+        </label>
+        <label>
+          Hasta
+          <input type="date" value={scheduleDateTo} onChange={(event) => setScheduleDateTo(event.target.value)} />
+        </label>
+        <label>
+          Cliente
+          <select value={scheduleClient} onChange={(event) => setScheduleClient(event.target.value)}>
+            {scheduleClients.map((client) => (
+              <option key={client} value={client}>{client}</option>
+            ))}
+          </select>
+        </label>
+        {(scheduleDateFrom || scheduleDateTo || scheduleClient !== "Todos") && (
+          <button
+            type="button"
+            className="schedule-filters-clear"
+            onClick={() => { setScheduleDateFrom(""); setScheduleDateTo(""); setScheduleClient("Todos"); }}
+          >
+            Limpiar filtros
+          </button>
+        )}
       </div>
       <div className="timeline-layout">
         <section className="gantt schedule-reading">
@@ -151,13 +197,16 @@ export function Timeline({
               <b>Días</b>
               {canManageActions && <b>Acciones</b>}
             </div>
-            {items.map((i) => {
+            {Boolean(items.length) && !filteredItems.length && (
+              <p className="tasks-empty">Ningún proyecto coincide con los filtros seleccionados.</p>
+            )}
+            {filteredItems.map((i) => {
               const presentation = timelinePresentation(i);
               return (
                 <article className="schedule-row" key={i.id}>
                   <div className="schedule-project" title={i.descripcion || i.titulo}>
-                    <b>{i.codigo}</b>
-                    <small>{i.descripcion || i.titulo}</small>
+                    <b>{i.codigo} · {i.titulo}</b>
+                    <small>{i.descripcion}</small>
                   </div>
                   <div className="schedule-area">
                     <i style={{ background: i.color }} />

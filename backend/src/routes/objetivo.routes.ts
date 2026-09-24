@@ -1,2 +1,3 @@
 import { Router } from 'express';import { create,list,progress } from '../controllers/objetivo.controller.js';
-export const objetivoRoutes=Router().get('/',list).post('/',create).post('/:id/progresos',progress);
+import { requirePageAccess } from '../middlewares/pageAccess.js';
+export const objetivoRoutes=Router().get('/',requirePageAccess('verObjetivos'),list).post('/',create).post('/:id/progresos',progress);

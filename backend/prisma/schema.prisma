@@ -189,6 +189,7 @@ model Cliente {
   updatedAt   DateTime          @updatedAt @map("updated_at")
   tickets     Ticket[]
   contactos   ClienteContacto[]
+  iniciativas Iniciativa[]
 
   @@map("clientes")
 }
@@ -291,6 +292,8 @@ model Iniciativa {
   titulo             String            @db.VarChar(200)
   descripcion        String
   cliente            String?           @db.VarChar(160)
+  clienteId          String?           @map("cliente_id") @db.Uuid
+  software           String?           @db.VarChar(120)
   icono              String?           @db.VarChar(12)
   colorIcono         String?           @map("color_icono") @db.VarChar(7)
   areaId             String            @map("area_id") @db.Uuid
@@ -310,6 +313,7 @@ model Iniciativa {
   area               Area              @relation(fields: [areaId], references: [id])
   objetivo           ObjetivoNegocio?  @relation(fields: [objetivoId], references: [id])
   responsable        Usuario?          @relation("Responsable", fields: [responsableId], references: [id])
+  clienteRef         Cliente?          @relation(fields: [clienteId], references: [id])
   progresos          Progreso[]
   eventos            Evento[]
   tareas             TareaIniciativa[]
@@ -318,6 +322,7 @@ model Iniciativa {
   @@index([areaId], map: "idx_iniciativas_area")
   @@index([score(sort: Desc)], map: "idx_iniciativas_score")
   @@index([responsableId], map: "idx_iniciativas_responsable")
+  @@index([clienteId], map: "idx_iniciativas_cliente")
   @@map("iniciativas")
 }
 

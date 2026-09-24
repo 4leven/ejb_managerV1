@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { CanalTicket, EstadoTicket, Prisma, PrioridadTicket } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../config/db.js";
+import { hasPermission } from "../services/permissions.js";
 import { TICKET_CHANNELS, TICKET_DESTINATION_AREAS, TICKET_MODULES, TICKET_PRIORITIES } from "../constants/ticket.js";
 import {
   attemptAtomicTicketClaim,
@@ -395,7 +396,7 @@ export async function advance(req: Request, res: Response, next: NextFunction) {
       throw fail(403, "Los casos cerrados están disponibles en modo solo lectura");
     if (current.estado !== "EN_CURSO" && !(boss && current.estado === "FINALIZADO"))
       throw fail(409, "Este caso no admite modificaciones");
-    if (!boss && current.asignadoAId !== currentUser.id)
+    if (!boss && current.asignadoAId !== currentUser.id && !hasPermission(currentUser, "editarTickets"))
       throw fail(403, "Este caso está bloqueado para otro consultor");
     const row = await prisma.$transaction(async (tx) => {
       await tx.ticket.update({ where: { id }, data });

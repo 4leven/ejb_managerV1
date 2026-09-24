@@ -3,11 +3,11 @@ import { Cargo, Rol } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "../config/db.js";
-import { isManagement } from "../services/permissions.js";
+import { isManagement, canSeePage } from "../services/permissions.js";
 import { audit } from "../services/audit.js";
 async function manager(id: string) {
   const actor = await prisma.usuario.findUniqueOrThrow({ where: { id } });
-  if (!isManagement(actor))
+  if (!isManagement(actor) || !canSeePage(actor, "verAdministracion"))
     throw new Error(
       "Solo administración o gerencia puede realizar esta acción",
     );

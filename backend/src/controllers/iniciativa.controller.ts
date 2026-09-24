@@ -4,8 +4,9 @@ import { z } from "zod";
 import { iniciativaService } from "../services/iniciativa.service.js";
 import { prisma } from "../config/db.js";
 import { audit } from "../services/audit.js";
+import { score as computeScore } from "../utils/iniciativa.js";
 import {
-  canManageInitiative, canDeleteOwned, requiresProjectDeleteApproval, isAreaLeader,
+  canManageInitiative, canDeleteInitiative, requiresProjectDeleteApproval, isAreaLeader,
   canReadInitiative,
   canManageArea,
   hasPermission,
@@ -15,10 +16,11 @@ const createSchema = z
   .object({
     titulo: z.string().min(3),
     descripcion: z.string().min(10),
-    cliente: z
+    clienteId: z.string().uuid().optional(),
+    software: z
       .string()
       .trim()
-      .max(160)
+      .max(120)
       .optional()
       .transform((v) => v || undefined),
     areaId: z.string().uuid(),
@@ -191,8 +193,20 @@ const editSchema = z
   .object({
     titulo: z.string().min(3).max(180),
     descripcion: z.string().min(10).max(1000),
-    cliente: z.string().trim().max(160).nullable(),
+    clienteId: z.string().uuid().nullable(),
+    software: z.string().trim().max(120).nullable(),
     areaId: z.string().uuid(),
+    responsableId: z.string().uuid().nullable(),
+    impacto: z.number().int().min(1).max(10),
+    esfuerzo: z.nativeEnum(Esfuerzo),
+    fechaInicio: z
+      .string()
+      .nullable()
+      .transform((v) => (v ? new Date(v) : null)),
+    fechaFin: z
+      .string()
+      .nullable()
+      .transform((v) => (v ? new Date(v) : null)),
   })
   .partial();
 export const update = async (
@@ -215,20 +229,53 @@ export const update = async (
       (!isAreaLeader(actor) || actor.areaId !== row.areaId)
     )
       throw new Error("Solo el jefe del área puede editar esta iniciativa");
-    res.json(
-      await (
-        await import("../config/db.js")
-      ).prisma.iniciativa.update({
-        where: { id: row.id },
-        data: editSchema.parse(req.body),
-        include: {
-          area: true,
-          objetivo: true,
-          responsable: true,
-          progresos: { orderBy: { createdAt: "desc" } },
-        },
-      }),
-    );
+    const db = (await import("../config/db.js")).prisma;
+    const input = editSchema.parse(req.body);
+    // Mantiene sincronizado el texto legacy "cliente" con el cliente elegido en
+    // el selector, para no romper reportes/búsqueda/alertas que leen ese campo
+    // directo de la base sin pasar por el servicio de iniciativas.
+    const data: typeof input & { cliente?: string | null; score?: number } = { ...input };
+    if (input.clienteId === null) data.cliente = null;
+    else if (input.clienteId) {
+      const cliente = await db.cliente.findUnique({
+        where: { id: input.clienteId },
+        select: { razonSocial: true },
+      });
+      if (!cliente) throw new Error("Cliente no encontrado.");
+      data.cliente = cliente.razonSocial;
+    }
+    // "Derivar a" al editar exige la misma jefatura que al crear, y el
+    // responsable debe pertenecer al área final del proyecto (la nueva si se
+    // está cambiando de área en el mismo guardado, o la actual si no).
+    if (input.responsableId) {
+      if (!actor.isSuperAdmin && !isAreaLeader(actor))
+        throw new Error("Solo jefes, gerentes y el administrador principal pueden derivar proyectos");
+      const targetAreaId = input.areaId ?? row.areaId;
+      const responsable = await db.usuario.findUnique({ where: { id: input.responsableId }, select: { areaId: true } });
+      if (!responsable || responsable.areaId !== targetAreaId)
+        throw new Error("El responsable seleccionado no pertenece al área del proyecto");
+    }
+    // El score no se guarda directo: depende de impacto/esfuerzo, así que se
+    // recalcula si cualquiera de los dos cambió (igual que al crear).
+    if (input.impacto !== undefined || input.esfuerzo !== undefined) {
+      data.score = computeScore(input.impacto ?? row.impacto, input.esfuerzo ?? row.esfuerzo);
+    }
+    const finalStart = input.fechaInicio !== undefined ? input.fechaInicio : row.fechaInicio;
+    const finalEnd = input.fechaFin !== undefined ? input.fechaFin : row.fechaFin;
+    if (finalStart && finalEnd && finalEnd < finalStart)
+      throw new Error("La fecha fin debe ser posterior al inicio");
+    const updated = await db.iniciativa.update({
+      where: { id: row.id },
+      data,
+      include: {
+        area: true,
+        objetivo: true,
+        responsable: true,
+        clienteRef: true,
+        progresos: { orderBy: { createdAt: "desc" } },
+      },
+    });
+    res.json({ ...updated, cliente: updated.clienteRef?.razonSocial ?? updated.cliente });
   } catch (e) {
     next(e);
   }
@@ -244,7 +291,7 @@ export const remove = async (
         where: { id: req.userId! },
       });
     const row = await db.iniciativa.findFirstOrThrow({where:{id:String(req.params.id),deletedAt:null}});
-    if (!canDeleteOwned(actor,row.creadorId,row.areaId)) throw new Error("Solo el creador, la jefatura de su área o el administrador global puede eliminar este proyecto.");
+    if (!canDeleteInitiative(actor,row.creadorId,row.areaId)) throw new Error("Solo el creador, la jefatura de su área o el administrador global puede eliminar este proyecto.");
     if(requiresProjectDeleteApproval(actor)) throw new Error("Solicita la aprobación del gerente del área o del administrador global para eliminar este proyecto.");
     await db.iniciativa.update({ where: { id: String(req.params.id) }, data: { deletedAt: new Date(), deletedById: actor.id } });
     res.json({ ok: true });

@@ -25,6 +25,7 @@ import { startMarketingScheduler } from "./services/marketingScheduler.js";
 import { huddleRoutes } from "./routes/huddle.routes.js";
 import { ticketRoutes } from "./routes/ticket.routes.js";
 import { marketingRoutes } from "./routes/marketing.routes.js";
+import { clienteRoutes } from "./routes/cliente.routes.js";
 const localOrigin =
   /^http:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|26\.\d+\.\d+\.\d+):5173$/;
 const app = express();
@@ -50,6 +51,7 @@ app.use("/api/producto", requireAuth, productRoutes);
 app.use("/api/notificaciones", requireAuth, notificationRoutes);
 app.use("/api/busqueda", requireAuth, searchRoutes);
 app.use("/api/iniciativas", requireAuth, iniciativaRoutes);
+app.use("/api/clientes", requireAuth, clienteRoutes);
 app.use("/api/objetivos", requireAuth, objetivoRoutes);
 app.use("/api/dashboard", requireAuth, dashboardRoutes);
 app.use("/api/mensajes", requireAuth, mensajeRoutes);

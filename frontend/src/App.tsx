@@ -47,7 +47,9 @@ import {
   Trash2,
   TrendingUp,
   UserCog,
+  UserRound,
   Users,
+  MoreVertical,
   BriefcaseBusiness,
   Building2,
   Settings,
@@ -80,6 +82,7 @@ import {
   savePortalColor,
   saveInitiativeAppearance,
   saveTeamCargo,
+  updateUserPermissions,
   deleteTeamMember,
   savePreferences,
   updateInitiative,
@@ -105,8 +108,11 @@ import {
   UserFeedback,
 } from "./components/ProductSuite";
 import { MarketingCenter } from "./components/MarketingCenter";
+import { ClientSelect } from "./components/ClientSelect";
+import { DateField } from "./components/DateField";
+import { FilterCombobox } from "./components/FilterCombobox";
 import { uiAlert, uiConfirm, uiPrompt } from "./utils/dialog";
-import { canOperateGlobally, cargoLabel, hasFullPortalAccess, isTechnicalUser, isAreaLeaderUser, isAdministrationUser, canPublishAnnouncements, canDeleteOwned, canReadMarketing } from "./utils/access";
+import { canOperateGlobally, cargoLabel, hasFullPortalAccess, isTechnicalUser, isAreaLeaderUser, isAdministrationUser, canPublishAnnouncements, canDeleteOwned, canReadMarketing, canManageInitiative } from "./utils/access";
 import {
   clearRememberedCredentials,
   loadRememberedCredentials,
@@ -166,13 +172,47 @@ const workerPanelPages = new Set<Page>([
   "perfil",
 ]);
 
+// Claves del catálogo de permisos (backend/src/constants/paginas.ts) por
+// página — mismo mapeo que replica el backend para exigirlo de verdad, no
+// solo ocultar el link. "opt-out": permisos[clave] === false quita acceso
+// aunque la regla de cargo/área de abajo diría que sí puede verla; ausente
+// o true no cambia nada (nunca da acceso de más).
+const PAGE_PERMISO_KEY: Partial<Record<Page, string>> = {
+  resumen: "verResumen",
+  notificaciones: "verNotificaciones",
+  iniciativas: "verProyectos",
+  "mi-trabajo": "verMiTrabajo",
+  objetivos: "verObjetivos",
+  equipo: "verEquipo",
+  clientes: "verClientes",
+  ticketera: "verTicketera",
+  "kanban-sistemas": "verKanbanSistemas",
+  mensajes: "verMensajes",
+  cronograma: "verCronograma",
+  calendario: "verCalendario",
+  informes: "verInformesBI",
+  requerimientos: "verRequerimientos",
+  reporteria: "verReporteria",
+  flujos: "verFlujosAreas",
+  encuestas: "verEncuestas",
+  aprobaciones: "verAprobaciones",
+  marketing: "verMarketing",
+  administracion: "verAdministracion",
+  feedback: "verMejoraContinua",
+  personalizacion: "verPersonalizacion",
+};
+
 const canAccessPortalPage = (user: User, target: Page) => {
-  if (hasFullPortalAccess(user)) return true;
   const leadership = isAreaLeaderUser(user);
-  if (["cronograma", "informes", "reporteria", "flujos"].includes(target))
-    return leadership;
-  if (target === "administracion") return leadership;
-  return !isWorkerPortalUser(user) || workerPanelPages.has(target);
+  const baseline =
+    hasFullPortalAccess(user) ||
+    (["cronograma", "informes", "reporteria", "flujos", "administracion"].includes(target)
+      ? leadership
+      : !isWorkerPortalUser(user) || workerPanelPages.has(target));
+  if (!baseline) return false;
+  if (user?.isSuperAdmin) return true;
+  const key = PAGE_PERMISO_KEY[target];
+  return !key || (user as any)?.permisos?.[key] !== false;
 };
 
 const notificationPage = (value: string): Page | null => {
@@ -241,6 +281,8 @@ type Item = {
   titulo: string;
   descripcion: string;
   cliente?: string;
+  clienteId?: string | null;
+  software?: string | null;
   area: string;
   color: string;
   impacto: number;
@@ -312,6 +354,7 @@ type TeamMember = {
   area: Area;
   isSuperAdmin: boolean;
   fotoPerfil?: string | null;
+  permisos?: Record<string, boolean> | null;
 };
 type HelpTopic = { title: string; text: string; detail: string };
 type Progress = {
@@ -369,6 +412,8 @@ const mapItem = (r: any): Item => ({
   titulo: r.titulo,
   descripcion: r.descripcion,
   cliente: r.cliente,
+  clienteId: r.clienteId,
+  software: r.software,
   area: r.area.nombre,
   areaId:r.areaId??r.area.id,
   creadorId:r.creadorId,
@@ -731,7 +776,11 @@ function Access({
   );
 }
 
-async function askProjectChange(item: Item, accion: "Editar" | "Eliminar") {
+async function askProjectChange(
+  item: Item,
+  accion: "Editar" | "Eliminar",
+  onError: (error: unknown, fallback: string) => void,
+) {
   const motivo = await uiPrompt(
     `Solicitar ${accion.toLowerCase()} proyecto`,
     "",
@@ -747,17 +796,21 @@ async function askProjectChange(item: Item, accion: "Editar" | "Eliminar") {
     if (!titulo || !descripcion) return;
     payload = { titulo, descripcion };
   }
-  const result = await requestChange({
-    tipoEntidad: "Iniciativa",
-    entidadId: item.id,
-    accion,
-    payload,
-    motivo,
-  });
-  await uiAlert(
-    "Solicitud enviada",
-    result.appliedDirectly ? "El cambio ya fue aplicado." : `El proyecto seguirá visible hasta recibir aprobación. Basta con uno de los siguientes responsables:\n${(result.approvers??[]).map((a:any)=>`${a.nombre} — ${cargoLabel(a.cargo)}`).join("\n")}`,
-  );
+  try {
+    const result = await requestChange({
+      tipoEntidad: "Iniciativa",
+      entidadId: item.id,
+      accion,
+      payload,
+      motivo,
+    });
+    await uiAlert(
+      "Solicitud enviada",
+      result.appliedDirectly ? "El cambio ya fue aplicado." : `El proyecto seguirá visible hasta recibir aprobación. Basta con uno de los siguientes responsables:\n${(result.approvers??[]).map((a:any)=>`${a.nombre} — ${cargoLabel(a.cargo)}`).join("\n")}`,
+    );
+  } catch (error) {
+    onError(error, "No se pudo enviar la solicitud.");
+  }
 }
 function InitiativeList({
   items,
@@ -766,31 +819,36 @@ function InitiativeList({
   onSelect,
   user,
   areas,
+  team,
   onChanged,
+  onError,
 }: {
   items: Item[];
   onProgress: (i: Item) => void;
   onAppearance: (i: Item) => void;
   onSelect: (i: Item) => void;
+  onError: (error: unknown, fallback: string) => void;
   user: User;
   areas: Area[];
+  team: TeamMember[];
   onChanged: () => void;
 }) {
   const [editItem, setEditItem] = useState<Item | null>(null);
+  const [editAreaName, setEditAreaName] = useState("");
   if (!items.length)
     return (
       <div className="empty-state">
         <div>
           <Lightbulb />
         </div>
-        <h3>Aún no hay iniciativas</h3>
+        <h3>Aún no hay proyectos</h3>
         <p>Registra la primera idea para comenzar el portafolio.</p>
       </div>
     );
   return (
     <>
       <div className="list-head">
-        <span>INICIATIVA</span>
+        <span>PROYECTO</span>
         <span>PRIORIDAD</span>
         <span>ESTADO</span>
         <span>AVANCE</span>
@@ -819,7 +877,13 @@ function InitiativeList({
                   <i style={{ background: projectAreaAccent(i.area, i.color) }} />
                   {i.area} · {i.codigo}
                 </div>
-                <h3>{i.titulo}</h3>
+                <h3>
+                  {i.titulo}
+                  <span className="initiative-owner">
+                    <UserRound />
+                    {i.responsable}
+                  </span>
+                </h3>
                 <p>{i.descripcion}</p>
               </div>
             </div>
@@ -871,12 +935,15 @@ function InitiativeList({
               </button>
               {true && (
                 <button
+                  className="row-edit-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (canOperateGlobally(user)) setEditItem(i);
-                    else void askProjectChange(i, "Editar");
+                    if (canOperateGlobally(user)) {
+                      setEditItem(i);
+                      setEditAreaName(i.area);
+                    } else void askProjectChange(i, "Editar", onError);
                   }}
-                  title="Editar iniciativa"
+                  title="Editar proyecto"
                 >
                   <Edit3 />
                 </button>
@@ -886,19 +953,23 @@ function InitiativeList({
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (!user.isSuperAdmin && ["Asistente","Trabajador"].includes(user.cargo)) {
-                      await askProjectChange(i, "Eliminar"); onChanged(); return;
+                      await askProjectChange(i, "Eliminar", onError); onChanged(); return;
                     }
                     if (
                       await uiConfirm(
-                        "Eliminar iniciativa",
+                        "Eliminar proyecto",
                         `¿Deseas enviar ${i.codigo} a la papelera?`,
                       )
                     ) {
-                      await deleteInitiative(i.id);
-                      onChanged();
+                      try {
+                        await deleteInitiative(i.id);
+                        onChanged();
+                      } catch (error) {
+                        onError(error, "No se pudo eliminar el proyecto.");
+                      }
                     }
                   }}
-                  title="Eliminar iniciativa"
+                  title="Eliminar proyecto"
                 >
                   <Trash2 />
                 </button>
@@ -914,17 +985,41 @@ function InitiativeList({
             onSubmit={async (e) => {
               e.preventDefault();
               const f = new FormData(e.currentTarget);
-              await updateInitiative(editItem.id, {
-                titulo: String(f.get("titulo")),
-                descripcion: String(f.get("descripcion")),
-                areaId: String(f.get("areaId")),
-              });
-              await saveInitiativeAppearance(editItem.id, {
-                icono: String(f.get("icono")),
-                colorIcono: String(f.get("colorIcono")),
-              });
-              setEditItem(null);
-              onChanged();
+              const clienteIdRaw = String(f.get("clienteId") || "");
+              const clienteQueryRaw = String(f.get("clienteIdQuery") || "").trim();
+              // Si no se eligió un cliente pero tampoco se borró el texto (se
+              // dejó el nombre legacy tal cual se precargó), no se toca el
+              // cliente guardado: evita desvincularlo solo por no interactuar
+              // con el campo.
+              const clienteId = clienteIdRaw
+                ? clienteIdRaw
+                : clienteQueryRaw
+                  ? undefined
+                  : null;
+              const fechaInicio = String(f.get("fechaInicio") || "");
+              const fechaFin = String(f.get("fechaFin") || "");
+              try {
+                await updateInitiative(editItem.id, {
+                  titulo: String(f.get("titulo")),
+                  descripcion: String(f.get("descripcion")),
+                  clienteId,
+                  software: String(f.get("software") || "").trim() || null,
+                  areaId: String(f.get("areaId")),
+                  responsableId: String(f.get("responsableId") || "") || null,
+                  impacto: Number(f.get("impacto")),
+                  esfuerzo: String(f.get("esfuerzo")),
+                  fechaInicio: fechaInicio || null,
+                  fechaFin: fechaFin || null,
+                });
+                await saveInitiativeAppearance(editItem.id, {
+                  icono: String(f.get("icono")),
+                  colorIcono: String(f.get("colorIcono")),
+                });
+                setEditItem(null);
+                onChanged();
+              } catch (error) {
+                onError(error, "No se pudo guardar el proyecto.");
+              }
             }}
           >
             <button
@@ -935,7 +1030,7 @@ function InitiativeList({
               <X />
             </button>
             <Edit3 />
-            <h2>Editar iniciativa</h2>
+            <h2>Editar proyecto</h2>
             <p>
               {editItem.codigo} · Solo jefatura del área o administración
               global.
@@ -945,6 +1040,10 @@ function InitiativeList({
               <select
                 name="areaId"
                 defaultValue={areas.find((a) => a.nombre === editItem.area)?.id}
+                onChange={(event) => {
+                  const areaName = areas.find((a) => a.id === event.target.value)?.nombre;
+                  setEditAreaName(areaName ?? editItem.area);
+                }}
               >
                 {areas.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -971,6 +1070,83 @@ function InitiativeList({
                 minLength={10}
               />
             </label>
+            <div className="two-fields">
+              <label>
+                Cliente
+                <ClientSelect
+                  name="clienteId"
+                  initialId={editItem.clienteId ?? ""}
+                  initialLabel={editItem.cliente ?? ""}
+                />
+              </label>
+              <label>
+                Software
+                <input
+                  name="software"
+                  defaultValue={editItem.software ?? ""}
+                  placeholder="Ej. ERP, Power BI"
+                  maxLength={120}
+                />
+              </label>
+            </div>
+            <div className="form-grid">
+              {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+                <label>
+                  Derivar a
+                  <select
+                    name="responsableId"
+                    defaultValue={editItem.responsableId ?? ""}
+                    key={editAreaName}
+                  >
+                    <option value="">Sin derivar</option>
+                    {team
+                      .filter((member) => member.area.nombre === (editAreaName || editItem.area))
+                      .sort((a, b) => `${a.nombres} ${a.apellidos}`.localeCompare(`${b.nombres} ${b.apellidos}`, "es"))
+                      .map((member) => (
+                        <option key={member.id} value={member.id}>
+                          {member.nombres} {member.apellidos}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              )}
+              <label>
+                Impacto
+                <input
+                  name="impacto"
+                  type="number"
+                  min="1"
+                  max="10"
+                  defaultValue={editItem.impacto}
+                />
+              </label>
+              <label>
+                Esfuerzo
+                <select name="esfuerzo" defaultValue={editItem.esfuerzo}>
+                  <option>Bajo</option>
+                  <option>Medio</option>
+                  <option>Alto</option>
+                </select>
+              </label>
+            </div>
+            <div className="two-fields schedule-fields">
+              <label>
+                Fecha de inicio
+                <input
+                  name="fechaInicio"
+                  type="date"
+                  defaultValue={editItem.fechaInicio?.slice(0, 10) ?? ""}
+                />
+              </label>
+              <label>
+                Fecha estimada de fin
+                <input
+                  name="fechaFin"
+                  type="date"
+                  defaultValue={editItem.fechaFin?.slice(0, 10) ?? ""}
+                />
+              </label>
+            </div>
             <div className="initiative-icon-editor">
               <div
                 className="icon-edit-preview"
@@ -1016,6 +1192,9 @@ function InitiativeList({
 
 function App() {
   const [areas, setAreas] = useState<Area[]>([]),
+    [permisosCatalogo, setPermisosCatalogo] = useState<{ clave: string; etiqueta: string; modulo: string }[]>([]),
+    [paginasCatalogo, setPaginasCatalogo] = useState<{ clave: string; etiqueta: string }[]>([]),
+    [permisosMenuOpen, setPermisosMenuOpen] = useState<{ id: string; top: number; right: number } | null>(null),
     [user, setUser] = useState<User | null>(null),
     [booting, setBooting] = useState(true),
     [page, setPage] = useState<Page>(() =>
@@ -1035,6 +1214,9 @@ function App() {
     [statusFilter, setStatusFilter] = useState("Todos"),
     [effortFilter, setEffortFilter] = useState("Todos"),
     [sortFilter, setSortFilter] = useState("score"),
+    [dateFrom, setDateFrom] = useState(""),
+    [dateTo, setDateTo] = useState(""),
+    [dateFilterEnabled, setDateFilterEnabled] = useState(false),
     [filtersOpen, setFiltersOpen] = useState(false),
     [sidebarCollapsed, setSidebarCollapsed] = useState(false),
     [sidebarScale, setSidebarScale] = useState(() =>
@@ -1052,6 +1234,8 @@ function App() {
     [helpTopic, setHelpTopic] = useState<HelpTopic | null>(null),
     [modal, setModal] = useState(false),
     [createAreaName, setCreateAreaName] = useState(""),
+    [createTasks, setCreateTasks] = useState<string[]>([]),
+    [createTaskDraft, setCreateTaskDraft] = useState(""),
     [progressItem, setProgressItem] = useState<Item | null>(null),
     [history, setHistory] = useState<Progress[]>([]),
     [alerts, setAlerts] = useState<any[]>([]),
@@ -1061,6 +1245,7 @@ function App() {
     [notificationsOpen, setNotificationsOpen] = useState(false),
     [userMenuOpen, setUserMenuOpen] = useState(false),
     [toast, setToast] = useState(""),
+    [errorToast, setErrorToast] = useState(""),
     [unreadMessages, setUnreadMessages] = useState(0),
     [messageNotice, setMessageNotice] = useState<{
       name: string;
@@ -1341,7 +1526,11 @@ function App() {
   };
   useEffect(() => {
     fetchCatalogo()
-      .then((c) => setAreas(c.areas))
+      .then((c) => {
+        setAreas(c.areas);
+        setPermisosCatalogo(c.permisos ?? []);
+        setPaginasCatalogo(c.paginas ?? []);
+      })
       .finally(() => setBooting(false));
     if (
       localStorage.getItem("ejb_token") ||
@@ -1535,6 +1724,19 @@ function App() {
     return () => clearTimeout(timer);
   }, [toast]);
   useEffect(() => {
+    if (!errorToast) return;
+    const timer = setTimeout(
+      () => setErrorToast(""),
+      errorToast.length > 55 ? 3500 : 2500,
+    );
+    return () => clearTimeout(timer);
+  }, [errorToast]);
+  // Punto central para mostrar cualquier error de la API por toast (el mismo
+  // sistema de toasts que ya usa toda la app — setToast/"✓" para éxito — no se
+  // agregó ninguna librería nueva, solo la variante de error que faltaba).
+  const reportError = (error: unknown, fallback: string) =>
+    setErrorToast(error instanceof Error ? error.message : fallback);
+  useEffect(() => {
     if (!user || query.trim().length < 2) {
       setGlobalResults([]);
       return;
@@ -1585,9 +1787,23 @@ function App() {
               (clientFilter === "Sin cliente"
                 ? !i.cliente
                 : i.cliente === clientFilter)) &&
-            (workerFilter === "Todos" || i.responsable === workerFilter) &&
+            (workerFilter === "Todos" ||
+              (workerFilter === "Sin asignar" ? !i.responsableId : i.responsableId === workerFilter)) &&
             (statusFilter === "Todos" || i.estado === statusFilter) &&
             (effortFilter === "Todos" || i.esfuerzo === effortFilter) &&
+            (() => {
+              // El filtro de fecha solo aplica si está activado con el check
+              // — así siempre hay una forma explícita de quitarlo, sin
+              // depender de vaciar los dos campos de fecha nativos.
+              if (!dateFilterEnabled) return true;
+              // El proyecto queda si su rango [fechaInicio, fechaFin] se
+              // solapa con el rango elegido (mismo criterio que Cronograma).
+              const start = i.fechaInicio?.slice(0, 10);
+              const end = i.fechaFin?.slice(0, 10);
+              if (dateFrom && (end || start) && (end ?? start)! < dateFrom) return false;
+              if (dateTo && start && start > dateTo) return false;
+              return true;
+            })() &&
             `${i.titulo} ${i.codigo}`
               .toLowerCase()
               .includes(query.toLowerCase()),
@@ -1599,7 +1815,7 @@ function App() {
               ? b.codigo.localeCompare(a.codigo)
               : b.score - a.score,
         ),
-    [items, query, area, clientFilter, workerFilter, statusFilter, effortFilter, sortFilter],
+    [items, query, area, clientFilter, workerFilter, statusFilter, effortFilter, sortFilter, dateFrom, dateTo, dateFilterEnabled],
   );
   const visibleTeam = useMemo(() => {
     const term = teamQuery.trim().toLocaleLowerCase("es");
@@ -1686,12 +1902,55 @@ function App() {
     setAppearanceItem(i);
   };
   const changeTeamCargo = async (member: TeamMember, cargo: string) => {
-    await saveTeamCargo(member.id, cargo);
-    setTeam((rows) =>
-      rows.map((row) => (row.id === member.id ? { ...row, cargo } : row)),
-    );
-    setToast(`${member.nombres} ahora tiene el rol ${cargo}`);
+    try {
+      await saveTeamCargo(member.id, cargo);
+      setTeam((rows) =>
+        rows.map((row) => (row.id === member.id ? { ...row, cargo } : row)),
+      );
+      setToast(`${member.nombres} ahora tiene el rol ${cargo}`);
+    } catch (error) {
+      reportError(error, "No se pudo cambiar el cargo.");
+    }
   };
+  // Solo el administrador global puede ver este menú (botón oculto salvo
+  // user.isSuperAdmin) y solo el administrador global puede guardarlo de
+  // verdad: el backend (PATCH /admin/usuarios/:id/permisos) vuelve a exigir
+  // isSuperAdmin por su cuenta, sin confiar en lo que oculte o muestre el
+  // frontend.
+  const toggleMemberPermiso = async (
+    member: any,
+    clave: string,
+    checked: boolean,
+  ) => {
+    const next = { ...(member.permisos || {}), [clave]: checked };
+    await updateUserPermissions(member.id, next);
+    setTeam((rows) =>
+      rows.map((row) => (row.id === member.id ? { ...row, permisos: next } : row)),
+    );
+  };
+  useEffect(() => {
+    if (!permisosMenuOpen) return;
+    const close = (event: MouseEvent) => {
+      if (!(event.target as HTMLElement).closest(".team-permisos-wrap,.team-permisos-menu"))
+        setPermisosMenuOpen(null);
+    };
+    const escape = (event: KeyboardEvent) => event.key === "Escape" && setPermisosMenuOpen(null);
+    // La posición del popover se calcula una sola vez, al abrirlo (coordenadas
+    // fijas vía getBoundingClientRect). Si se recalculara en cada scroll para
+    // mantenerlo anclado, la tarjeta lo recortaría igual (tiene overflow:hidden
+    // por el diseño de la tarjeta) y sería una animación costosa sin necesidad.
+    // Más simple y predecible: cerrarlo al hacer scroll, mismo patrón que usan
+    // la mayoría de menús desplegables.
+    const closeOnScroll = () => setPermisosMenuOpen(null);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", escape);
+    document.addEventListener("scroll", closeOnScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", escape);
+      document.removeEventListener("scroll", closeOnScroll, true);
+    };
+  }, [permisosMenuOpen]);
   const addInitiative = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget),
@@ -1701,53 +1960,68 @@ function App() {
       const r = await createIniciativa({
         titulo: String(f.get("titulo")),
         descripcion: String(f.get("descripcion")),
-        cliente: String(f.get("cliente") || "").trim() || undefined,
+        clienteId: String(f.get("clienteId") || "") || undefined,
+        software: String(f.get("software") || "").trim() || undefined,
         areaId: selected.id,
         responsableId: String(f.get("responsableId") || "") || undefined,
         impacto: Number(f.get("impacto")),
         esfuerzo: String(f.get("esfuerzo")),
         fechaInicio: String(f.get("fechaInicio") || "") || undefined,
         fechaFin: String(f.get("fechaFin") || "") || undefined,
-        tareas: String(f.get("tareas") || "")
-          .split("\n")
-          .map((task) => task.trim())
-          .filter(Boolean),
+        tareas: createTasks,
       });
       setItems((v) => [mapItem(r), ...v]);
       setModal(false);
-      setToast("Iniciativa guardada como Pendiente");
+      setCreateTasks([]);
+      setCreateTaskDraft("");
+      setToast("Proyecto guardado como Pendiente");
     } catch (x) {
-      setToast(x instanceof Error ? x.message : "No se pudo guardar");
+      reportError(x, "No se pudo guardar el proyecto.");
     }
+  };
+  const closeCreateModal = () => {
+    setModal(false);
+    setCreateTasks([]);
+    setCreateTaskDraft("");
+  };
+  const addCreateTask = () => {
+    const value = createTaskDraft.trim();
+    if (!value) return;
+    setCreateTasks((tasks) => [...tasks, value]);
+    setCreateTaskDraft("");
   };
   const addProgress = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!progressItem) return;
     const f = new FormData(e.currentTarget),
       porcentaje = Number(f.get("porcentaje"));
-    const p = await addProgreso(progressItem.id, {
-      porcentaje,
-      comentario: String(f.get("comentario")),
-    }),
-      projectProgress = Number(p.porcentajeAvance ?? porcentaje),
-      projectStatus = mapProjectStatus(p.estadoProyecto ?? (projectProgress >= 100 ? "Finalizado" : projectProgress > 0 ? "En_desarrollo" : progressItem.estado));
-    setHistory((v) => [p, ...v]);
-    setItems((v) =>
-      v.map((i) =>
-        i.id === progressItem.id ? { ...i, avance: projectProgress, estado: projectStatus } : i,
-      ),
-    );
-    setProgressItem({ ...progressItem, avance: projectProgress, estado: projectStatus });
-    const nextAlerts = await fetchAlerts();
-    setAlerts(nextAlerts);
-    currentAlerts.current = nextAlerts;
-    lastAlertCount.current = nextAlerts.length;
-    lastAlertSignature.current = alertSignature(nextAlerts);
-    setToast(
-      porcentaje >= 100
-        ? "Tarea completada y notificaciones actualizadas"
-        : "Progreso registrado",
-    );
+    try {
+      const p = await addProgreso(progressItem.id, {
+        porcentaje,
+        comentario: String(f.get("comentario")),
+      }),
+        projectProgress = Number(p.porcentajeAvance ?? porcentaje),
+        projectStatus = mapProjectStatus(p.estadoProyecto ?? (projectProgress >= 100 ? "Finalizado" : projectProgress > 0 ? "En_desarrollo" : progressItem.estado));
+      setHistory((v) => [p, ...v]);
+      setItems((v) =>
+        v.map((i) =>
+          i.id === progressItem.id ? { ...i, avance: projectProgress, estado: projectStatus } : i,
+        ),
+      );
+      setProgressItem({ ...progressItem, avance: projectProgress, estado: projectStatus });
+      const nextAlerts = await fetchAlerts();
+      setAlerts(nextAlerts);
+      currentAlerts.current = nextAlerts;
+      lastAlertCount.current = nextAlerts.length;
+      lastAlertSignature.current = alertSignature(nextAlerts);
+      setToast(
+        porcentaje >= 100
+          ? "Tarea completada y notificaciones actualizadas"
+          : "Progreso registrado",
+      );
+    } catch (error) {
+      reportError(error, "No se pudo registrar el progreso.");
+    }
   };
   const addGoal = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -2006,34 +2280,42 @@ function App() {
           </div>
         )}
         <nav onClickCapture={() => setMobileMenuOpen(false)}>
-          <button
-            className={page === "resumen" ? "active" : ""}
-            onClick={() => setPage("resumen")}
-          >
-            <LayoutDashboard />
-            Resumen
-          </button>
-          <button
-            className={page === "notificaciones" ? "active" : ""}
-            onClick={() => setPage("notificaciones")}
-          >
-            <Bell /> Notificaciones
-            {notificationUnreadCount > 0 && <span>{notificationUnreadCount}</span>}
-          </button>
-          <button
-            className={page === "iniciativas" ? "active" : ""}
-            onClick={() => setPage("iniciativas")}
-          >
-            <Lightbulb />
-            Iniciativas<span>{items.length}</span>
-          </button>
-          <button
-            className={page === "mi-trabajo" ? "active" : ""}
-            onClick={() => setPage("mi-trabajo")}
-          >
-            <BriefcaseBusiness /> Mi trabajo
-          </button>
-          {!isWorkerPortalUser(user) && (
+          {canAccessPortalPage(user, "resumen") && (
+            <button
+              className={page === "resumen" ? "active" : ""}
+              onClick={() => setPage("resumen")}
+            >
+              <LayoutDashboard />
+              Resumen
+            </button>
+          )}
+          {canAccessPortalPage(user, "notificaciones") && (
+            <button
+              className={page === "notificaciones" ? "active" : ""}
+              onClick={() => setPage("notificaciones")}
+            >
+              <Bell /> Notificaciones
+              {notificationUnreadCount > 0 && <span>{notificationUnreadCount}</span>}
+            </button>
+          )}
+          {canAccessPortalPage(user, "iniciativas") && (
+            <button
+              className={page === "iniciativas" ? "active" : ""}
+              onClick={() => setPage("iniciativas")}
+            >
+              <Lightbulb />
+              Proyectos<span>{items.length}</span>
+            </button>
+          )}
+          {canAccessPortalPage(user, "mi-trabajo") && (
+            <button
+              className={page === "mi-trabajo" ? "active" : ""}
+              onClick={() => setPage("mi-trabajo")}
+            >
+              <BriefcaseBusiness /> Mi trabajo
+            </button>
+          )}
+          {canAccessPortalPage(user, "objetivos") && (
             <button
               className={page === "objetivos" ? "active" : ""}
               onClick={() => setPage("objetivos")}
@@ -2042,45 +2324,55 @@ function App() {
               Objetivos
             </button>
           )}
-          <button
-            className={page === "equipo" ? "active" : ""}
-            onClick={() => setPage("equipo")}
-          >
-            <Users />
-            Equipo
-          </button>
-          <button
-            className={page === "clientes" ? "active" : ""}
-            onClick={() => setPage("clientes")}
-          >
-            <Building2 /> Clientes
-          </button>
-          <button
-            className={page === "ticketera" ? "active" : ""}
-            onClick={() => setPage("ticketera")}
-          >
-            <BarChart3 /> Ticketera Consultoría
-          </button>
-          <button
-            className={page === "kanban-sistemas" ? "active" : ""}
-            onClick={() => setPage("kanban-sistemas")}
-          >
-            <PanelsTopLeft /> Kanban Sistemas
-            {items.filter((item) => item.area === "Sistemas").length > 0 && (
-              <span>{items.filter((item) => item.area === "Sistemas").length}</span>
-            )}
-          </button>
-          <button
-            className={page === "mensajes" ? "active" : ""}
-            onClick={() => {
-              setPage("mensajes");
-              setMessageNotice(null);
-            }}
-          >
-            <MessageCircle />
-            Mensajes{unreadMessages > 0 && <span>{unreadMessages}</span>}
-          </button>
-          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+          {canAccessPortalPage(user, "equipo") && (
+            <button
+              className={page === "equipo" ? "active" : ""}
+              onClick={() => setPage("equipo")}
+            >
+              <Users />
+              Equipo
+            </button>
+          )}
+          {canAccessPortalPage(user, "clientes") && (
+            <button
+              className={page === "clientes" ? "active" : ""}
+              onClick={() => setPage("clientes")}
+            >
+              <Building2 /> Clientes
+            </button>
+          )}
+          {canAccessPortalPage(user, "ticketera") && (
+            <button
+              className={page === "ticketera" ? "active" : ""}
+              onClick={() => setPage("ticketera")}
+            >
+              <BarChart3 /> Ticketera Consultoría
+            </button>
+          )}
+          {canAccessPortalPage(user, "kanban-sistemas") && (
+            <button
+              className={page === "kanban-sistemas" ? "active" : ""}
+              onClick={() => setPage("kanban-sistemas")}
+            >
+              <PanelsTopLeft /> Kanban Sistemas
+              {items.filter((item) => item.area === "Sistemas").length > 0 && (
+                <span>{items.filter((item) => item.area === "Sistemas").length}</span>
+              )}
+            </button>
+          )}
+          {canAccessPortalPage(user, "mensajes") && (
+            <button
+              className={page === "mensajes" ? "active" : ""}
+              onClick={() => {
+                setPage("mensajes");
+                setMessageNotice(null);
+              }}
+            >
+              <MessageCircle />
+              Mensajes{unreadMessages > 0 && <span>{unreadMessages}</span>}
+            </button>
+          )}
+          {canAccessPortalPage(user, "cronograma") && (
             <button
               className={page === "cronograma" ? "active" : ""}
               onClick={() => setPage("cronograma")}
@@ -2089,70 +2381,76 @@ function App() {
               Cronogramas y alertas
             </button>
           )}
-          <button
-            className={page === "calendario" ? "active" : ""}
-            onClick={() => setPage("calendario")}
-          >
-            <CalendarDays /> Calendario
-          </button>
-          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+          {canAccessPortalPage(user, "calendario") && (
             <button
-            className={page === "informes" ? "active" : ""}
-            onClick={() => setPage("informes")}
-          >
-            <BarChart3 /> Informes BI
+              className={page === "calendario" ? "active" : ""}
+              onClick={() => setPage("calendario")}
+            >
+              <CalendarDays /> Calendario
             </button>
           )}
-          {!isWorkerPortalUser(user) && (
+          {canAccessPortalPage(user, "informes") && (
             <button
-            className={page === "requerimientos" ? "active" : ""}
-            onClick={() => {
-              setPage("requerimientos");
-              setMobileMenuOpen(false);
-            }}
-          >
-            <ClipboardList />
-            Requerimientos
+              className={page === "informes" ? "active" : ""}
+              onClick={() => setPage("informes")}
+            >
+              <BarChart3 /> Informes BI
             </button>
           )}
-          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
-            <>
-              <button
-            className={page === "reporteria" ? "active" : ""}
-            onClick={() => setPage("reporteria")}
-          >
-            <Download /> Reportería
-              </button>
-              <button
-            className={page === "flujos" ? "active" : ""}
-            onClick={() => {
-              setPage("flujos");
-              setMobileMenuOpen(false);
-            }}
-          >
-            <FileText />
-            Flujos de Áreas
-              </button>
-            </>
+          {canAccessPortalPage(user, "requerimientos") && (
+            <button
+              className={page === "requerimientos" ? "active" : ""}
+              onClick={() => {
+                setPage("requerimientos");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <ClipboardList />
+              Requerimientos
+            </button>
           )}
-          <button
-            className={page === "encuestas" ? "active" : ""}
-            onClick={() => {
-              setPage("encuestas");
-              setMobileMenuOpen(false);
-            }}
-          >
-            <Vote />
-            Encuestas
-          </button>
-          <button
-            className={page === "aprobaciones" ? "active" : ""}
-            onClick={() => setPage("aprobaciones")}
-          >
-            <CheckSquare />
-            Aprobaciones
-          </button>
-          {!isWorkerPortalUser(user) && canReadMarketing(user) && (
+          {canAccessPortalPage(user, "reporteria") && (
+            <button
+              className={page === "reporteria" ? "active" : ""}
+              onClick={() => setPage("reporteria")}
+            >
+              <Download /> Reportería
+            </button>
+          )}
+          {canAccessPortalPage(user, "flujos") && (
+            <button
+              className={page === "flujos" ? "active" : ""}
+              onClick={() => {
+                setPage("flujos");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <FileText />
+              Flujos de Áreas
+            </button>
+          )}
+          {canAccessPortalPage(user, "encuestas") && (
+            <button
+              className={page === "encuestas" ? "active" : ""}
+              onClick={() => {
+                setPage("encuestas");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Vote />
+              Encuestas
+            </button>
+          )}
+          {canAccessPortalPage(user, "aprobaciones") && (
+            <button
+              className={page === "aprobaciones" ? "active" : ""}
+              onClick={() => setPage("aprobaciones")}
+            >
+              <CheckSquare />
+              Aprobaciones
+            </button>
+          )}
+          {canAccessPortalPage(user, "marketing") && canReadMarketing(user) && (
             <button
               className={page === "marketing" ? "active" : ""}
               onClick={() => setPage("marketing")}
@@ -2160,7 +2458,7 @@ function App() {
               <TrendingUp /> Marketing
             </button>
           )}
-          {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+          {canAccessPortalPage(user, "administracion") && (
             <button
               className={page === "administracion" ? "active" : ""}
               onClick={() => setPage("administracion")}
@@ -2168,24 +2466,28 @@ function App() {
               <Settings /> Administración
             </button>
           )}
-          <button
-            className={page === "feedback" ? "active" : ""}
-            onClick={() => setPage("feedback")}
-          >
-            <Sparkles /> Mejora continua
-          </button>
-          <button
-            className={page === "personalizacion" ? "active" : ""}
-            onClick={() => setPage("personalizacion")}
-          >
-            <Palette />
-            Personalización
-          </button>
+          {canAccessPortalPage(user, "feedback") && (
+            <button
+              className={page === "feedback" ? "active" : ""}
+              onClick={() => setPage("feedback")}
+            >
+              <Sparkles /> Mejora continua
+            </button>
+          )}
+          {canAccessPortalPage(user, "personalizacion") && (
+            <button
+              className={page === "personalizacion" ? "active" : ""}
+              onClick={() => setPage("personalizacion")}
+            >
+              <Palette />
+              Personalización
+            </button>
+          )}
         </nav>
         <div className="nav-foot">
           <div className="app-version">
             <span>EJB MANAGER</span>
-            <b>V. 0.3.29</b>
+            <b>V. 0.3.36</b>
           </div>
         </div>
       </aside>
@@ -2500,7 +2802,7 @@ function App() {
             ) : QUICK_CREATE_INITIATIVE_PAGES.includes(page) ? (
               <button className="primary" onClick={() => { setCreateAreaName(user.area.nombre); setModal(true); }}>
                 <Plus />
-                Nueva iniciativa
+                Registrar Proyecto
               </button>
             ) : null}
           </header>
@@ -2810,7 +3112,9 @@ function App() {
                       onSelect={setSelectedItem}
                       user={user}
                       areas={areas}
+                      team={team}
                       onChanged={reloadItems}
+                      onError={reportError}
                     />
                   </section>
                 </section>
@@ -2824,7 +3128,7 @@ function App() {
                   </div>
                   <div className="projects-hero-copy">
                     <small>PORTAFOLIO DE PROYECTOS</small>
-                    <h2>Prioriza y acompaña cada iniciativa</h2>
+                    <h2>Prioriza y acompaña cada proyecto</h2>
                     <p>
                       Consulta responsables, score y avance sin perder de vista
                       las acciones operativas de cada proyecto.
@@ -2901,12 +3205,51 @@ function App() {
                 <div className="module-actions">
                   <label className="worker-project-filter">
                     <Users />
-                    <select value={workerFilter} onChange={(event) => setWorkerFilter(event.target.value)} aria-label="Filtrar proyectos por trabajador">
-                      <option value="Todos">Todos los trabajadores</option>
-                      <option value="Sin asignar">Sin asignar</option>
-                      {team.map((member) => <option key={member.id} value={`${member.nombres} ${member.apellidos}`}>{member.nombres} {member.apellidos}</option>)}
-                    </select>
+                    <FilterCombobox
+                      value={workerFilter}
+                      onChange={setWorkerFilter}
+                      ariaLabel="Filtrar proyectos por trabajador"
+                      placeholder="Buscar trabajador…"
+                      options={[
+                        { value: "Todos", label: "Todos los trabajadores" },
+                        { value: "Sin asignar", label: "Sin asignar" },
+                        ...team
+                          .slice()
+                          .sort((a, b) => `${a.nombres} ${a.apellidos}`.localeCompare(`${b.nombres} ${b.apellidos}`, "es"))
+                          .map((member) => ({ value: member.id, label: `${member.nombres} ${member.apellidos}` })),
+                      ]}
+                    />
                   </label>
+                  <div className="initiative-date-filter">
+                    <label className="date-filter-toggle">
+                      <input
+                        type="checkbox"
+                        checked={dateFilterEnabled}
+                        onChange={(event) => setDateFilterEnabled(event.target.checked)}
+                      />
+                      Filtrar por fecha
+                    </label>
+                    <label>
+                      Desde
+                      <input
+                        type="date"
+                        value={dateFrom}
+                        disabled={!dateFilterEnabled}
+                        onChange={(event) => setDateFrom(event.target.value)}
+                        aria-label="Filtrar proyectos desde esta fecha"
+                      />
+                    </label>
+                    <label>
+                      Hasta
+                      <input
+                        type="date"
+                        value={dateTo}
+                        disabled={!dateFilterEnabled}
+                        onChange={(event) => setDateTo(event.target.value)}
+                        aria-label="Filtrar proyectos hasta esta fecha"
+                      />
+                    </label>
+                  </div>
                   <SectionTools
                     areas={areas}
                     area={area}
@@ -2931,7 +3274,7 @@ function App() {
                   />
                   <button className="primary" onClick={() => setModal(true)}>
                     <Plus />
-                    Registrar iniciativa
+                    Registrar Proyecto
                   </button>
                 </div>
                 <InitiativeList
@@ -2941,7 +3284,9 @@ function App() {
                   onSelect={setSelectedItem}
                   user={user}
                   areas={areas}
+                  team={team}
                   onChanged={reloadItems}
+                  onError={reportError}
                 />
                 </section>
               </div>
@@ -3097,6 +3442,81 @@ function App() {
                           <MessageCircle />
                           Enviar mensaje
                         </button>
+                        {user.isSuperAdmin && (
+                          <div className="team-permisos-wrap">
+                            <button
+                              type="button"
+                              className="team-permisos-trigger"
+                              aria-label={`Permisos de ${m.nombres}`}
+                              aria-haspopup="menu"
+                              aria-expanded={permisosMenuOpen?.id === m.id}
+                              onClick={(event) => {
+                                const rect = event.currentTarget.getBoundingClientRect();
+                                setPermisosMenuOpen((current) =>
+                                  current?.id === m.id
+                                    ? null
+                                    : { id: m.id, top: rect.bottom + 6, right: window.innerWidth - rect.right },
+                                );
+                              }}
+                            >
+                              <MoreVertical />
+                            </button>
+                            {permisosMenuOpen?.id === m.id &&
+                              createPortal(
+                                <div
+                                  className="team-permisos-menu"
+                                  role="menu"
+                                  style={{ top: permisosMenuOpen.top, right: permisosMenuOpen.right }}
+                                >
+                                  <h4>Permisos de {m.nombres}</h4>
+                                  {Object.entries(
+                                    permisosCatalogo.reduce<Record<string, typeof permisosCatalogo>>(
+                                      (groups, permiso) => {
+                                        (groups[permiso.modulo] ??= []).push(permiso);
+                                        return groups;
+                                      },
+                                      {},
+                                    ),
+                                  ).map(([modulo, permisos]) => (
+                                    <div key={modulo} className="team-permisos-group">
+                                      <b>{modulo}</b>
+                                      {permisos.map((permiso) => (
+                                        <label key={permiso.clave}>
+                                          <input
+                                            type="checkbox"
+                                            defaultChecked={Boolean((m.permisos as any)?.[permiso.clave])}
+                                            onChange={(event) =>
+                                              toggleMemberPermiso(m, permiso.clave, event.target.checked)
+                                            }
+                                          />
+                                          {permiso.etiqueta}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  ))}
+                                  <div className="team-permisos-group">
+                                    <b>Páginas visibles del menú</b>
+                                    <p className="team-permisos-hint">
+                                      Todas activadas por defecto. Desactiva solo las que no debe ver.
+                                    </p>
+                                    {paginasCatalogo.map((pagina) => (
+                                      <label key={pagina.clave}>
+                                        <input
+                                          type="checkbox"
+                                          defaultChecked={(m.permisos as any)?.[pagina.clave] !== false}
+                                          onChange={(event) =>
+                                            toggleMemberPermiso(m, pagina.clave, event.target.checked)
+                                          }
+                                        />
+                                        {pagina.etiqueta}
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>,
+                                document.body,
+                              )}
+                          </div>
+                        )}
                         {user.isSuperAdmin && (
                           <select
                             className="team-role"
@@ -3282,14 +3702,14 @@ function App() {
               <button
                 type="button"
                 className="close"
-                onClick={() => setModal(false)}
+                onClick={closeCreateModal}
               >
                 <X />
               </button>
               <div className="modal-icon">
                 <Lightbulb />
               </div>
-              <h2>{page === "kanban-sistemas" ? "Nuevo registro de Sistemas" : "Nueva iniciativa"}</h2>
+              <h2>{page === "kanban-sistemas" ? "Nuevo registro de Sistemas" : "Nuevo proyecto"}</h2>
               <p>{page === "kanban-sistemas" ? "Se agregará al Kanban de Sistemas como Pendiente." : "Se registrará inicialmente como Pendiente."}</p>
               <div className="initiative-create-body">
               <label>
@@ -3300,14 +3720,20 @@ function App() {
                 Descripción
                 <textarea name="descripcion" required minLength={10} />
               </label>
-              <label>
-                Cliente
-                <input
-                  name="cliente"
-                  placeholder="Nombre del cliente"
-                  maxLength={160}
-                />
-              </label>
+              <div className="two-fields">
+                <label>
+                  Cliente
+                  <ClientSelect name="clienteId" />
+                </label>
+                <label>
+                  Software
+                  <input
+                    name="software"
+                    placeholder="Ej. ERP, Power BI"
+                    maxLength={120}
+                  />
+                </label>
+              </div>
               <div className="form-grid">
                 <label>
                   Área
@@ -3366,21 +3792,49 @@ function App() {
                   <input name="fechaFin" type="date" />
                 </label>
               </div>
-              <div className="modal-actions">
-                <label className="initiative-tasks-field">
-                  Tareas por agregar
-                  <textarea
-                    name="tareas"
-                    placeholder={
-                      "Una tarea por línea\nEj. Preparar propuesta\nEj. Validar con Gerencia"
-                    }
+              <div className="initiative-tasks-field">
+                <span>Tareas por agregar</span>
+                <div className="initiative-tasks-add">
+                  <input
+                    value={createTaskDraft}
+                    onChange={(event) => setCreateTaskDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        addCreateTask();
+                      }
+                    }}
+                    placeholder="Ej. Preparar propuesta"
                   />
-                  <small>
-                    Podrás marcarlas y comentarlas desde el detalle del
-                    proyecto.
-                  </small>
-                </label>
-                <button type="button" onClick={() => setModal(false)}>
+                  <button type="button" onClick={addCreateTask}>
+                    Agregar
+                  </button>
+                </div>
+                {createTasks.length > 0 && (
+                  <ul className="initiative-tasks-list">
+                    {createTasks.map((task, index) => (
+                      <li key={`${task}-${index}`}>
+                        <span>{task}</span>
+                        <button
+                          type="button"
+                          aria-label={`Quitar "${task}"`}
+                          onClick={() =>
+                            setCreateTasks((tasks) => tasks.filter((_, i) => i !== index))
+                          }
+                        >
+                          <X />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <small>
+                  Podrás marcarlas y comentarlas desde el detalle del
+                  proyecto.
+                </small>
+              </div>
+              <div className="modal-actions">
+                <button type="button" onClick={closeCreateModal}>
                   Cancelar
                 </button>
                 <button className="primary">
@@ -3625,17 +4079,21 @@ function App() {
           item={appearanceItem}
           onClose={() => setAppearanceItem(null)}
           onSave={async (icono, colorIcono) => {
-            const saved = await saveInitiativeAppearance(appearanceItem.id, {
-              icono,
-              colorIcono,
-            });
-            setItems((rows) =>
-              rows.map((row) =>
-                row.id === appearanceItem.id ? mapItem(saved) : row,
-              ),
-            );
-            setAppearanceItem(null);
-            setToast("Apariencia actualizada");
+            try {
+              const saved = await saveInitiativeAppearance(appearanceItem.id, {
+                icono,
+                colorIcono,
+              });
+              setItems((rows) =>
+                rows.map((row) =>
+                  row.id === appearanceItem.id ? mapItem(saved) : row,
+                ),
+              );
+              setAppearanceItem(null);
+              setToast("Apariencia actualizada");
+            } catch (error) {
+              reportError(error, "No se pudo guardar la apariencia.");
+            }
           }}
         />
       )}
@@ -3708,6 +4166,8 @@ function App() {
             <ProjectTasks
               item={selectedItem}
               team={team}
+              user={user}
+              onError={reportError}
               onUpdate={(updated) => {
                 setSelectedItem(updated);
                 setItems((rows) =>
@@ -3784,6 +4244,7 @@ function App() {
         </div>
       )}
       {toast && <div className="toast">✓ {toast}</div>}
+      {errorToast && <div className="toast toast-error">✕ {errorToast}</div>}
     </div>
   );
 }
@@ -3909,82 +4370,123 @@ function InitiativeTasks({
 function ProjectTasks({
   item,
   team = [],
+  user,
   onUpdate,
+  onError,
 }: {
   item: Item;
   team?: TeamMember[];
+  user: User;
   onUpdate: (item: Item) => void;
+  onError: (error: unknown, fallback: string) => void;
 }) {
-  const [drafts, setDrafts] = useState<Record<string, string>>({}),
-    [addOpen, setAddOpen] = useState(false),
-    [taskError, setTaskError] = useState("");
+  const canManage = canManageInitiative(user, item);
+  const [addOpen, setAddOpen] = useState(false),
+    [taskError, setTaskError] = useState(""),
+    [editTaskItem, setEditTaskItem] = useState<Item["tareas"][number] | null>(null),
+    [editTaskError, setEditTaskError] = useState(""),
+    [editComment, setEditComment] = useState(""),
+    [editSaving, setEditSaving] = useState(false);
   const saveTask = async (
     task: Item["tareas"][number],
     estado = task.estado,
     comentario?: string,
   ) => {
-    const response = await updateInitiativeTask(item.id, task.id, {
-        estado,
-        comentario: comentario?.trim() || undefined,
-        fechaInicio: task.fechaInicio?.slice(0, 10),
-        fechaFin: task.fechaFin?.slice(0, 10),
-      }),
-      { porcentajeAvance, estadoProyecto, ...saved } = response;
-    onUpdate({
-      ...item,
-      avance: porcentajeAvance,
-      estado: mapProjectStatus(estadoProyecto ?? item.estado),
-      tareas: item.tareas.map((row) => (row.id === task.id ? saved : row)),
-    });
-    if (comentario) setDrafts((values) => ({ ...values, [task.id]: "" }));
+    try {
+      const response = await updateInitiativeTask(item.id, task.id, {
+          estado,
+          comentario: comentario?.trim() || undefined,
+          fechaInicio: task.fechaInicio?.slice(0, 10),
+          fechaFin: task.fechaFin?.slice(0, 10),
+        }),
+        { porcentajeAvance, estadoProyecto, ...saved } = response;
+      onUpdate({
+        ...item,
+        avance: porcentajeAvance,
+        estado: mapProjectStatus(estadoProyecto ?? item.estado),
+        tareas: item.tareas.map((row) => (row.id === task.id ? saved : row)),
+      });
+      return saved;
+    } catch (error) {
+      onError(error, "No se pudo guardar la tarea.");
+      return undefined;
+    }
   };
-  const editTask = async (task: Item["tareas"][number]) => {
-    const title = await uiPrompt(
-      "Nombre de la tarea",
-      task.titulo,
-      { message: "Actualiza el nombre que se mostrará en el proyecto y sus reportes." },
-    );
-    if (!title?.trim()) return;
-    const priority = await uiPrompt(
-      "Prioridad de la tarea",
-      task.prioridad || "Normal",
-      { message: "Baja, Normal, Alta o Urgente" },
-    );
-    if (!priority) return;
-    const start = await uiPrompt(
-      "Fecha de inicio",
-      task.fechaInicio?.slice(0, 10) || "",
-      { message: "Formato AAAA-MM-DD; puede quedar vacío." },
-    );
-    if (start === null) return;
-    const end = await uiPrompt(
-      "Fin estimado",
-      task.fechaFin?.slice(0, 10) || "",
-      { message: "Formato AAAA-MM-DD; puede quedar vacío." },
-    );
-    if (end === null) return;
-    const reminder = await uiPrompt(
-      "Recordatorio",
-      task.recordatorioAt?.slice(0, 16) || "",
-      { message: "Formato AAAA-MM-DDTHH:mm; puede quedar vacío." },
-    );
-    if (reminder === null) return;
-    const response = await updateInitiativeTask(item.id, task.id, {
-      titulo: title.trim(),
-      estado: task.estado,
-      prioridad: priority,
-      fechaInicio: start || undefined,
-      fechaFin: end || undefined,
-      recordatorioAt: reminder || null,
-      responsableId: task.responsableId || null,
-    });
-    const { porcentajeAvance, estadoProyecto, ...saved } = response;
-    onUpdate({
-      ...item,
-      avance: porcentajeAvance,
-      estado: mapProjectStatus(estadoProyecto ?? item.estado),
-      tareas: item.tareas.map((row) => (row.id === task.id ? saved : row)),
-    });
+  const openEditTask = (task: Item["tareas"][number]) => {
+    setEditTaskError("");
+    setEditComment("");
+    setEditTaskItem(task);
+  };
+  const saveEditComment = async () => {
+    if (!editTaskItem || !editComment.trim()) return;
+    const saved = await saveTask(editTaskItem, editTaskItem.estado, editComment);
+    if (!saved) return;
+    setEditTaskItem(saved);
+    setEditComment("");
+  };
+  const submitEditTask = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editTaskItem) return;
+    const form = event.currentTarget,
+      data = new FormData(form),
+      titulo = String(data.get("titulo") || "").trim(),
+      fechaInicio = String(data.get("fechaInicio") || ""),
+      fechaFin = String(data.get("fechaFin") || ""),
+      attachment = data.get("adjunto") as File;
+    if (!titulo) {
+      setEditTaskError("El nombre de la tarea es obligatorio.");
+      return;
+    }
+    if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
+      setEditTaskError("La fecha estimada de fin no puede ser anterior al inicio.");
+      return;
+    }
+    if (attachment?.size > 3 * 1024 * 1024) {
+      setEditTaskError("El archivo adjunto no puede superar los 3 MB.");
+      return;
+    }
+    setEditSaving(true);
+    setEditTaskError("");
+    try {
+      const existing = editTaskItem.adjuntos ?? [];
+      const newAttachment = attachment?.size
+        ? [
+            {
+              nombre: attachment.name,
+              mime: attachment.type || "application/octet-stream",
+              data: await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(attachment);
+              }),
+            },
+          ]
+        : [];
+      const response = await updateInitiativeTask(item.id, editTaskItem.id, {
+        titulo,
+        estado: editTaskItem.estado,
+        prioridad: String(data.get("prioridad") || "Normal"),
+        fechaInicio: fechaInicio || undefined,
+        fechaFin: fechaFin || undefined,
+        recordatorioAt: String(data.get("recordatorioAt") || "") || null,
+        responsableId: String(data.get("responsableId") || "") || null,
+        adjuntos: [...existing, ...newAttachment],
+      });
+      const { porcentajeAvance, estadoProyecto, ...saved } = response;
+      onUpdate({
+        ...item,
+        avance: porcentajeAvance,
+        estado: mapProjectStatus(estadoProyecto ?? item.estado),
+        tareas: item.tareas.map((row) => (row.id === editTaskItem.id ? saved : row)),
+      });
+      setEditTaskItem(null);
+    } catch (cause) {
+      setEditTaskError(cause instanceof Error ? cause.message : "No se pudo guardar la tarea.");
+      onError(cause, "No se pudo guardar la tarea.");
+    } finally {
+      setEditSaving(false);
+    }
   };
   const add = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -4002,40 +4504,45 @@ function ProjectTasks({
       setTaskError("El archivo adjunto no puede superar los 3 MB.");
       return;
     }
-    const adjuntos = attachment?.size
-      ? [
-          {
-            nombre: attachment.name,
-            mime: attachment.type || "application/octet-stream",
-            data: await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(String(reader.result));
-              reader.onerror = () => reject(reader.error);
-              reader.readAsDataURL(attachment);
-            }),
-          },
-        ]
-      : undefined;
-    const response = await addInitiativeTask(item.id, {
-        titulo,
-        comentario: String(data.get("comentario") || "").trim() || undefined,
-        fechaInicio: fechaInicio || undefined,
-        fechaFin: fechaFin || undefined,
-        prioridad: String(data.get("prioridad") || "Normal"),
-        responsableId: String(data.get("responsableId") || "") || null,
-        recordatorioAt: String(data.get("recordatorioAt") || "") || null,
-        adjuntos,
-      }),
-      { porcentajeAvance, estadoProyecto, ...saved } = response;
-    onUpdate({
-      ...item,
-      avance: porcentajeAvance,
-      estado: mapProjectStatus(estadoProyecto ?? item.estado),
-      tareas: [...item.tareas, saved],
-    });
-    form.reset();
     setTaskError("");
-    setAddOpen(false);
+    try {
+      const adjuntos = attachment?.size
+        ? [
+            {
+              nombre: attachment.name,
+              mime: attachment.type || "application/octet-stream",
+              data: await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(attachment);
+              }),
+            },
+          ]
+        : undefined;
+      const response = await addInitiativeTask(item.id, {
+          titulo,
+          comentario: String(data.get("comentario") || "").trim() || undefined,
+          fechaInicio: fechaInicio || undefined,
+          fechaFin: fechaFin || undefined,
+          prioridad: String(data.get("prioridad") || "Normal"),
+          responsableId: String(data.get("responsableId") || "") || null,
+          recordatorioAt: String(data.get("recordatorioAt") || "") || null,
+          adjuntos,
+        }),
+        { porcentajeAvance, estadoProyecto, ...saved } = response;
+      onUpdate({
+        ...item,
+        avance: porcentajeAvance,
+        estado: mapProjectStatus(estadoProyecto ?? item.estado),
+        tareas: [...item.tareas, saved],
+      });
+      form.reset();
+      setAddOpen(false);
+    } catch (cause) {
+      setTaskError(cause instanceof Error ? cause.message : "No se pudo agregar la tarea.");
+      onError(cause, "No se pudo agregar la tarea.");
+    }
   };
   const progress = item.tareas.length
     ? Math.round(
@@ -4083,12 +4590,6 @@ function ProjectTasks({
                 <span className={`priority ${task.prioridad?.toLowerCase()}`}>
                   Prioridad {task.prioridad || "Media"}
                 </span>
-                <span>
-                  Responsable:{" "}
-                  {task.responsable
-                    ? `${task.responsable.nombres} ${task.responsable.apellidos}`
-                    : "Sin asignar"}
-                </span>
                 {task.recordatorioAt && (
                   <span>
                     Recordatorio:{" "}
@@ -4096,61 +4597,27 @@ function ProjectTasks({
                   </span>
                 )}
               </div>
-              <div className="task-comment-compose">
-                <textarea
-                  value={drafts[task.id] ?? ""}
-                  onChange={(event) =>
-                    setDrafts((values) => ({
-                      ...values,
-                      [task.id]: event.target.value,
-                    }))
-                  }
-                  placeholder="Escribe un nuevo comentario"
-                  maxLength={600}
-                />
-                <button
-                  type="button"
-                  disabled={!drafts[task.id]?.trim()}
-                  onClick={() => saveTask(task, task.estado, drafts[task.id])}
-                >
-                  Guardar comentario
-                </button>
+              <div className="task-assignee">
+                <span>Asignado</span>
+                <b>
+                  <UserRound />
+                  {task.responsable
+                    ? `${task.responsable.nombres} ${task.responsable.apellidos}`
+                    : "Sin asignar"}
+                </b>
               </div>
-              {Boolean(task.comentarios?.length) && (
-                <section className="task-comment-history">
-                  <h4>Historial de comentarios</h4>
-                  {task.comentarios!.map((comment) => (
-                    <article key={comment.id}>
-                      <div>
-                        {comment.usuario.fotoPerfil ? (
-                          <img src={comment.usuario.fotoPerfil} alt="" />
-                        ) : (
-                          <span>
-                            {initials(
-                              `${comment.usuario.nombres} ${comment.usuario.apellidos}`,
-                            )}
-                          </span>
-                        )}
-                        <p>
-                          <b>
-                            {comment.usuario.nombres}{" "}
-                            {comment.usuario.apellidos}
-                          </b>
-                          <time>
-                            {new Date(comment.createdAt).toLocaleString(
-                              "es-PE",
-                              { dateStyle: "short", timeStyle: "short" },
-                            )}
-                          </time>
-                        </p>
-                      </div>
-                      <blockquote>{comment.contenido}</blockquote>
-                    </article>
-                  ))}
-                </section>
+              {(Boolean(task.comentarios?.length) || Boolean(task.adjuntos?.length)) && (
+                <div className="task-meta-badges">
+                  {Boolean(task.comentarios?.length) && (
+                    <span>{task.comentarios!.length} comentario{task.comentarios!.length === 1 ? "" : "s"}</span>
+                  )}
+                  {Boolean(task.adjuntos?.length) && (
+                    <span>{task.adjuntos!.length} adjunto{task.adjuntos!.length === 1 ? "" : "s"}</span>
+                  )}
+                </div>
               )}
               <div className="task-actions">
-                <button type="button" onClick={() => editTask(task)}>
+                <button type="button" onClick={() => openEditTask(task)}>
                   Editar tarea
                 </button>
                 <select
@@ -4180,106 +4647,270 @@ function ProjectTasks({
           <p className="tasks-empty">Aún no hay tareas para esta iniciativa.</p>
         )}
       </div>
-      <button
-        type="button"
-        className="open-task-modal"
-        onClick={() => setAddOpen(true)}
-      >
-        <Plus />
-        Agregar tarea
-      </button>
-      {addOpen && (
-        <div
-          className="task-modal-backdrop"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setAddOpen(false);
-          }}
+      {canManage ? (
+        <button
+          type="button"
+          className="open-task-modal"
+          onClick={() => setAddOpen(true)}
         >
-          <form className="task-create-modal" onSubmit={add}>
-            <button
-              type="button"
-              className="close"
-              onClick={() => setAddOpen(false)}
-            >
-              <X />
-            </button>
-            <div className="modal-icon">
-              <CheckSquare />
-            </div>
-            <h2>Agregar tarea</h2>
-            <p>
-              Registra la planificación y el primer comentario de seguimiento.
-            </p>
-            <label>
-              Título
-              <input
-                name="titulo"
-                required
-                minLength={2}
-                maxLength={220}
-                placeholder="Ej. Validar propuesta con el cliente"
-              />
-            </label>
-            <div className="two-fields">
+          <Plus />
+          Agregar tarea
+        </button>
+      ) : (
+        <p className="tasks-empty">
+          Solo la jefatura del área, quien creó el proyecto o su responsable pueden agregar tareas.
+        </p>
+      )}
+      {addOpen &&
+        createPortal(
+          <div
+            className="task-modal-backdrop"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setAddOpen(false);
+            }}
+          >
+            <form className="task-create-modal" onSubmit={add}>
+              <header className="task-modal-header">
+                <button
+                  type="button"
+                  className="close"
+                  onClick={() => setAddOpen(false)}
+                >
+                  <X />
+                </button>
+                <div className="modal-icon">
+                  <CheckSquare />
+                </div>
+                <h2>Agregar tarea</h2>
+                <p>
+                  Registra la planificación y el primer comentario de seguimiento.
+                </p>
+              </header>
               <label>
-                Fecha de inicio
-                <input name="fechaInicio" type="date" />
+                Título
+                <input
+                  name="titulo"
+                  required
+                  minLength={2}
+                  maxLength={220}
+                  placeholder="Ej. Validar propuesta con el cliente"
+                />
               </label>
+              <div className="two-fields">
+                <DateField name="fechaInicio" label="Fecha de inicio" />
+                <DateField name="fechaFin" label="Fin estimado" />
+              </div>
+              <div className="two-fields">
+                <label>
+                  Prioridad
+                  <select name="prioridad" defaultValue="Normal">
+                    <option>Baja</option>
+                    <option>Normal</option>
+                    <option>Alta</option>
+                    <option>Urgente</option>
+                  </select>
+                </label>
+                <label>
+                  Responsable
+                  <select name="responsableId" defaultValue="">
+                    <option value="">Sin asignar</option>
+                    {team.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.nombres} {member.apellidos}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="two-fields">
+                <label>
+                  Recordatorio
+                  <input name="recordatorioAt" type="datetime-local" />
+                </label>
+                <label>
+                  Archivo adjunto (máx. 3 MB)
+                  <input name="adjunto" type="file" />
+                </label>
+              </div>
               <label>
-                Fin estimado
-                <input name="fechaFin" type="date" />
+                Comentario inicial
+                <textarea
+                  name="comentario"
+                  maxLength={600}
+                  placeholder="Contexto, alcance o indicaciones para esta tarea"
+                />
               </label>
-            </div>
-            <div className="two-fields">
+              {taskError && <div className="auth-error">{taskError}</div>}
+              <div className="modal-actions">
+                <button type="button" onClick={() => setAddOpen(false)}>
+                  Cancelar
+                </button>
+                <button className="primary">Guardar tarea</button>
+              </div>
+            </form>
+          </div>,
+          document.body,
+        )}
+      {editTaskItem &&
+        createPortal(
+          <div
+            className="task-modal-backdrop"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setEditTaskItem(null);
+            }}
+          >
+            <form className="task-create-modal task-edit-modal" onSubmit={submitEditTask}>
+              <header className="task-modal-header">
+                <button
+                  type="button"
+                  className="close"
+                  onClick={() => setEditTaskItem(null)}
+                >
+                  <X />
+                </button>
+                <div className="modal-icon">
+                  <Edit3 />
+                </div>
+                <h2>Editar tarea</h2>
+                <p>Actualiza todos los parámetros de la tarea desde un solo lugar.</p>
+              </header>
               <label>
-                Prioridad
-                <select name="prioridad" defaultValue="Normal">
-                  <option>Baja</option>
-                  <option>Normal</option>
-                  <option>Alta</option>
-                  <option>Urgente</option>
-                </select>
+                Título
+                <input
+                  name="titulo"
+                  required
+                  minLength={2}
+                  maxLength={220}
+                  defaultValue={editTaskItem.titulo}
+                />
               </label>
-              <label>
-                Responsable
-                <select name="responsableId" defaultValue="">
-                  <option value="">Sin asignar</option>
-                  {team.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.nombres} {member.apellidos}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="two-fields">
+              <div className="task-edit-comments">
+                <span>Comentarios</span>
+                {Boolean(editTaskItem.comentarios?.length) ? (
+                  <div className="task-comment-history">
+                    {editTaskItem.comentarios!.map((comment) => (
+                      <article key={comment.id}>
+                        <div>
+                          {comment.usuario.fotoPerfil ? (
+                            <img src={comment.usuario.fotoPerfil} alt="" />
+                          ) : (
+                            <span>
+                              {initials(
+                                `${comment.usuario.nombres} ${comment.usuario.apellidos}`,
+                              )}
+                            </span>
+                          )}
+                          <p>
+                            <b>
+                              {comment.usuario.nombres} {comment.usuario.apellidos}
+                            </b>
+                            <time>
+                              {new Date(comment.createdAt).toLocaleString("es-PE", {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              })}
+                            </time>
+                          </p>
+                        </div>
+                        <blockquote>{comment.contenido}</blockquote>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="tasks-empty">Sin comentarios todavía.</p>
+                )}
+                <div className="task-comment-compose">
+                  <textarea
+                    value={editComment}
+                    onChange={(event) => setEditComment(event.target.value)}
+                    placeholder="Escribe un nuevo comentario"
+                    maxLength={600}
+                  />
+                  <button
+                    type="button"
+                    disabled={!editComment.trim()}
+                    onClick={saveEditComment}
+                  >
+                    Guardar comentario
+                  </button>
+                </div>
+              </div>
+              <div className="two-fields">
+                <DateField
+                  name="fechaInicio"
+                  label="Fecha de inicio"
+                  defaultValue={editTaskItem.fechaInicio}
+                />
+                <DateField
+                  name="fechaFin"
+                  label="Fin estimado"
+                  defaultValue={editTaskItem.fechaFin}
+                />
+              </div>
+              <div className="two-fields">
+                <label>
+                  Prioridad
+                  <select name="prioridad" defaultValue={editTaskItem.prioridad || "Normal"}>
+                    <option>Baja</option>
+                    <option>Normal</option>
+                    <option>Alta</option>
+                    <option>Urgente</option>
+                  </select>
+                </label>
+                <label>
+                  Responsable
+                  <select name="responsableId" defaultValue={editTaskItem.responsableId ?? ""}>
+                    <option value="">Sin asignar</option>
+                    {team.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.nombres} {member.apellidos}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <label>
                 Recordatorio
-                <input name="recordatorioAt" type="datetime-local" />
+                <input
+                  name="recordatorioAt"
+                  type="datetime-local"
+                  defaultValue={editTaskItem.recordatorioAt?.slice(0, 16) ?? ""}
+                />
               </label>
-              <label>
-                Archivo adjunto (máx. 3 MB)
-                <input name="adjunto" type="file" />
-              </label>
-            </div>
-            <label>
-              Comentario inicial
-              <textarea
-                name="comentario"
-                maxLength={600}
-                placeholder="Contexto, alcance o indicaciones para esta tarea"
-              />
-            </label>
-            {taskError && <div className="auth-error">{taskError}</div>}
-            <div className="modal-actions">
-              <button type="button" onClick={() => setAddOpen(false)}>
-                Cancelar
-              </button>
-              <button className="primary">Guardar tarea</button>
-            </div>
-          </form>
-        </div>
-      )}
+              <div className="task-edit-attachments">
+                <span>Adjuntos</span>
+                {Boolean(editTaskItem.adjuntos?.length) ? (
+                  <ul>
+                    {editTaskItem.adjuntos!.map((file, index) => (
+                      <li key={`${file.nombre}-${index}`}>
+                        <a href={file.data} download={file.nombre}>
+                          <Download />
+                          {file.nombre}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="tasks-empty">Sin adjuntos todavía.</p>
+                )}
+                <label>
+                  Agregar otro adjunto (máx. 3 MB)
+                  <input name="adjunto" type="file" />
+                </label>
+              </div>
+              {editTaskError && <div className="auth-error">{editTaskError}</div>}
+              <div className="modal-actions">
+                <button type="button" onClick={() => setEditTaskItem(null)}>
+                  Cancelar
+                </button>
+                <button className="primary" disabled={editSaving}>
+                  {editSaving ? "Guardando…" : "Guardar cambios"}
+                </button>
+              </div>
+            </form>
+          </div>,
+          document.body,
+        )}
     </section>
   );
 }
@@ -4323,17 +4954,17 @@ function SectionTools({
           <option key={a.id}>{a.nombre}</option>
         ))}
       </select>
-      <select
+      <FilterCombobox
         value={client}
-        onChange={(event) => setClient(event.target.value)}
-        aria-label="Filtrar por cliente"
-      >
-        <option value="Todos">Cliente</option>
-        <option>Sin cliente</option>
-        {clients.map((value) => (
-          <option key={value}>{value}</option>
-        ))}
-      </select>
+        onChange={setClient}
+        ariaLabel="Filtrar por cliente"
+        placeholder="Cliente"
+        options={[
+          { value: "Todos", label: "Cliente" },
+          { value: "Sin cliente", label: "Sin cliente" },
+          ...clients.map((value) => ({ value, label: value })),
+        ]}
+      />
       <span className="filter-menu">
         <button className={open ? "active" : ""} onClick={() => setOpen(!open)}>
           <SlidersHorizontal />
@@ -4425,7 +5056,7 @@ function AppearanceModal({
         <button className="close" onClick={onClose}>
           <X />
         </button>
-        <h2>Personalizar iniciativa</h2>
+        <h2>Personalizar proyecto</h2>
         <p>Elige un emoji o escribe hasta dos iniciales.</p>
         <div
           className="appearance-preview"

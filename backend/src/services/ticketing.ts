@@ -1,5 +1,5 @@
 import type { Actor } from "./permissions.js";
-import { hasPermission, isAreaLeader, isTechnical } from "./permissions.js";
+import { hasPermission, isAreaLeader, isTechnical, canSeePage } from "./permissions.js";
 import { TICKET_AREA_KEYS } from "../constants/ticket.js";
 
 export type TicketActor = Actor & { area: { nombre: string } };
@@ -29,7 +29,8 @@ export const isTicketBoss = (actor: TicketActor) =>
   (belongsToConsulting(actor) && ["Jefe","Gerente"].includes(actor.cargo));
 
 export const canViewTickets = (actor: TicketActor) =>
-  isTicketBoss(actor) || belongsToConsulting(actor) || isLinkedAreaLeader(actor) || hasPermission(actor, "verTicketera");
+  (isTicketBoss(actor) || belongsToConsulting(actor) || isLinkedAreaLeader(actor) || hasPermission(actor, "verTicketera")) &&
+  canSeePage(actor, "verTicketera");
 
 export const canRegisterTickets = (actor: TicketActor) =>
   isTicketBoss(actor) || isLinkedAreaLeader(actor) || hasPermission(actor, "registrarTickets");

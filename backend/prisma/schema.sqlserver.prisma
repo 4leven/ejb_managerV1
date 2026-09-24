@@ -114,6 +114,7 @@ model Cliente {
   updatedAt   DateTime          @updatedAt @map("updated_at")
   tickets     Ticket[]
   contactos   ClienteContacto[]
+  iniciativas Iniciativa[]
 
   @@map("clientes")
 }
@@ -216,7 +217,9 @@ model Iniciativa {
   titulo             String            @db.VarChar(200)
   descripcion        String            @db.NVarChar(Max)
   cliente            String?           @db.VarChar(160)
-  icono              String?           @db.VarChar(12)
+  clienteId          String?           @map("cliente_id") @db.UniqueIdentifier
+  software           String?           @db.VarChar(120)
+  icono              String?           @db.NVarChar(12)
   colorIcono         String?           @map("color_icono") @db.VarChar(7)
   areaId             String            @map("area_id") @db.UniqueIdentifier
   objetivoId         String?           @map("objetivo_id") @db.UniqueIdentifier
@@ -235,6 +238,7 @@ model Iniciativa {
   area               Area              @relation(fields: [areaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   objetivo           ObjetivoNegocio?  @relation(fields: [objetivoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   responsable        Usuario?          @relation("Responsable", fields: [responsableId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  clienteRef         Cliente?          @relation(fields: [clienteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   progresos          Progreso[]
   eventos            Evento[]
   tareas             TareaIniciativa[]
@@ -243,6 +247,7 @@ model Iniciativa {
   @@index([areaId], map: "idx_iniciativas_area")
   @@index([score(sort: Desc)], map: "idx_iniciativas_score")
   @@index([responsableId], map: "idx_iniciativas_responsable")
+  @@index([clienteId], map: "idx_iniciativas_cliente")
   @@map("iniciativas")
 }
 
@@ -330,7 +335,7 @@ model MensajeReaccion {
   id        String   @id @default(uuid()) @db.UniqueIdentifier
   mensajeId String   @map("mensaje_id") @db.UniqueIdentifier
   usuarioId String   @map("usuario_id") @db.UniqueIdentifier
-  emoji     String   @db.VarChar(8)
+  emoji     String   @db.NVarChar(8)
   createdAt DateTime @default(now()) @map("created_at")
   mensaje   Mensaje  @relation(fields: [mensajeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -405,7 +410,7 @@ model Evento {
   descripcion  String?     @db.VarChar(800)
   inicio       DateTime
   fin          DateTime
-  icono        String      @default("ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Â¦") @db.VarChar(12)
+  icono        String      @default("📅") @db.NVarChar(12)
   colorHex     String      @default("#2F6FED") @map("color_hex") @db.VarChar(7)
   prioridad    String      @default("Normal") @db.VarChar(20)
   estado       String      @default("Programado") @db.VarChar(30)

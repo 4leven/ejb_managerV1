@@ -575,6 +575,12 @@ button.brand{border:0!important;font:inherit;cursor:pointer;appearance:none;tran
 
 /* Alta de tareas en una ventana separada. */
 .open-task-modal{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:12px;padding:11px;border:1px dashed #2f6fed88;border-radius:10px;background:#2f6fed12;color:#60a5fa;font-weight:800;cursor:pointer}.open-task-modal svg{width:17px}.task-modal-backdrop{position:fixed;z-index:1300;inset:74px 0 0;display:grid;place-items:center;padding:20px;background:#00152dcc;backdrop-filter:blur(8px)}.task-create-modal{position:relative;width:min(600px,94vw);max-height:calc(100dvh - 118px);overflow-y:auto;padding:27px;border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--text);box-shadow:0 28px 90px #00142e99}.task-create-modal>label{display:grid;gap:7px;margin-top:14px;font-size:10px;font-weight:800}.task-create-modal input,.task-create-modal textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--text)}.task-create-modal textarea{min-height:90px;resize:vertical}.task-create-modal .two-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.task-create-modal .close{position:absolute;top:15px;right:15px}.task-create-modal .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+/* Cabecera sticky: al hacer scroll dentro del modal, título y botón de
+   cerrar se quedan siempre visibles arriba en vez de desaparecer. */
+.task-modal-header{position:sticky;top:-27px;z-index:5;margin:-27px -27px 14px;padding:20px 27px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
+.task-modal-header .modal-icon{margin-top:7px}
+.task-modal-header h2{margin:12px 0 3px}
+.task-modal-header p{margin:0}
 .task-comment-compose{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px}.task-comment-compose button{min-height:38px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--text);font-weight:800}.task-comment-compose button:disabled{opacity:.45;cursor:not-allowed}.task-comment-history{display:grid;gap:7px;padding:10px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--surface-2) 80%,transparent)}.task-comment-history h4{margin:0 0 2px;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.8px}.task-comment-history>article{display:grid!important;gap:6px;padding:9px!important;border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;background:transparent!important}.task-comment-history>article>div{display:flex;align-items:center;gap:8px}.task-comment-history img,.task-comment-history article>div>span{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;object-fit:cover;background:#2f6fed;color:#fff;font-size:9px;font-weight:900}.task-comment-history p{margin:0}.task-comment-history p b,.task-comment-history p time{display:block}.task-comment-history p b{font-size:9px}.task-comment-history p time{margin-top:2px;color:var(--muted);font-size:8px}.task-comment-history blockquote{margin:0;padding:0;color:var(--text);font-size:10px;line-height:1.45}
 @media(max-width:650px){.task-create-modal .two-fields,.task-comment-compose{grid-template-columns:1fr}.task-modal-backdrop{padding:12px}}
 
@@ -667,7 +673,7 @@ body>.initiative-create-overlay{position:fixed!important;z-index:2000!important;
   .modal-actions button,.event-detail-actions button{width:100%!important;justify-content:center!important}
   body>.initiative-create-overlay{inset:64px 0 0!important;height:calc(100dvh - 64px)!important;padding:10px!important}
   body>.initiative-create-overlay>.initiative-create-modal{width:100%!important;max-width:100%!important;padding:22px 15px!important;border-radius:16px!important}
-  .task-modal-backdrop{inset:64px 0 0!important;padding:10px!important}.task-create-modal{width:100%!important;max-height:calc(100dvh - 84px)!important;padding:22px 15px!important}
+  .task-modal-backdrop{inset:64px 0 0!important;padding:10px!important}.task-create-modal{width:100%!important;max-height:calc(100dvh - 84px)!important;padding:22px 15px!important}.task-modal-header{top:-22px!important;margin:-22px -15px 14px!important;padding:16px 15px 12px!important}
 
   .week-calendar,.report-table-wrap,.gantt-bi-scroll,.timeline-layout>.gantt{max-width:100%;overflow-x:auto!important;overscroll-behavior-inline:contain}
   .week-calendar{display:grid!important;grid-template-columns:62px repeat(7,minmax(145px,1fr))!important;min-width:1077px}
@@ -1980,3 +1986,118 @@ body>.initiative-create-overlay>.initiative-create-modal{display:flex!important;
 
 @media(max-width:900px){.week-calendar{position:relative;overflow-x:auto!important}.week-calendar::after{content:"Desliza para ver más";position:sticky;right:8px;bottom:8px;float:right;width:max-content;margin:-28px 8px 8px auto;padding:5px 8px;border-radius:999px;background:color-mix(in srgb,var(--surface) 88%,transparent);color:var(--muted);font-size:10px;font-weight:700;box-shadow:0 2px 8px #0b234722;pointer-events:none}}
 .calendar-toolbar>.primary{display:none!important}
+
+/* === QA: fecha dd/mm/aaaa, selector de cliente, tareas por agregar, ===
+   === modal Editar tarea, márgenes de Editar iniciativa, filtros de Cronograma === */
+.date-field{display:grid;gap:6px}
+.date-field-row{position:relative;display:flex;align-items:center}
+.date-field-row input[type="text"]{width:100%;padding-right:36px}
+.date-field input[aria-invalid="true"]{border-color:#dc2626!important}
+.date-field-error{color:#dc2626;font-size:9px;font-weight:700}
+.date-field-picker-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
+.date-field-picker-btn:hover{color:#2f6fed;background:color-mix(in srgb,#2f6fed 10%,transparent)}
+.date-field-picker-btn svg{width:15px;height:15px}
+.date-field-native{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none;border:0}
+
+/* Menú ⋮ de permisos por usuario en Equipo (solo administrador global) */
+.team-permisos-wrap{position:relative;display:inline-flex}
+.team-permisos-trigger{display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--muted);cursor:pointer}
+.team-permisos-trigger:hover,.team-permisos-trigger[aria-expanded="true"]{border-color:var(--primary);color:var(--primary)}
+.team-permisos-trigger svg{width:16px;height:16px}
+.team-permisos-menu{position:fixed;z-index:120;width:min(320px,90vw);max-height:70vh;overflow-y:auto;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 24px 60px #00142e40}
+.team-permisos-menu h4{margin:0 0 10px;font-size:12px}
+.team-permisos-group{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.team-permisos-group:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.team-permisos-group b{display:block;margin-bottom:6px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.team-permisos-group label{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;color:var(--text);cursor:pointer}
+.team-permisos-hint{margin:0 0 6px;color:var(--muted);font-size:10px}
+
+/* Toast de error: mismo sistema de toasts que ya usa la app, variante roja */
+.toast-error{background:#7f1d1d!important;bottom:70px!important}
+@media(max-width:600px){.toast-error{bottom:112px!important}}
+
+/* Combobox con autocomplete para los filtros de Trabajador/Cliente */
+.filter-combobox{position:relative;min-width:170px}
+.filter-combobox>input{width:100%;height:38px;padding:0 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-size:11px}
+.filter-combobox-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;max-height:240px;overflow-y:auto;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 18px 40px #00142e30}
+.filter-combobox-menu>button{display:block;width:100%;text-align:left;padding:8px 9px;border:0;border-radius:7px;background:transparent;color:var(--text);font-size:11px;cursor:pointer}
+.filter-combobox-menu>button:hover{background:var(--surface-2)}
+.filter-combobox-menu>button.active{background:color-mix(in srgb,var(--primary) 12%,var(--surface-2));color:var(--primary);font-weight:700}
+.filter-combobox-empty{margin:4px 6px;color:var(--muted);font-size:10px}
+.worker-project-filter{display:flex;align-items:center;gap:8px}
+.worker-project-filter svg{width:15px;height:15px;color:var(--muted);flex:none}
+
+.client-select{position:relative}
+.client-select>input{width:100%}
+.client-select-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;display:grid;gap:2px;max-height:220px;overflow-y:auto;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 18px 40px #00142e30}
+.client-select-menu>button{display:block;width:100%;text-align:left;padding:8px 9px;border:0;border-radius:7px;background:transparent;color:var(--text);font-size:11px;cursor:pointer}
+.client-select-menu>button:hover{background:var(--surface-2)}
+.client-select-empty{margin:4px 6px;color:var(--muted);font-size:10px}
+.client-select-new{color:#2f6fed!important;font-weight:700}
+.client-select-create{display:grid;gap:6px;padding:8px 6px 4px;border-top:1px solid var(--line);margin-top:4px}
+.client-select-create input{width:100%;padding:8px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);color:var(--text)}
+.client-select-create small{color:#dc2626;font-size:9px}
+.client-select-create>div{display:flex;gap:6px}
+.client-select-create button{flex:1;min-height:32px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);color:var(--text);font-weight:700}
+
+/* "Tareas por agregar": lista interactiva acotada en vez de textarea estático */
+.initiative-tasks-field{flex:1 0 100%;text-align:left;display:grid;gap:6px}
+.initiative-tasks-field>span{font-size:10px;font-weight:800}
+.initiative-tasks-add{display:flex;gap:7px}
+.initiative-tasks-add input{flex:1;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--text)}
+.initiative-tasks-add button{border:0;border-radius:8px;padding:8px 12px;background:#2f6fed;color:#fff;font-weight:800}
+.initiative-tasks-list{display:grid;gap:5px;max-height:150px;overflow-y:auto;margin:0;padding:2px;list-style:none}
+.initiative-tasks-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:11px}
+.initiative-tasks-list li button{border:0;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.initiative-tasks-list li button:hover{color:#dc2626}
+.initiative-tasks-list li button svg{width:13px;height:13px}
+
+/* Modal "Editar tarea": adjuntos ya subidos y comentarios con alto acotado, */
+/* para que no empujen el resto del modal como pasaba en la tarjeta de tarea. */
+.task-edit-modal{display:grid;gap:14px}
+.task-edit-attachments,.task-edit-comments{display:grid;gap:8px}
+.task-edit-attachments>span,.task-edit-comments>span{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.task-edit-attachments ul{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:140px;overflow-y:auto}
+.task-edit-attachments li a{display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:11px;text-decoration:none;word-break:break-all}
+.task-edit-attachments li a svg{width:14px;height:14px;flex:none;color:#2f6fed}
+.task-edit-attachments label{font-size:10px;font-weight:700;color:var(--muted);display:grid;gap:6px}
+.task-edit-comments .task-comment-history{max-height:220px;overflow-y:auto}
+
+/* Modal "Editar iniciativa": el espaciado genérico de .event-modal quedaba */
+/* apretado con los campos de esta ficha (más densa: cliente, software, icono). */
+.initiative-edit-modal{display:grid;gap:16px;padding:28px}
+.initiative-edit-modal h2{margin:0}
+.initiative-edit-modal>p{margin:-6px 0 0;color:var(--muted);font-size:11px}
+.initiative-edit-modal label{display:grid;gap:6px;font-size:10px;font-weight:800}
+.initiative-edit-modal .two-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.initiative-edit-modal .initiative-icon-editor{margin-top:2px}
+@media(max-width:600px){.initiative-edit-modal .two-fields{grid-template-columns:1fr}}
+
+/* Filtros del Cronograma: fecha desde/hasta y cliente */
+.schedule-filters{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:16px 0}
+.schedule-filters label{display:grid;gap:5px;font-size:10px;font-weight:800;color:var(--muted)}
+.schedule-filters input,.schedule-filters select{min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text)}
+.schedule-filters-clear{min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--muted);font-weight:700;cursor:pointer}
+@media(max-width:650px){.schedule-filters{flex-direction:column;align-items:stretch}}
+
+.task-meta-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.task-meta-badges span{padding:3px 9px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:9px;font-weight:700}
+
+/* "Asignado" como su propia fila con encabezado, en vez de una etiqueta
+   suelta mezclada entre prioridad/recordatorio. */
+.task-assignee{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.task-assignee>span{font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.task-assignee>b{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text)}
+.task-assignee>b svg{width:13px;height:13px;color:var(--muted)}
+
+/* Encargado junto al nombre del proyecto, en el listado de Iniciativas */
+.initiative-owner{display:inline-flex;align-items:center;gap:4px;margin-left:9px;padding:2px 9px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:10px;font-weight:700;vertical-align:middle}
+.initiative-owner svg{width:11px;height:11px;flex:none}
+
+/* Filtro de fechas en el listado de Iniciativas */
+.initiative-date-filter{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+.initiative-date-filter label{display:grid;gap:5px;font-size:10px;font-weight:800;color:var(--muted)}
+.initiative-date-filter input{min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text)}
+.initiative-date-filter input:disabled{opacity:.5;cursor:not-allowed}
+.date-filter-toggle{display:flex!important;flex-direction:row!important;align-items:center;gap:7px;padding-bottom:9px;cursor:pointer}
+.date-filter-toggle input{min-height:0!important;width:15px;height:15px;cursor:pointer}

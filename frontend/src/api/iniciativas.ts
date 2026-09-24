@@ -83,7 +83,8 @@ export async function fetchCatalogo() {
 export async function createIniciativa(data: {
   titulo: string;
   descripcion: string;
-  cliente?: string;
+  clienteId?: string;
+  software?: string;
   areaId: string;
   responsableId?: string;
   impacto: number;
@@ -223,8 +224,14 @@ export const updateInitiative = (
   data: {
     titulo: string;
     descripcion: string;
-    cliente?: string;
+    clienteId?: string | null;
+    software?: string | null;
     areaId: string;
+    responsableId?: string | null;
+    impacto?: number;
+    esfuerzo?: string;
+    fechaInicio?: string | null;
+    fechaFin?: string | null;
   },
 ) =>
   jsonRequest(`/iniciativas/${id}`, {
@@ -233,6 +240,14 @@ export const updateInitiative = (
   });
 export const deleteInitiative = (id: string) =>
   jsonRequest(`/iniciativas/${id}`, { method: "DELETE" });
+export const fetchClientes = (q = "") =>
+  jsonRequest(`/clientes?q=${encodeURIComponent(q)}`);
+export const createCliente = (data: {
+  razonSocial: string;
+  ruc?: string;
+  telefono?: string;
+  contacto?: string;
+}) => jsonRequest("/clientes", { method: "POST", body: JSON.stringify(data) });
 let conversationsRequest: { auth: string; promise: Promise<any> } | undefined;
 export const fetchConversations = () => {
   const auth = authHeaders().Authorization;

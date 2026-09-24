@@ -26,13 +26,13 @@ async function buildAlerts(userId: string) {
       if (initiative.porcentajeAvance >= 100) {
         if (latest && latest.createdAt >= completedSince) {
           const author = `${latest.usuario.nombres} ${latest.usuario.apellidos}`.trim();
-          result.push({ type: "completado", severity: "success", initiativeId: initiative.id, code: initiative.codigo, title: `${initiative.codigo} fue completada`, message: `Completada por ${author} · ${latest.createdAt.toLocaleString("es-PE")}`, alertDate: latest.createdAt.toISOString() });
+          result.push({ type: "completado", severity: "success", initiativeId: initiative.id, code: initiative.codigo, title: `${initiative.codigo} · ${initiative.titulo} fue completada`, message: `Completada por ${author} · ${latest.createdAt.toLocaleString("es-PE")}`, alertDate: latest.createdAt.toISOString() });
         }
         return result;
       }
-      if (initiative.fechaFin && initiative.fechaFin < today) result.push({ type: "retraso", severity: "high", initiativeId: initiative.id, code: initiative.codigo, title: `${initiative.codigo} está retrasada`, message: `Fecha límite: ${initiative.fechaFin.toLocaleDateString("es-PE")}`, alertDate: initiative.fechaFin.toISOString() });
+      if (initiative.fechaFin && initiative.fechaFin < today) result.push({ type: "retraso", severity: "high", initiativeId: initiative.id, code: initiative.codigo, title: `${initiative.codigo} · ${initiative.titulo} está retrasada`, message: `Fecha límite: ${initiative.fechaFin.toLocaleDateString("es-PE")}`, alertDate: initiative.fechaFin.toISOString() });
       const lastProgress = latest?.createdAt;
-      if (initiative.estado === "En_desarrollo" && (!lastProgress || lastProgress < today)) result.push({ type: "sin_avance", severity: "medium", initiativeId: initiative.id, code: initiative.codigo, title: `${initiative.codigo} sin avance diario`, message: "No se registró progreso hoy", alertDate: today.toISOString() });
+      if (initiative.estado === "En_desarrollo" && (!lastProgress || lastProgress < today)) result.push({ type: "sin_avance", severity: "medium", initiativeId: initiative.id, code: initiative.codigo, title: `${initiative.codigo} · ${initiative.titulo} sin avance diario`, message: "No se registró progreso hoy", alertDate: today.toISOString() });
       return result;
     });
     const [tasks,events,groups]=await Promise.all([
@@ -40,7 +40,7 @@ async function buildAlerts(userId: string) {
       prisma.evento.findMany({where:{inicio:{gte:now,lte:new Date(now.getTime()+24*3600000)},OR:[{asignadoId:actor.id},{areaId:actor.areaId}]},orderBy:{inicio:"asc"},take:20}),
       prisma.registroPortal.findMany({where:{tipo:"grupo"},select:{id:true,datos:true}})
     ]);
-    const taskAlerts=tasks.map(task=>({type:"tarea",severity:task.fechaFin&&task.fechaFin<today?"high":"medium",initiativeId:task.iniciativa.id,code:task.iniciativa.codigo,title:`Tarea pendiente: ${task.titulo}`,message:`${task.iniciativa.codigo} · vence ${task.fechaFin?.toLocaleDateString("es-PE")??"pronto"}`,alertDate:task.fechaFin?.toISOString()??now.toISOString()}));
+    const taskAlerts=tasks.map(task=>({type:"tarea",severity:task.fechaFin&&task.fechaFin<today?"high":"medium",initiativeId:task.iniciativa.id,code:task.iniciativa.codigo,title:`Tarea pendiente: ${task.titulo}`,message:`${task.iniciativa.codigo} · ${task.iniciativa.titulo} · vence ${task.fechaFin?.toLocaleDateString("es-PE")??"pronto"}`,alertDate:task.fechaFin?.toISOString()??now.toISOString()}));
     const eventAlerts=events.map(event=>({type:"reunion",severity:"medium",initiativeId:event.iniciativaId,title:`Próxima reunión: ${event.titulo}`,message:event.inicio.toLocaleString("es-PE"),alertDate:event.inicio.toISOString()}));
     const invitationAlerts=groups.flatMap(group=>{const data=group.datos as any;return (Array.isArray(data.invitaciones)?data.invitaciones:[]).filter((item:any)=>item.usuarioId===userId&&item.estado==="Pendiente").map((item:any)=>({type:"invitacion_grupo",severity:"medium",initiativeId:group.id,title:`Invitación a ${data.nombre}`,message:"Puedes aceptarla o rechazarla desde Mensajes",alertDate:item.fecha??item.createdAt??now.toISOString()}))});
     const derived=[...invitationAlerts,...eventAlerts,...taskAlerts,...initiativeAlerts];
