@@ -359,7 +359,42 @@ export const rejectTicket=(id:string,motivo:string)=>jsonRequest(`/tickets/${id}
 export const reopenTicket=(id:string,motivo:string)=>jsonRequest(`/tickets/${id}/reabrir`,{method:"POST",body:JSON.stringify({motivo})});
 export const reassignTicket=(id:string,asignadoAId:string)=>jsonRequest(`/tickets/${id}/reasignar`,{method:"POST",body:JSON.stringify({asignadoAId})});
 export const linkTicketConsultant=(id:string,asignadoAId:string)=>jsonRequest(`/tickets/${id}/vincular-consultor`,{method:"POST",body:JSON.stringify({asignadoAId})});
-export async function subscribeTickets(onChange:()=>void,signal:AbortSignal){const response=await fetch(`${API_URL}/tickets/stream`,{headers:{Accept:"text/event-stream",...authHeaders()},signal});if(!response.ok||!response.body)throw new Error("No se pudo conectar a la Ticketera");const reader=response.body.getReader(),decoder=new TextDecoder();let buffer="";while(!signal.aborted){const {done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const blocks=buffer.split("\n\n");buffer=blocks.pop()??"";for(const block of blocks)if(block.includes("event: tickets"))onChange()}}
+export type UrgentTicket={id:string;numeroTicket:string;razonSocial:string;modulo:string;registradoAt:string};
+// Mantiene abierto el canal de eventos de la Ticketera y lo reabre solo si se
+// cae (backend reiniciado, red): antes un corte dejaba la pantalla sin
+// actualizaciones ni alertas hasta recargar. "tickets" = recargar la lista;
+// "urgentes" = lista completa de URGENTE sin atender visibles para el usuario.
+export async function subscribeTickets(onChange:()=>void,signal:AbortSignal,onUrgent?:(rows:UrgentTicket[])=>void){
+  let attempt=0;
+  while(!signal.aborted){
+    try{
+      const response=await fetch(`${API_URL}/tickets/stream`,{headers:{Accept:"text/event-stream",...authHeaders()},signal});
+      // Sin permiso o sesión vencida no tiene sentido reintentar.
+      if(response.status===401||response.status===403)return;
+      if(!response.ok||!response.body)throw new Error("No se pudo conectar a la Ticketera");
+      attempt=0;
+      const reader=response.body.getReader(),decoder=new TextDecoder();let buffer="";
+      while(!signal.aborted){
+        const {done,value}=await reader.read();
+        if(done)break;
+        buffer+=decoder.decode(value,{stream:true});
+        const blocks=buffer.split("\n\n");buffer=blocks.pop()??"";
+        for(const block of blocks){
+          if(block.includes("event: tickets"))onChange();
+          else if(block.includes("event: urgentes")){
+            const line=block.split("\n").find(item=>item.startsWith("data:"));
+            if(line&&onUrgent){try{onUrgent(JSON.parse(line.slice(5).trim()))}catch{/* dato inválido: se ignora */}}
+          }
+        }
+      }
+    }catch{
+      if(signal.aborted)return;
+    }
+    if(signal.aborted)return;
+    attempt+=1;
+    await new Promise(resolve=>setTimeout(resolve,Math.min(1500*attempt,15000)));
+  }
+}
 export const fetchEvents = () => jsonRequest("/eventos");
 export const createEvent = (data: Record<string, unknown>) =>
   jsonRequest("/eventos", { method: "POST", body: JSON.stringify(data) });

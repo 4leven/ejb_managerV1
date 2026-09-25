@@ -57,6 +57,9 @@ const createSchema = z.object({
   canal: z.nativeEnum(CanalTicket),
 });
 
+// De mayor a menor severidad. TICKET_PRIORITIES (catálogo) va en orden inverso.
+const PRIORITY_SEVERITY_ORDER = ["URGENTE", "ALTA", "NORMAL", "BAJA"] as const;
+
 const fail = (status: number, message: string) =>
   Object.assign(new Error(message), { status });
 const ticketNumber = (correlative: number) =>
@@ -127,18 +130,46 @@ export async function list(req: Request, res: Response, next: NextFunction) {
       sort === "fecha_desc" ? [{ registradoAt: "desc" }]
       : sort === "fecha_asc" ? [{ registradoAt: "asc" }]
       : sort === "estado" ? [{ estado: "asc" }, { registradoAt: "asc" }]
-      : sort === "prioridad" ? [{ prioridad: "desc" }, { registradoAt: "asc" }]
+      : sort === "prioridad" ? [{ registradoAt: "asc" }] // dentro de cada nivel; el nivel se ordena abajo
       : sort === "asesor" ? [{ asignadoA: { nombres: "asc" } }, { registradoAt: "desc" }]
       : sort === "tiempo" ? [{ registradoAt: "asc" }]
       : [{ estado: "asc" }, { reabiertoAt: { sort: "desc", nulls: "last" } }, { registradoAt: "asc" }];
+    // "prioridad" se guarda como texto: ordenarlo alfabético daba URGENTE, NORMAL,
+    // BAJA, ALTA. La severidad real (URGENTE > ALTA > NORMAL > BAJA) se resuelve
+    // paginando nivel por nivel, así el orden también es correcto entre páginas.
+    const bySeverity = async () => {
+      const levels = PRIORITY_SEVERITY_ORDER;
+      const counts = await Promise.all(levels.map((level) => prisma.ticket.count({ where: { AND: [where, { prioridad: level }] } })));
+      let skip = (page - 1) * limit;
+      let remaining = limit;
+      const fetchLevel = (level: (typeof levels)[number], levelSkip: number, take: number) =>
+        prisma.ticket.findMany({
+          where: { AND: [where, { prioridad: level }] },
+          include: listInclude,
+          orderBy,
+          skip: levelSkip,
+          take,
+        });
+      const pageRows: Awaited<ReturnType<typeof fetchLevel>> = [];
+      for (let index = 0; index < levels.length && remaining > 0; index += 1) {
+        if (skip >= counts[index]) { skip -= counts[index]; continue; }
+        const take = Math.min(remaining, counts[index] - skip);
+        pageRows.push(...await fetchLevel(levels[index], skip, take));
+        remaining -= take;
+        skip = 0;
+      }
+      return pageRows;
+    };
     const [rows, total] = await Promise.all([
-      prisma.ticket.findMany({
-        where,
-        include: listInclude,
-        orderBy,
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
+      sort === "prioridad"
+        ? bySeverity()
+        : prisma.ticket.findMany({
+            where,
+            include: listInclude,
+            orderBy,
+            skip: (page - 1) * limit,
+            take: limit,
+          }),
       prisma.ticket.count({ where }),
     ]);
     res.json({ rows: rows.map(present), total, page, limit });
@@ -665,8 +696,37 @@ export async function stream(req: Request, res: Response, next: NextFunction) {
         res.write(`: ${Date.now()}\n\n`);
       }
     };
-    await send();
-    const timer = setInterval(() => void send().catch(() => undefined), 2500);
+    // Evento aparte con los tickets URGENTE aún sin atender (PENDIENTE y sin
+    // asignar) que ESTE usuario puede ver: usa el mismo `scope` de permisos y
+    // área del stream. Solo se envía cuando esa lista cambia; el primer envío
+    // (aunque sea vacío) sirve de línea base para que el cliente no suene al abrir.
+    let urgentSignature = "";
+    const sendUrgent = async () => {
+      if (closed) return;
+      const rows = await prisma.ticket.findMany({
+        where: { AND: [scope, { estado: "PENDIENTE", prioridad: "URGENTE", asignadoAId: null }] },
+        select: { id: true, correlativo: true, razonSocial: true, modulo: true, registradoAt: true },
+        orderBy: { registradoAt: "asc" },
+        take: 50,
+      });
+      const payload = JSON.stringify(rows.map((row) => ({
+        id: row.id,
+        numeroTicket: ticketNumber(row.correlativo),
+        razonSocial: row.razonSocial,
+        modulo: row.modulo,
+        registradoAt: row.registradoAt,
+      })));
+      if (payload !== urgentSignature) {
+        urgentSignature = payload;
+        res.write(`event: urgentes\ndata: ${payload}\n\n`);
+      }
+    };
+    const tick = async () => {
+      await send();
+      await sendUrgent();
+    };
+    await tick();
+    const timer = setInterval(() => void tick().catch(() => undefined), 2500);
     req.on("close", () => {
       closed = true;
       clearInterval(timer);

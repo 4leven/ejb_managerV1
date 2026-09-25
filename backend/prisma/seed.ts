@@ -9,7 +9,8 @@ const areas = [
   ['Sistemas', '#2563EB'],
   ['Gerencia', '#0B2347'],
   ['Administración', '#B7791F'],
-  ['Innovación y Producto', '#D97706']
+  ['Innovación y Producto', '#D97706'],
+  ['Proyectos', '#8B5CF6']
 ] as const;
 
 async function main(){

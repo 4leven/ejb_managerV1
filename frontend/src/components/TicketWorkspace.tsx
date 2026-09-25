@@ -46,8 +46,10 @@ import {
   saveTicketAdvance,
   subscribeTickets,
   takeTicket,
+  type UrgentTicket,
 } from "../api/iniciativas";
 import { isTechnicalUser } from "../utils/access";
+import { playChatTone } from "../utils/chat-tools";
 import { uiConfirm, uiPrompt } from "../utils/dialog";
 
 type TicketStatus = "PENDIENTE" | "EN_CURSO" | "FINALIZADO" | "RECHAZADO";
@@ -117,6 +119,29 @@ const statusLabel = (status: TicketStatus) =>
   ({ PENDIENTE: "Pendiente", EN_CURSO: "En curso", FINALIZADO: "Finalizado", RECHAZADO: "Rechazado" })[status];
 const label = (value: string) =>
   value.charAt(0) + value.slice(1).toLowerCase().replaceAll("_", " ");
+// Orden real de severidad (de mayor a menor) para el filtro; el catálogo del
+// backend viene en orden inverso (BAJA…URGENTE) y se usa tal cual al registrar.
+const PRIORITY_LEVELS: TicketPriority[] = ["URGENTE", "ALTA", "NORMAL", "BAJA"];
+// Timer = tiempo transcurrido desde que entró el ticket (sin plazos ni SLA).
+// Abiertos: cuenta en vivo; finalizados: duración total; rechazados: sin timer.
+const ticketAge = (ticket: { estado: TicketStatus; registradoAt: string; finalizadoAt?: string | null }) =>
+  ticket.estado === "PENDIENTE" || ticket.estado === "EN_CURSO"
+    ? { running: true, text: elapsed(ticket.registradoAt) }
+    : ticket.estado === "FINALIZADO" && ticket.finalizadoAt
+      ? { running: false, text: elapsed(ticket.registradoAt, ticket.finalizadoAt) }
+      : null;
+// Insignia de prioridad. El color sale de .ticket-priority.alta/.urgente; NORMAL
+// y BAJA usan el estilo neutro base. En URGENTE se suma un icono para no
+// depender solo del color.
+const PriorityBadge = ({ priority }: { priority?: TicketPriority | null }) => {
+  const level = priority ?? "NORMAL";
+  return (
+    <span className={`ticket-priority ${level.toLowerCase()}`} title={`Prioridad ${label(level).toLowerCase()}`}>
+      {level === "URGENTE" && <AlertTriangle aria-hidden="true" />}
+      {label(level)}
+    </span>
+  );
+};
 const dateTime = (value?: string | null) => {
   if (!value) return { date: "—", time: "—" };
   const date = new Date(value);
@@ -161,6 +186,15 @@ export default function TicketWorkspace({ user }: { user: any }) {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [sort, setSort] = useState("operativo");
+  // Alerta de URGENTE: lista viva enviada por el servidor (solo lo que este
+  // usuario puede ver). `knownUrgent` = ids ya conocidos; null hasta la primera
+  // lista (línea base: al abrir la pantalla se muestran sin sonar).
+  const [urgentPending, setUrgentPending] = useState<UrgentTicket[]>([]);
+  const [soundBlocked, setSoundBlocked] = useState(false);
+  const [, setClockTick] = useState(0);
+  const knownUrgent = useRef<Set<string> | null>(null);
+  const audioContext = useRef<AudioContext | null>(null);
+  const secondToneTimer = useRef<number | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(true);
@@ -256,11 +290,61 @@ export default function TicketWorkspace({ user }: { user: any }) {
     const timer = window.setTimeout(() => void load(), 180);
     return () => window.clearTimeout(timer);
   }, [load]);
+  // Doble pitido con el tono "Digital" del chat. Si el navegador aún no permite
+  // audio (ningún clic en la página) no se cuelga esperando: avisa con una
+  // pista visible y el aviso en pantalla sale igual.
+  const playUrgentSound = useCallback(async () => {
+    try {
+      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioClass) return;
+      const context: AudioContext = (audioContext.current ??= new AudioClass());
+      if (context.state !== "running")
+        await Promise.race([context.resume().catch(() => undefined), new Promise((resolve) => setTimeout(resolve, 300))]);
+      if (context.state !== "running") {
+        setSoundBlocked(true);
+        return;
+      }
+      setSoundBlocked(false);
+      await playChatTone("Digital", context);
+      secondToneTimer.current = window.setTimeout(() => void playChatTone("Digital", context).catch(() => undefined), 650);
+    } catch {
+      setSoundBlocked(true);
+    }
+  }, []);
+  const handleUrgent = useCallback((list: UrgentTicket[]) => {
+    const known = knownUrgent.current;
+    const arrivals = known ? list.filter((item) => !known.has(item.id)) : [];
+    knownUrgent.current = new Set(list.map((item) => item.id));
+    setUrgentPending(list);
+    if (arrivals.length) void playUrgentSound();
+  }, [playUrgentSound]);
   useEffect(() => {
     const controller = new AbortController();
-    void subscribeTickets(() => void load(), controller.signal).catch(() => undefined);
+    void subscribeTickets(() => void load(), controller.signal, handleUrgent).catch(() => undefined);
     return () => controller.abort();
-  }, [load]);
+  }, [load, handleUrgent]);
+  // Los navegadores solo habilitan audio tras un gesto del usuario: el primer
+  // clic prepara el contexto y quita la pista de "sonido bloqueado".
+  useEffect(() => {
+    const unlock = () => {
+      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioClass) return;
+      const context: AudioContext = (audioContext.current ??= new AudioClass());
+      void context.resume().then(() => setSoundBlocked(false)).catch(() => undefined);
+    };
+    window.addEventListener("pointerdown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.clearTimeout(secondToneTimer.current);
+      void audioContext.current?.close().catch(() => undefined);
+      audioContext.current = null;
+    };
+  }, []);
+  // Timer: el tiempo transcurrido se recalcula cada 30 s (solo repinta).
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockTick((value) => value + 1), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
   useEffect(() => {
     const openRegister = () => {
       if (canRegister) {setSelected(undefined);setError("");setRegisterOpen(true);}
@@ -371,6 +455,24 @@ export default function TicketWorkspace({ user }: { user: any }) {
     } finally {
       claimInFlight.current = false;
       setSaving(false);
+    }
+  };
+  // Acciones del aviso de urgentes: el ticket puede no estar en la página actual
+  // de la lista (filtros, paginación), así que si hace falta se pide el detalle.
+  const openUrgent = async (item: UrgentTicket) => {
+    const found = rows.find((row) => row.id === item.id);
+    if (found) return openTicket(found);
+    try {
+      selectTicket(await fetchTicketDetail(item.id));
+    } catch (cause: any) {
+      setError(cause.message ?? "No se pudo cargar el ticket.");
+    }
+  };
+  const claimUrgent = async (item: UrgentTicket) => {
+    try {
+      await claimTicket(rows.find((row) => row.id === item.id) ?? await fetchTicketDetail(item.id));
+    } catch (cause: any) {
+      setError(cause.message ?? "No se pudo tomar el caso.");
     }
   };
   const rejectCase = async (ticket: Ticket) => {
@@ -634,6 +736,8 @@ export default function TicketWorkspace({ user }: { user: any }) {
                     <div><dt>Usuario</dt><dd>{selected.contacto || "—"}</dd></div>
                     <div className="ticket-info-query"><dt>Consulta del usuario</dt><dd>{selected.consulta || "—"}</dd></div>
                     <div><dt>Estado</dt><dd>{statusLabel(selected.estado)}</dd></div>
+                    <div><dt>Prioridad</dt><dd><PriorityBadge priority={selected.prioridad} /></dd></div>
+                    {(() => { const age = ticketAge(selected); return age && <div><dt>{age.running ? "Tiempo transcurrido" : "Duración total"}</dt><dd>{age.text}</dd></div>; })()}
                     <div><dt>Atendido por</dt><dd>{selected.asignadoA ? fullName(selected.asignadoA) : (selected.atendidoPorNombre || "—")}</dd></div>
                     <div><dt>Fecha contacto</dt><dd>{selectedContacted.date}</dd></div>
                     <div><dt>Hora contacto</dt><dd>{selectedContacted.time}</dd></div>
@@ -682,6 +786,27 @@ export default function TicketWorkspace({ user }: { user: any }) {
   return <div className="ticket-workspace">
     {success&&<div className="ticket-feedback" role="status"><CheckCircle2/>{success}<button type="button" onClick={()=>setSuccess("")} aria-label="Cerrar confirmación"><X/></button></div>}
     {error && <div className="ticket-feedback" role="status"><AlertTriangle />{error}<button onClick={() => setError("")} aria-label="Cerrar aviso"><X /></button></div>}
+    {urgentPending.length > 0 && <section className="ticket-urgent-banner" aria-label="Tickets urgentes sin atender">
+      <div className="ticket-urgent-head">
+        <AlertTriangle aria-hidden="true" />
+        <b aria-live="assertive">{urgentPending.length === 1 ? "1 ticket URGENTE sin atender" : `${urgentPending.length} tickets URGENTES sin atender`}</b>
+        {soundBlocked && <small className="ticket-urgent-sound-hint">🔇 Haz clic en cualquier parte de la página para activar el sonido de las alertas</small>}
+      </div>
+      <ul>
+        {urgentPending.map((item) => <li key={item.id}>
+          <div>
+            <b>{item.numeroTicket}</b>
+            <span title={item.razonSocial}>{item.razonSocial}</span>
+            <small>{item.modulo}</small>
+          </div>
+          <span className="ticket-elapsed running" title="Tiempo desde que entró"><Clock3 aria-hidden="true" />{elapsed(item.registradoAt)}</span>
+          <div className="ticket-urgent-actions">
+            <button type="button" onClick={() => void openUrgent(item)}>Ver ticket</button>
+            {canTakeCases && <button type="button" className="primary" disabled={saving} onClick={() => void claimUrgent(item)}>Tomar caso</button>}
+          </div>
+        </li>)}
+      </ul>
+    </section>}
     <section className="ticket-kpis" aria-label="Indicadores de atención">
       <article><span className="pending"><Clock3 /></span><div><b>{summary.pending ?? 0}</b><small>Pendientes</small></div></article>
       <article><span className="progress"><Inbox /></span><div><b>{summary.progress ?? 0}</b><small>En curso</small></div></article>
@@ -697,6 +822,7 @@ export default function TicketWorkspace({ user }: { user: any }) {
           <select aria-label="Cliente" value={clientFilter} onChange={(event) => { setClientFilter(event.target.value); setPage(1); }}><option value="">Cliente: Todos</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.razonSocial}</option>)}</select>
           <select aria-label="Módulo" value={moduleFilter} onChange={(event) => { setModuleFilter(event.target.value); setPage(1); }}><option value="">Módulo: Todos</option>{catalogs.modules.map((module) => <option key={module}>{module}</option>)}</select>
           <select aria-label="Estado" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setQuickTab("all"); setPage(1); }}><option value="">Estado: Todos</option><option value="PENDIENTE">Pendiente</option><option value="EN_CURSO">En curso</option><option value="FINALIZADO">Finalizado</option><option value="RECHAZADO">Rechazado</option></select>
+          <select aria-label="Prioridad" value={priorityFilter} onChange={(event) => { setPriorityFilter(event.target.value); setPage(1); }}><option value="">Prioridad: Todas</option>{PRIORITY_LEVELS.map((level) => <option key={level} value={level}>{label(level)}</option>)}</select>
           <select aria-label="Asignado a" value={assigneeFilter} onChange={(event) => { setAssigneeFilter(event.target.value); setPage(1); }}><option value="">Asignado a: Todos</option><option value="__mine__">Asignado a: Mis casos</option>{consultants.map((person) => <option key={person.id} value={person.id}>{fullName(person)}</option>)}</select>
           <button className="ticket-clear" onClick={clearFilters}>Limpiar</button>
           <div className="ticket-date-range" role="group" aria-label="Filtrar por fecha de registro">
@@ -722,9 +848,9 @@ export default function TicketWorkspace({ user }: { user: any }) {
             <tbody>
             {rows.map((ticket) => {
               const registered = dateTime(ticket.registradoAt);
-              return <tr key={ticket.id} onClick={() => void openTicket(ticket)}>
-                <td><b className="ticket-number">{ticket.numeroTicket}</b></td>
-                <td><b>{registered.date}</b><small>{registered.time}</small></td>
+              return <tr key={ticket.id} className={ticket.prioridad === "URGENTE" && (ticket.estado === "PENDIENTE" || ticket.estado === "EN_CURSO") ? "ticket-row-urgent" : undefined} onClick={() => void openTicket(ticket)}>
+                <td><div className="ticket-number-cell"><b className="ticket-number">{ticket.numeroTicket}</b><PriorityBadge priority={ticket.prioridad} /></div></td>
+                <td><b>{registered.date}</b><small>{registered.time}</small>{(() => { const age = ticketAge(ticket); return age && <small className={`ticket-elapsed ${age.running ? "running" : "total"}`} title={age.running ? "Tiempo desde que entró" : "Duración total del caso"}><Clock3 aria-hidden="true" />{age.running ? age.text : `Duración ${age.text}`}</small>; })()}</td>
                 <td><b>{ticket.ruc}</b><small title={ticket.razonSocial}>{ticket.razonSocial}</small></td>
                 <td><span className="ticket-module">{ticket.modulo}</span><small className="ticket-area-destination">{ticket.areaDestino || "Consultoría"}</small></td>
                 <td><span className="ticket-query-preview" title={ticket.consulta}>{ticket.consulta}</span></td>
