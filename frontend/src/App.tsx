@@ -3674,9 +3674,13 @@ function App() {
                                 `¿Deseas eliminar el perfil de ${m.nombres}?`,
                               )
                             ) {
-                              await deleteTeamMember(m.id);
-                              setTeam((v) => v.filter((x) => x.id !== m.id));
-                              setToast("Perfil eliminado");
+                              try {
+                                await deleteTeamMember(m.id);
+                                setTeam((v) => v.filter((x) => x.id !== m.id));
+                                setToast("Perfil eliminado");
+                              } catch (error) {
+                                reportError(error, "No se pudo eliminar el perfil.");
+                              }
                             }
                           }}
                         >
