@@ -83,7 +83,10 @@ async function main() {
   lines.push("THROW;");
   lines.push("END CATCH");
 
-  writeFileSync(outPath, lines.join("\n"), "utf8");
+  // UTF-16LE con BOM: sqlcmd interpreta este formato de forma confiable como
+  // texto Unicode; un .sql en UTF-8 puede leerse con la codepage equivocada
+  // y corromper tildes/ñ al importar (bytes UTF-8 partidos en dos caracteres).
+  writeFileSync(outPath, "﻿" + lines.join("\n"), "utf16le");
 
   console.log(`Exportado a: ${outPath}`);
   for (const { model, rows } of counts) console.log(`  ${model}: ${rows}`);
