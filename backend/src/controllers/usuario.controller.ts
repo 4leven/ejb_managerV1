@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { Cargo, Rol } from "@prisma/client";
+import { Cargo, Rol, Usuario } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { prisma } from "../config/db.js";
 import { PERMISOS_CATALOGO } from "../constants/permisos.js";
@@ -144,6 +144,31 @@ export async function messageStatus(req: Request, res: Response, next: NextFunct
     next(error);
   }
 }
+// Regla única para cambiar el área de un usuario, usada por el perfil propio
+// y por Equipo. `actor` debe venir releído de la base en este mismo request.
+// Reenviar el área actual sin cambios siempre se permite (no es un cambio).
+async function assertAreaChangeAllowed(actor: Usuario, target: Usuario, areaId: string) {
+  if (areaId === target.areaId) return;
+  if (!actor.isSuperAdmin)
+    throw new Error("Solo el administrador global puede cambiar el área de un usuario.");
+  if (target.isSuperAdmin && target.id !== actor.id)
+    throw new Error("No se puede modificar otra cuenta administradora");
+  await prisma.area.findUniqueOrThrow({ where: { id: areaId } });
+}
+export async function teamArea(req: Request, res: Response, next: NextFunction) {
+  try {
+    const actor = await prisma.usuario.findUniqueOrThrow({ where: { id: req.userId! } });
+    const areaId = String(req.body.areaId ?? "");
+    if (!areaId) throw new Error("Área inválida");
+    const target = await prisma.usuario.findUniqueOrThrow({ where: { id: String(req.params.id) } });
+    await assertAreaChangeAllowed(actor, target, areaId);
+    res.json(await prisma.usuario.update({
+      where: { id: target.id },
+      data: { areaId },
+      select: { id: true, area: true },
+    }));
+  } catch (e) { next(e); }
+}
 export async function profile(req: Request, res: Response, next: NextFunction) {
   try {
     const data = req.body as {
@@ -164,9 +189,7 @@ export async function profile(req: Request, res: Response, next: NextFunction) {
       throw new Error("Solo Santiago puede cambiar su rol en el equipo");
     if (data.cargo && !Object.values(Cargo).includes(data.cargo))
       throw new Error("Rol inválido");
-    if(data.areaId && data.areaId!==current.areaId && !current.isSuperAdmin)throw new Error("Solo el administrador global puede cambiar el área de un usuario.");
-    if (data.areaId)
-      await prisma.area.findUniqueOrThrow({ where: { id: data.areaId } });
+    if (data.areaId) await assertAreaChangeAllowed(current, current, data.areaId);
     res.json(
       await prisma.usuario.update({
         where: { id: req.userId! },

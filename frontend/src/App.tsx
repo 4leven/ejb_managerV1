@@ -84,6 +84,7 @@ import {
   savePortalColor,
   saveInitiativeAppearance,
   saveTeamCargo,
+  saveTeamArea,
   updateUserPermissions,
   deleteTeamMember,
   savePreferences,
@@ -1552,23 +1553,53 @@ function App() {
     setUser({ ...user, darkMode });
   };
   useEffect(() => {
-    fetchCatalogo()
-      .then((c) => {
+    // El catálogo (áreas, permisos, páginas) solo se pedía una vez: si el
+    // backend aún no estaba listo, quedaba vacío hasta recargar. Ahora se
+    // reintenta con espera creciente y, si sigue fallando, se avisa por toast.
+    let cancelled = false;
+    const retryTimers: ReturnType<typeof setTimeout>[] = [];
+    const loadCatalogo = async (attempt: number): Promise<void> => {
+      try {
+        const c = await fetchCatalogo();
+        if (cancelled) return;
         setAreas(c.areas);
         setPermisosCatalogo(c.permisos ?? []);
         setPaginasCatalogo(c.paginas ?? []);
-      })
-      .finally(() => setBooting(false));
+        setBooting(false);
+      } catch (error) {
+        if (cancelled) return;
+        setBooting(false);
+        if (attempt < 4)
+          retryTimers.push(setTimeout(() => loadCatalogo(attempt + 1), 1500 * (attempt + 1)));
+        else reportError(error, "No se pudo cargar el catálogo. Recarga la página.");
+      }
+    };
+    // La sesión solo se descarta si el backend dice que el token no sirve
+    // (401). Ante un backend caído o reiniciándose (red, 5xx) se conserva el
+    // token y se reintenta, en vez de cerrar la sesión del usuario.
+    const loadSession = async (attempt: number): Promise<void> => {
+      try {
+        const current = await me();
+        if (!cancelled) setUser(current);
+      } catch (error) {
+        if (cancelled) return;
+        if ((error as { status?: number }).status === 401) {
+          localStorage.removeItem("ejb_token");
+          sessionStorage.removeItem("ejb_token");
+        } else if (attempt < 4)
+          retryTimers.push(setTimeout(() => loadSession(attempt + 1), 1500 * (attempt + 1)));
+      }
+    };
+    loadCatalogo(0);
     if (
       localStorage.getItem("ejb_token") ||
       sessionStorage.getItem("ejb_token")
     )
-      me()
-        .then(setUser)
-        .catch(() => {
-          localStorage.removeItem("ejb_token");
-          sessionStorage.removeItem("ejb_token");
-        });
+      loadSession(0);
+    return () => {
+      cancelled = true;
+      retryTimers.forEach(clearTimeout);
+    };
   }, []);
   useEffect(() => {
     if (!user) return;
@@ -1949,6 +1980,19 @@ function App() {
       setToast(`${member.nombres} ahora tiene el rol ${cargo}`);
     } catch (error) {
       reportError(error, "No se pudo cambiar el cargo.");
+    }
+  };
+  const changeTeamArea = async (member: TeamMember, areaId: string) => {
+    try {
+      await saveTeamArea(member.id, areaId);
+      const area = areas.find((a) => a.id === areaId);
+      if (area)
+        setTeam((rows) =>
+          rows.map((row) => (row.id === member.id ? { ...row, area } : row)),
+        );
+      setToast(`${member.nombres} ahora está en ${area?.nombre ?? "la nueva área"}`);
+    } catch (error) {
+      reportError(error, "No se pudo cambiar el área.");
     }
   };
   // Solo el administrador global puede ver este menú (botón oculto salvo
@@ -3576,6 +3620,21 @@ function App() {
                             <option>Jefe</option><option>Gerente</option><option value="Administracion">Administración</option>
                           </select>
                         )}
+                        {user.isSuperAdmin && (
+                          <select
+                            className="team-role"
+                            aria-label={`Cambiar área de ${m.nombres}`}
+                            value={m.area.id}
+                            disabled={m.isSuperAdmin && m.id !== user.id}
+                            onChange={(e) => changeTeamArea(m, e.target.value)}
+                          >
+                            {areas.map((a) => (
+                              <option key={a.id} value={a.id}>
+                                {a.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </div>
                       {user.isSuperAdmin && !m.isSuperAdmin && (
                         <button
@@ -3662,7 +3721,7 @@ function App() {
             {page === "aprobaciones" && <Approvals user={user} />}
             {page === "marketing" && !isWorkerPortalUser(user) && <MarketingCenter user={user} />}
             {page === "perfil" && (
-              <Profile user={user} onUpdate={setUser} areas={areas} />
+              <Profile user={user} onUpdate={setUser} areas={areas} onError={reportError} />
             )}
             {page === "ayuda" && (
               <div className="help-grid">

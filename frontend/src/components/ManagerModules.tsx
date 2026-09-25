@@ -362,10 +362,12 @@ export function Profile({
   user,
   onUpdate,
   areas,
+  onError,
 }: {
   user: any;
   onUpdate: (u: any) => void;
   areas: any[];
+  onError: (error: unknown, fallback: string) => void;
 }) {
   const [preview, setPreview] = useState<string | null>(
     user.fotoPerfil ?? null,
@@ -384,19 +386,26 @@ export function Profile({
   };
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const f = new FormData(e.currentTarget),
-      saved = await saveProfile({
+    const f = new FormData(e.currentTarget);
+    try {
+      // Cargo y área solo los puede cambiar el administrador global; para el
+      // resto no viajan en el payload y el resto del perfil se guarda igual.
+      const saved = await saveProfile({
         nombres: String(f.get("nombres")),
         apellidos: String(f.get("apellidos")),
         fotoPerfil: preview,
-        ...(user.isSuperAdmin ? { cargo: String(f.get("cargo")) } : {}),
-        areaId: String(f.get("areaId")),
+        ...(user.isSuperAdmin
+          ? { cargo: String(f.get("cargo")), areaId: String(f.get("areaId")) }
+          : {}),
       });
-    onUpdate({
-      ...user,
-      ...saved,
-      nombreCompleto: `${saved.nombres} ${saved.apellidos}`,
-    });
+      onUpdate({
+        ...user,
+        ...saved,
+        nombreCompleto: `${saved.nombres} ${saved.apellidos}`,
+      });
+    } catch (error) {
+      onError(error, "No se pudo guardar el perfil.");
+    }
   };
   const toggle = async () => {
     const darkMode = !user.darkMode;
@@ -446,7 +455,11 @@ export function Profile({
         </label>
         <label>
           Área
-          <select name="areaId" defaultValue={user.area.id}>
+          <select
+            name="areaId"
+            defaultValue={user.area.id}
+            disabled={!user.isSuperAdmin}
+          >
             {areas.map((area) => (
               <option key={area.id} value={area.id}>
                 {area.nombre}

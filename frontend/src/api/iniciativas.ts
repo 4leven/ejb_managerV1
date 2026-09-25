@@ -127,7 +127,12 @@ export async function login(email: string, password: string) {
 }
 export async function me() {
   const r = await fetch(`${API_URL}/auth/me`, { headers: authHeaders() });
-  return expectJson(r, "Sesión inválida");
+  try {
+    return await expectJson(r, "Sesión inválida");
+  } catch (error) {
+    // El status permite distinguir sesión vencida (401) de un backend caído.
+    throw Object.assign(error as Error, { status: r.status });
+  }
 }
 async function jsonRequest(path: string, options: RequestInit = {}) {
   const r = await fetch(`${API_URL}${path}`, {
@@ -156,6 +161,11 @@ export const saveTeamCargo = (id: string, cargo: string) =>
   jsonRequest(`/usuarios/equipo/${id}/cargo`, {
     method: "PATCH",
     body: JSON.stringify({ cargo }),
+  });
+export const saveTeamArea = (id: string, areaId: string) =>
+  jsonRequest(`/usuarios/equipo/${id}/area`, {
+    method: "PATCH",
+    body: JSON.stringify({ areaId }),
   });
 export const deleteTeamMember = (id: string) =>
   jsonRequest(`/usuarios/equipo/${id}`, { method: "DELETE" });
