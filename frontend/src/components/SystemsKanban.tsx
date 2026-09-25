@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { transitionInitiative } from "../api/iniciativas";
+import { canDeriveInitiative } from "../utils/access";
 
 type SystemStatus = "Pendiente" | "En evaluación" | "Priorizado" | "En proceso" | "Finalizado";
 type SystemTask = { id: string; completada: boolean };
@@ -184,6 +185,12 @@ export default function SystemsKanban({
       return;
     }
     if (target === "Priorizado" && !item.responsableId) {
+      // Asignar responsable es "derivar": solo jefatura o admin global. El
+      // backend lo exige; aquí se avisa antes de mostrar un formulario inútil.
+      if (!canDeriveInitiative(user)) {
+        setFeedback({ type: "error", text: "Un jefe o gerente debe asignar el responsable antes de priorizar este proyecto." });
+        return;
+      }
       setAssignment({ item, target });
       return;
     }

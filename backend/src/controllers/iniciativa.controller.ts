@@ -6,11 +6,11 @@ import { prisma } from "../config/db.js";
 import { audit } from "../services/audit.js";
 import { score as computeScore } from "../utils/iniciativa.js";
 import {
-  canManageInitiative, canDeleteInitiative, requiresProjectDeleteApproval, isAreaLeader,
+  canManageInitiative, canDeleteInitiative, requiresProjectDeleteApproval,
   canReadInitiative,
-  canManageArea,
-  hasPermission,
-  isTechnical,
+  canCreateInitiativeInArea,
+  canDeriveInitiative,
+  canLeadInitiative,
 } from "../services/permissions.js";
 const createSchema = z
   .object({
@@ -62,10 +62,10 @@ export const create = async (
       actor = await prisma.usuario.findUniqueOrThrow({
         where: { id: req.userId! },
       });
-    if (!hasPermission(actor,"crearProyectos") && actor.areaId !== input.areaId && !canManageArea(actor, input.areaId))
+    if (!canCreateInitiativeInArea(actor, input.areaId))
       throw new Error("Solo puedes registrar proyectos para tu área");
     if (input.responsableId) {
-      if (!actor.isSuperAdmin && !isAreaLeader(actor))
+      if (!canDeriveInitiative(actor))
         throw new Error("Solo jefes, gerentes y el administrador principal pueden derivar proyectos");
       const responsable = await prisma.usuario.findUnique({ where: { id: input.responsableId }, select: { areaId: true } });
       if (!responsable || responsable.areaId !== input.areaId)
@@ -94,11 +94,19 @@ export const transition = async (
       current = await prisma.iniciativa.findUniqueOrThrow({ where: { id } });
     if (!canManageInitiative(actor, current))
       throw new Error("No tienes permisos para cambiar este proyecto");
-    const row = await iniciativaService.transition(
-      id,
-      z.nativeEnum(Estado).parse(req.body.estado),
-      req.body.responsableId,
-    );
+    const estado = z.nativeEnum(Estado).parse(req.body.estado),
+      responsableId = z.string().uuid().nullish().parse(req.body.responsableId) ?? undefined;
+    // Reenviar el responsable actual (el Kanban lo hace en cada movimiento) no
+    // es derivar. Asignar o cambiar uno distinto exige la misma regla que
+    // crear/editar, y el responsable debe ser del área del proyecto.
+    if (responsableId && responsableId !== current.responsableId) {
+      if (!canDeriveInitiative(actor))
+        throw new Error("Solo jefes, gerentes y el administrador principal pueden derivar proyectos");
+      const responsable = await prisma.usuario.findUnique({ where: { id: responsableId }, select: { areaId: true } });
+      if (!responsable || responsable.areaId !== current.areaId)
+        throw new Error("El responsable seleccionado no pertenece al área del proyecto");
+    }
+    const row = await iniciativaService.transition(id, estado, responsableId);
     await audit(actor.id, "Cambiar estado", "Iniciativa", id, {
       estado: row.estado,
     });
@@ -223,14 +231,25 @@ export const update = async (
       ).prisma.iniciativa.findUniqueOrThrow({
         where: { id: String(req.params.id) },
       });
-    if (
-      !actor.isSuperAdmin &&
-      !isTechnical(actor) &&
-      (!isAreaLeader(actor) || actor.areaId !== row.areaId)
-    )
-      throw new Error("Solo el jefe del área puede editar esta iniciativa");
+    // Misma capacidad que ya rige tareas, avances, estado y apariencia: creador,
+    // responsable, jefatura del área, técnico, admin global o permiso
+    // editarProyectos. Quien no entra aquí sigue el flujo de aprobación.
+    if (!canManageInitiative(actor, row))
+      throw new Error("No tienes permisos para editar este proyecto");
     const db = (await import("../config/db.js")).prisma;
     const input = editSchema.parse(req.body);
+    // Los campos de jefatura solo cuentan si realmente CAMBIAN: el formulario
+    // reenvía los valores actuales y eso no debe bloquear al resto de la edición.
+    const areaChanged = input.areaId !== undefined && input.areaId !== row.areaId;
+    const responsableChanged = input.responsableId !== undefined && input.responsableId !== row.responsableId;
+    const scoreChanged =
+      (input.impacto !== undefined && input.impacto !== row.impacto) ||
+      (input.esfuerzo !== undefined && input.esfuerzo !== row.esfuerzo);
+    if ((areaChanged || scoreChanged) && !canLeadInitiative(actor, row.areaId))
+      throw new Error("Solo la jefatura del área de origen, el técnico o el administrador global pueden mover el proyecto de área o cambiar su impacto y esfuerzo");
+    if (responsableChanged && !canDeriveInitiative(actor))
+      throw new Error("Solo jefes, gerentes y el administrador principal pueden derivar proyectos");
+    if (areaChanged) await db.area.findUniqueOrThrow({ where: { id: input.areaId! } });
     // Mantiene sincronizado el texto legacy "cliente" con el cliente elegido en
     // el selector, para no romper reportes/búsqueda/alertas que leen ese campo
     // directo de la base sin pasar por el servicio de iniciativas.
@@ -244,17 +263,18 @@ export const update = async (
       if (!cliente) throw new Error("Cliente no encontrado.");
       data.cliente = cliente.razonSocial;
     }
-    // "Derivar a" al editar exige la misma jefatura que al crear, y el
-    // responsable debe pertenecer al área final del proyecto (la nueva si se
+    // El responsable debe pertenecer al área final del proyecto (la nueva si se
     // está cambiando de área en el mismo guardado, o la actual si no).
-    if (input.responsableId) {
-      if (!actor.isSuperAdmin && !isAreaLeader(actor))
-        throw new Error("Solo jefes, gerentes y el administrador principal pueden derivar proyectos");
+    if (input.responsableId && (responsableChanged || areaChanged)) {
       const targetAreaId = input.areaId ?? row.areaId;
       const responsable = await db.usuario.findUnique({ where: { id: input.responsableId }, select: { areaId: true } });
       if (!responsable || responsable.areaId !== targetAreaId)
         throw new Error("El responsable seleccionado no pertenece al área del proyecto");
     }
+    // Al mover de área sin indicar un responsable nuevo, el actual (del área
+    // anterior) queda como "Sin derivar" en vez de apuntar a alguien ajeno.
+    if (areaChanged && input.responsableId === undefined && row.responsableId)
+      data.responsableId = null;
     // El score no se guarda directo: depende de impacto/esfuerzo, así que se
     // recalcula si cualquiera de los dos cambió (igual que al crear).
     if (input.impacto !== undefined || input.esfuerzo !== undefined) {
@@ -274,6 +294,18 @@ export const update = async (
         clienteRef: true,
         progresos: { orderBy: { createdAt: "desc" } },
       },
+    });
+    // Solo los campos cuyo valor realmente cambió: el formulario reenvía todo
+    // (incluso lo que no se tocó), así que se compara contra el valor actual.
+    const asComparable = (value: unknown) => (value instanceof Date ? value.getTime() : value ?? null);
+    const camposCambiados = Object.entries(input)
+      .filter(([campo, valor]) => asComparable(valor) !== asComparable((row as Record<string, unknown>)[campo]))
+      .map(([campo]) => campo);
+    await audit(actor.id, "Editar", "Iniciativa", row.id, {
+      codigo: row.codigo,
+      campos: camposCambiados,
+      ...(areaChanged ? { areaAnterior: row.areaId, areaNueva: input.areaId } : {}),
+      ...(responsableChanged ? { responsableAnterior: row.responsableId, responsableNuevo: input.responsableId } : {}),
     });
     res.json({ ...updated, cliente: updated.clienteRef?.razonSocial ?? updated.cliente });
   } catch (e) {

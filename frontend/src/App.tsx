@@ -115,7 +115,7 @@ import { ClientSelect } from "./components/ClientSelect";
 import { DateField } from "./components/DateField";
 import { FilterCombobox } from "./components/FilterCombobox";
 import { uiAlert, uiConfirm, uiPrompt } from "./utils/dialog";
-import { canOperateGlobally, cargoLabel, hasFullPortalAccess, isTechnicalUser, isAreaLeaderUser, isAdministrationUser, canPublishAnnouncements, canDeleteOwned, canReadMarketing, canManageInitiative } from "./utils/access";
+import { canOperateGlobally, cargoLabel, hasFullPortalAccess, isTechnicalUser, isAreaLeaderUser, isAdministrationUser, canPublishAnnouncements, canDeleteOwned, canReadMarketing, canManageInitiative, canCreateInAnyArea, canDeriveInitiative, canLeadInitiative } from "./utils/access";
 import {
   clearRememberedCredentials,
   loadRememberedCredentials,
@@ -764,7 +764,7 @@ function Access({
             {mode === "register" && (
               <small className="privacy">
                 Acceso protegido exclusivo para colaboradores de <b>EJB</b>. Al continuar,
-                aceptas las polÃ­ticas de seguridad interna.
+                aceptas las políticas de seguridad interna.
               </small>
             )}
           </form>
@@ -838,6 +838,10 @@ function InitiativeList({
 }) {
   const [editItem, setEditItem] = useState<Item | null>(null);
   const [editAreaName, setEditAreaName] = useState("");
+  // Área, impacto y esfuerzo los cambia la jefatura; "Derivar a" también. El
+  // resto de campos, cualquiera que pueda editar (canManageInitiative).
+  const editCanLead = Boolean(editItem) && canLeadInitiative(user, editItem);
+  const editCanDerive = canDeriveInitiative(user);
   if (!items.length)
     return (
       <div className="empty-state">
@@ -941,7 +945,10 @@ function InitiativeList({
                   className="row-edit-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (canOperateGlobally(user)) {
+                    // Misma regla que el backend (canManageInitiative): quien
+                    // puede editar abre el formulario; el resto sigue pidiendo
+                    // aprobación.
+                    if (canManageInitiative(user, i)) {
                       setEditItem(i);
                       setEditAreaName(i.area);
                     } else void askProjectChange(i, "Editar", onError);
@@ -1018,10 +1025,18 @@ function InitiativeList({
                   descripcion: String(f.get("descripcion")),
                   clienteId,
                   software: String(f.get("software") || "").trim() || null,
-                  areaId: String(f.get("areaId")),
-                  responsableId: String(f.get("responsableId") || "") || null,
-                  impacto: Number(f.get("impacto")),
-                  esfuerzo: String(f.get("esfuerzo")),
+                  // Los campos deshabilitados no viajan: el backend solo los
+                  // acepta de la jefatura y rechazaría cualquier cambio.
+                  ...(editCanLead
+                    ? {
+                        areaId: String(f.get("areaId")),
+                        impacto: Number(f.get("impacto")),
+                        esfuerzo: String(f.get("esfuerzo")),
+                      }
+                    : {}),
+                  ...(editCanDerive
+                    ? { responsableId: String(f.get("responsableId") || "") || null }
+                    : {}),
                   fechaInicio: fechaInicio || null,
                   fechaFin: fechaFin || null,
                 });
@@ -1052,8 +1067,10 @@ function InitiativeList({
                 <small>GESTIÓN DEL PROYECTO</small>
                 <h2 id="initiative-edit-title">Editar proyecto</h2>
                 <p>
-                  {editItem.codigo} · Solo jefatura del área o administración
-                  global.
+                  {editItem.codigo} ·{" "}
+                  {editCanLead
+                    ? "Jefatura del área o administración global."
+                    : "Área, responsable, impacto y esfuerzo los cambia la jefatura del área."}
                 </p>
               </div>
             </header>
@@ -1063,6 +1080,7 @@ function InitiativeList({
               <select
                 name="areaId"
                 defaultValue={areas.find((a) => a.nombre === editItem.area)?.id}
+                disabled={!editCanLead}
                 onChange={(event) => {
                   const areaName = areas.find((a) => a.id === event.target.value)?.nombre;
                   setEditAreaName(areaName ?? editItem.area);
@@ -1113,7 +1131,7 @@ function InitiativeList({
               </label>
             </div>
             <div className="form-grid">
-              {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+              {editCanDerive && (
                 <label>
                   Derivar a
                   <select
@@ -1141,11 +1159,12 @@ function InitiativeList({
                   min="1"
                   max="10"
                   defaultValue={editItem.impacto}
+                  disabled={!editCanLead}
                 />
               </label>
               <label>
                 Esfuerzo
-                <select name="esfuerzo" defaultValue={editItem.esfuerzo}>
+                <select name="esfuerzo" defaultValue={editItem.esfuerzo} disabled={!editCanLead}>
                   <option>Bajo</option>
                   <option>Medio</option>
                   <option>Alto</option>
@@ -2038,6 +2057,11 @@ function App() {
       document.removeEventListener("scroll", closeOnScroll, true);
     };
   }, [permisosMenuOpen]);
+  // Áreas que el backend acepta hoy para crear: todas con permiso/técnico/admin;
+  // si no, solo la propia (canCreateInitiativeInArea).
+  const creatableAreas = canCreateInAnyArea(user)
+    ? areas
+    : areas.filter((a) => a.id === user?.area?.id);
   const addInitiative = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget),
@@ -2895,10 +2919,14 @@ function App() {
                 Evento nuevo
               </button>
             ) : page === "kanban-sistemas" ? (
-              <button className="primary" onClick={() => { setCreateAreaName("Sistemas"); setModal(true); }}>
-                <Plus />
-                Nuevo registro Kanban
-              </button>
+              // El backend solo acepta registros en Sistemas de gente de esa
+              // área o con permiso para crear en cualquier área.
+              canCreateInAnyArea(user) || user.area.nombre === "Sistemas" ? (
+                <button className="primary" onClick={() => { setCreateAreaName("Sistemas"); setModal(true); }}>
+                  <Plus />
+                  Nuevo registro Kanban
+                </button>
+              ) : null
             ) : QUICK_CREATE_INITIATIVE_PAGES.includes(page) ? (
               <button className="primary" onClick={() => { setCreateAreaName(user.area.nombre); setModal(true); }}>
                 <Plus />
@@ -3847,11 +3875,11 @@ function App() {
                   )}
                   <select
                     name="area"
-                    value={page === "kanban-sistemas" ? "Sistemas" : (createAreaName || user.area.nombre)}
+                    value={page === "kanban-sistemas" ? "Sistemas" : (creatableAreas.some((a) => a.nombre === createAreaName) ? createAreaName : user.area.nombre)}
                     onChange={(event) => setCreateAreaName(event.target.value)}
                     disabled={page === "kanban-sistemas"}
                   >
-                    {areas.map((a) => (
+                    {(page === "kanban-sistemas" ? areas : creatableAreas).map((a) => (
                       <option key={a.id}>{a.nombre}</option>
                     ))}
                   </select>

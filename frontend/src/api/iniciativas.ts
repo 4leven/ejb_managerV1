@@ -236,7 +236,9 @@ export const updateInitiative = (
     descripcion: string;
     clienteId?: string | null;
     software?: string | null;
-    areaId: string;
+    // Área, responsable, impacto y esfuerzo se omiten cuando quien edita no es
+    // jefatura (el backend solo los acepta de la jefatura del área).
+    areaId?: string;
     responsableId?: string | null;
     impacto?: number;
     esfuerzo?: string;

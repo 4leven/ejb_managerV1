@@ -22,6 +22,16 @@ export const canReadInitiative=(actor:Actor,item:{areaId:string;responsableId?:s
 // registrar avance, ni cambiar el estado. Se agrega el mismo criterio que ya
 // usa canDeleteOwned para "dueño" del contenido.
 export const canManageInitiative=(actor:Actor,item:{areaId:string;responsableId?:string|null;creadorId?:string|null})=>canManageArea(actor,item.areaId)||hasPermission(actor,"editarProyectos")||actor.id===item.responsableId||actor.id===item.creadorId;
+// Crear: cualquiera puede registrar en su propia área; en otra área solo con
+// el permiso crearProyectos, siendo técnico/admin o jefatura de esa área.
+export const canCreateInitiativeInArea=(actor:Actor,areaId:string)=>hasPermission(actor,"crearProyectos")||actor.areaId===areaId||canManageArea(actor,areaId);
+// "Derivar" = asignar, cambiar o quitar el responsable de un proyecto. Regla
+// única para crear, editar y cambiar de estado (antes transition() la eludía).
+export const canDeriveInitiative=(actor:Actor)=>actor.isSuperAdmin||isAreaLeader(actor);
+// Campos "de jefatura" al editar (mover de área, impacto/esfuerzo): jefatura del
+// área de origen, técnico o administrador global. El resto de campos los edita
+// cualquiera que pase canManageInitiative.
+export const canLeadInitiative=(actor:Actor,areaId:string)=>canManageArea(actor,areaId);
 export const canManageMarketing=(actor:Actor)=>actor.isSuperAdmin||actor.area?.nombre.trim().toLocaleLowerCase("es-PE")==="marketing";
 export const canReadMarketing=(_actor:Actor)=>true;
 export const groupMembers=(data:any,creatorId:string):string[]=>Array.from(new Set([creatorId,...(Array.isArray(data?.miembros)?data.miembros:[])]));

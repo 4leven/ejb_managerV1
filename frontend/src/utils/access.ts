@@ -24,6 +24,18 @@ export const canDeleteOwned=(user:any,creatorId?:string|null,areaId?:string|null
 export const canManageMarketing=(user?:AccessUser|null)=>Boolean(user?.isSuperAdmin||user?.area?.nombre?.trim().toLocaleLowerCase("es-PE")==="marketing");
 export const canReadMarketing=(user?:AccessUser|null)=>Boolean(user);
 export const hasPermission=(user?:AccessUser|null,key?:string)=>Boolean(user?.isSuperAdmin||(key&&user?.permisos?.[key]));
+// Espejos de canCreateInitiativeInArea / canDeriveInitiative / canLeadInitiative
+// (backend/src/services/permissions.ts). El backend sigue siendo el que decide.
+// Crear en cualquier área: permiso crearProyectos, técnico o admin global.
+export const canCreateInAnyArea=(user?:AccessUser|null)=>Boolean(user&&(hasPermission(user,"crearProyectos")||isTechnicalUser(user)));
+// Derivar (asignar/quitar responsable): admin global o Jefe/Gerente.
+export const canDeriveInitiative=(user?:AccessUser|null)=>Boolean(user?.isSuperAdmin||isAreaLeaderUser(user));
+// Campos de jefatura al editar (área, impacto, esfuerzo): jefatura del área
+// del proyecto, técnico o admin global.
+export const canLeadInitiative=(
+  user?:(AccessUser&{area?:{id?:string;nombre?:string}|null})|null,
+  item?:{areaId?:string}|null,
+)=>Boolean(user&&item&&(canOperateGlobally(user)||(isAreaLeaderUser(user)&&user.area?.id===item.areaId)));
 // Espejo en frontend de canManageInitiative (backend/src/services/permissions.ts),
 // para poder ocultar/deshabilitar "Agregar tarea" y acciones similares antes de
 // llamar a la API. La validación real y definitiva sigue siendo la del backend.

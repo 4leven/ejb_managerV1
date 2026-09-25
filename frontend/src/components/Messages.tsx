@@ -1044,7 +1044,7 @@ export default function Messages({
       )}
       <div className="gif-section-title">
         <b>
-          {gifQuery.trim() ? `Resultados para â€œ${gifQuery}â€` : "Tendencias"}
+          {gifQuery.trim() ? `Resultados para “${gifQuery}”` : "Tendencias"}
         </b>
         <span>{gifResults.length} disponibles</span>
       </div>
@@ -1061,7 +1061,7 @@ export default function Messages({
           <div className="gif-empty">
             <Image />
             <b>No encontramos resultados</b>
-            <span>Prueba con otra bÃºsqueda.</span>
+            <span>Prueba con otra búsqueda.</span>
           </div>
         )}
         {!gifsLoading && gifHasNext && gifResults.length > 0 && (
@@ -1077,7 +1077,7 @@ export default function Messages({
                 Cargando...
               </>
             ) : (
-              "Ver mÃ¡s GIFs"
+              "Ver más GIFs"
             )}
           </button>
         )}
