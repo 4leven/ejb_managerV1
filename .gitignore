@@ -9,3 +9,6 @@ outputs/backups/
 tmp/
 claude.md
 backend/scripts/output/
+/SYNC_LOCAL_TO_SERVER.mjs
+/SYNC_LOCAL_TO_SERVER_README.md
+/sync-backups/

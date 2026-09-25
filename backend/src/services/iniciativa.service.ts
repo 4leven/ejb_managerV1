@@ -35,10 +35,11 @@ export const iniciativaService = {
       throw error;
     }
   },
-  async transition(id:string, estado:Estado, responsableId?:string) {
+  // responsableId: undefined = conservar el actual; null = quitarlo; texto = asignarlo.
+  async transition(id:string, estado:Estado, responsableId?:string|null) {
     const current = await prisma.iniciativa.findUniqueOrThrow({where:{id}});
     if (!allowed[current.estado].includes(estado)) throw new Error('Transición de estado no permitida');
-    const owner = responsableId ?? current.responsableId;
+    const owner = responsableId === undefined ? current.responsableId : responsableId;
     if (estado === Estado.Priorizado && !owner) throw new Error('Asigna un responsable antes de priorizar');
     return prisma.iniciativa.update({where:{id},data:{estado,responsableId:owner}});
   },

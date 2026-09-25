@@ -65,7 +65,7 @@ export const create = async (
     if (!canCreateInitiativeInArea(actor, input.areaId))
       throw new Error("Solo puedes registrar proyectos para tu área");
     if (input.responsableId) {
-      if (!canDeriveInitiative(actor))
+      if (!canDeriveInitiative(actor, input.areaId))
         throw new Error("Solo jefes, gerentes y el administrador principal pueden derivar proyectos");
       const responsable = await prisma.usuario.findUnique({ where: { id: input.responsableId }, select: { areaId: true } });
       if (!responsable || responsable.areaId !== input.areaId)
@@ -94,21 +94,33 @@ export const transition = async (
       current = await prisma.iniciativa.findUniqueOrThrow({ where: { id } });
     if (!canManageInitiative(actor, current))
       throw new Error("No tienes permisos para cambiar este proyecto");
+    // responsableId: ausente (undefined) = no tocar; null EXPLÍCITO = quitar al
+    // responsable; texto = asignar ese. Antes null se convertía en undefined y
+    // "quitar" no hacía nada (y nunca pasaba por la validación de derivar).
     const estado = z.nativeEnum(Estado).parse(req.body.estado),
-      responsableId = z.string().uuid().nullish().parse(req.body.responsableId) ?? undefined;
+      responsableId = z.string().uuid().nullish().parse(req.body.responsableId);
     // Reenviar el responsable actual (el Kanban lo hace en cada movimiento) no
-    // es derivar. Asignar o cambiar uno distinto exige la misma regla que
-    // crear/editar, y el responsable debe ser del área del proyecto.
-    if (responsableId && responsableId !== current.responsableId) {
-      if (!canDeriveInitiative(actor))
+    // es derivar. Asignar, cambiar o quitar exige la misma regla que
+    // crear/editar, y el nuevo responsable debe ser del área del proyecto.
+    const assigns = typeof responsableId === "string" && responsableId !== current.responsableId;
+    const removes = responsableId === null && Boolean(current.responsableId);
+    if (assigns || removes) {
+      if (!canDeriveInitiative(actor, current.areaId))
         throw new Error("Solo jefes, gerentes y el administrador principal pueden derivar proyectos");
+    }
+    if (assigns) {
       const responsable = await prisma.usuario.findUnique({ where: { id: responsableId }, select: { areaId: true } });
       if (!responsable || responsable.areaId !== current.areaId)
         throw new Error("El responsable seleccionado no pertenece al área del proyecto");
     }
     const row = await iniciativaService.transition(id, estado, responsableId);
+    // Asignar, cambiar o quitar al responsable por esta vía debe dejar rastro de
+    // quién lo hizo, igual que en update (antes solo se registraba el estado).
     await audit(actor.id, "Cambiar estado", "Iniciativa", id, {
       estado: row.estado,
+      ...(assigns || removes
+        ? { responsableAnterior: current.responsableId, responsableNuevo: row.responsableId ?? null }
+        : {}),
     });
     res.json(row);
   } catch (e) {
@@ -247,8 +259,15 @@ export const update = async (
       (input.esfuerzo !== undefined && input.esfuerzo !== row.esfuerzo);
     if ((areaChanged || scoreChanged) && !canLeadInitiative(actor, row.areaId))
       throw new Error("Solo la jefatura del área de origen, el técnico o el administrador global pueden mover el proyecto de área o cambiar su impacto y esfuerzo");
-    if (responsableChanged && !canDeriveInitiative(actor))
+    // Mover de área un proyecto que YA tiene responsable, sin indicar uno nuevo,
+    // lo deja "sin derivar": es quitar al responsable de forma implícita y debe
+    // pasar por la MISMA validación que hacerlo de forma explícita. Antes el
+    // técnico (puede mover, no derivar) lo lograba por esta vía indirecta.
+    const clearsResponsableByMove = areaChanged && input.responsableId === undefined && Boolean(row.responsableId);
+    if (responsableChanged && !canDeriveInitiative(actor, row.areaId))
       throw new Error("Solo jefes, gerentes y el administrador principal pueden derivar proyectos");
+    if (clearsResponsableByMove && !canDeriveInitiative(actor, row.areaId))
+      throw new Error("Este proyecto tiene un responsable asignado y moverlo de área lo dejaría sin derivar; solo jefes, gerentes y el administrador principal pueden derivar proyectos");
     if (areaChanged) await db.area.findUniqueOrThrow({ where: { id: input.areaId! } });
     // Mantiene sincronizado el texto legacy "cliente" con el cliente elegido en
     // el selector, para no romper reportes/búsqueda/alertas que leen ese campo
@@ -273,8 +292,7 @@ export const update = async (
     }
     // Al mover de área sin indicar un responsable nuevo, el actual (del área
     // anterior) queda como "Sin derivar" en vez de apuntar a alguien ajeno.
-    if (areaChanged && input.responsableId === undefined && row.responsableId)
-      data.responsableId = null;
+    if (clearsResponsableByMove) data.responsableId = null;
     // El score no se guarda directo: depende de impacto/esfuerzo, así que se
     // recalcula si cualquiera de los dos cambió (igual que al crear).
     if (input.impacto !== undefined || input.esfuerzo !== undefined) {
@@ -305,7 +323,7 @@ export const update = async (
       codigo: row.codigo,
       campos: camposCambiados,
       ...(areaChanged ? { areaAnterior: row.areaId, areaNueva: input.areaId } : {}),
-      ...(responsableChanged ? { responsableAnterior: row.responsableId, responsableNuevo: input.responsableId } : {}),
+      ...(responsableChanged || clearsResponsableByMove ? { responsableAnterior: row.responsableId, responsableNuevo: input.responsableId ?? null } : {}),
     });
     res.json({ ...updated, cliente: updated.clienteRef?.razonSocial ?? updated.cliente });
   } catch (e) {

@@ -162,6 +162,12 @@ async function assertAreaChangeAllowed(actor: Usuario, target: Usuario, areaId: 
 export async function teamArea(req: Request, res: Response, next: NextFunction) {
   try {
     const actor = await prisma.usuario.findUniqueOrThrow({ where: { id: req.userId! } });
+    // Primero quién pide: un no-admin no recibe ni una respuesta "exitosa" de
+    // no-op cuando pide la misma área (el atajo de assertAreaChangeAllowed es para
+    // el perfil propio, donde reenviar el área actual es normal), ni se le
+    // revela si el usuario objetivo existe.
+    if (!actor.isSuperAdmin)
+      throw new Error("Solo el administrador global puede cambiar el área de un usuario.");
     const areaId = String(req.body.areaId ?? "");
     if (!areaId) throw new Error("Área inválida");
     const target = await prisma.usuario.findUniqueOrThrow({ where: { id: String(req.params.id) } });

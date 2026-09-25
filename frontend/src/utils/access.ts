@@ -28,8 +28,18 @@ export const hasPermission=(user?:AccessUser|null,key?:string)=>Boolean(user?.is
 // (backend/src/services/permissions.ts). El backend sigue siendo el que decide.
 // Crear en cualquier área: permiso crearProyectos, técnico o admin global.
 export const canCreateInAnyArea=(user?:AccessUser|null)=>Boolean(user&&(hasPermission(user,"crearProyectos")||isTechnicalUser(user)));
-// Derivar (asignar/quitar responsable): admin global o Jefe/Gerente.
-export const canDeriveInitiative=(user?:AccessUser|null)=>Boolean(user?.isSuperAdmin||isAreaLeaderUser(user));
+// Derivar (asignar/quitar responsable): admin global o Jefe/Gerente del ÁREA DEL
+// PROYECTO (no de cualquier área). El área se puede pasar por id y/o por nombre
+// según lo que tenga cada pantalla a la mano (el Kanban solo tiene el nombre).
+export const canDeriveInitiative=(
+  user?:(AccessUser&{area?:{id?:string;nombre?:string}|null})|null,
+  area?:{id?:string|null;nombre?:string|null}|null,
+)=>Boolean(
+  user?.isSuperAdmin||
+    (isAreaLeaderUser(user)&&area&&(
+      (area.id&&user?.area?.id===area.id)||(area.nombre&&user?.area?.nombre===area.nombre)
+    )),
+);
 // Campos de jefatura al editar (área, impacto, esfuerzo): jefatura del área
 // del proyecto, técnico o admin global.
 export const canLeadInitiative=(

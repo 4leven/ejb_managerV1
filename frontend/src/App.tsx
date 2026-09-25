@@ -841,7 +841,7 @@ function InitiativeList({
   // Área, impacto y esfuerzo los cambia la jefatura; "Derivar a" también. El
   // resto de campos, cualquiera que pueda editar (canManageInitiative).
   const editCanLead = Boolean(editItem) && canLeadInitiative(user, editItem);
-  const editCanDerive = canDeriveInitiative(user);
+  const editCanDerive = Boolean(editItem) && canDeriveInitiative(user, { id: editItem?.areaId, nombre: editItem?.area });
   if (!items.length)
     return (
       <div className="empty-state">
@@ -3888,7 +3888,7 @@ function App() {
                     ))}
                   </select>
                 </label>
-                {(hasFullPortalAccess(user) || isAreaLeaderUser(user)) && (
+                {canDeriveInitiative(user, { nombre: page === "kanban-sistemas" ? "Sistemas" : (createAreaName || user.area.nombre) }) && (
                   <label>
                     Derivar a
                     <select name="responsableId" defaultValue="" key={page === "kanban-sistemas" ? "Sistemas" : createAreaName}>

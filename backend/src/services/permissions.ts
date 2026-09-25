@@ -26,8 +26,12 @@ export const canManageInitiative=(actor:Actor,item:{areaId:string;responsableId?
 // el permiso crearProyectos, siendo técnico/admin o jefatura de esa área.
 export const canCreateInitiativeInArea=(actor:Actor,areaId:string)=>hasPermission(actor,"crearProyectos")||actor.areaId===areaId||canManageArea(actor,areaId);
 // "Derivar" = asignar, cambiar o quitar el responsable de un proyecto. Regla
-// única para crear, editar y cambiar de estado (antes transition() la eludía).
-export const canDeriveInitiative=(actor:Actor)=>actor.isSuperAdmin||isAreaLeader(actor);
+// única para crear, editar y cambiar de estado. Acotada al ÁREA DEL PROYECTO
+// (igual que canLeadInitiative): admin global, o Jefe/Gerente de esa área. Antes
+// bastaba ser Jefe/Gerente de cualquier área, así que uno de otra área que
+// llegaba a gestionar el proyecto (creador o permiso editarProyectos) podía
+// derivarlo. Poder gestionar un proyecto NO implica poder derivarlo.
+export const canDeriveInitiative=(actor:Actor,areaId:string)=>actor.isSuperAdmin||(isAreaLeader(actor)&&actor.areaId===areaId);
 // Campos "de jefatura" al editar (mover de área, impacto/esfuerzo): jefatura del
 // área de origen, técnico o administrador global. El resto de campos los edita
 // cualquiera que pase canManageInitiative.

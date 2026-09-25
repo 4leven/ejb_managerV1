@@ -187,7 +187,7 @@ export default function SystemsKanban({
     if (target === "Priorizado" && !item.responsableId) {
       // Asignar responsable es "derivar": solo jefatura o admin global. El
       // backend lo exige; aquí se avisa antes de mostrar un formulario inútil.
-      if (!canDeriveInitiative(user)) {
+      if (!canDeriveInitiative(user, { nombre: item.area })) {
         setFeedback({ type: "error", text: "Un jefe o gerente debe asignar el responsable antes de priorizar este proyecto." });
         return;
       }
